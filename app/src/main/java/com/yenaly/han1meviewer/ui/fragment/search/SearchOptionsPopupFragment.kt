@@ -21,6 +21,7 @@ import com.lxj.xpopup.core.BasePopupView
 import com.lxj.xpopup.interfaces.SimpleCallback
 import com.lxj.xpopupext.listener.TimePickerListener
 import com.lxj.xpopupext.popup.TimePickerPopup
+import com.yenaly.han1meviewer.BuildConfig
 import com.yenaly.han1meviewer.FirebaseConstants
 import com.yenaly.han1meviewer.Preferences.isAlreadyLogin
 import com.yenaly.han1meviewer.R
@@ -409,11 +410,13 @@ class SearchOptionsPopupFragment :
 
     private fun logAdvSearchEvent(type: String, used: Boolean = isUserUsed) {
         Log.d("HFirebase", "logAdvSearchEvent: $type, $used")
-        Firebase.analytics.logEvent(FirebaseConstants.ADV_SEARCH_OPT) {
-            // 判断当前点击类型
-            param(FirebaseAnalytics.Param.CONTENT_TYPE, type)
-            // 判断用户是否真正使用了高级搜索
-            param("used", used.toString())
+        if (BuildConfig.FIREBASE_ENABLED) {
+            Firebase.analytics.logEvent(FirebaseConstants.ADV_SEARCH_OPT) {
+                // 判断当前点击类型
+                param(FirebaseAnalytics.Param.CONTENT_TYPE, type)
+                // 判断用户是否真正使用了高级搜索
+                param("used", used.toString())
+            }
         }
         // 重置状态
         isUserUsed = false

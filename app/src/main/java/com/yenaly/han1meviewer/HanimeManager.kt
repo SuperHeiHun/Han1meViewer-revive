@@ -23,7 +23,7 @@ val Throwable.pienization: CharSequence get() = "🥺\n$localizedMessage"
 // base
 
 private const val HANIME_TITLE_HTML =
-    """<span style="color: #FF0000;"><b>H</b></span><b>an1me</b>Viewer"""
+    """<span style="color: #FF0000;"><b>H</b></span><b>an1me</b>Viewer<span style="color: #FF0000;"><b>-revive</b></span>"""
 
 val hanimeSpannedTitle = HANIME_TITLE_HTML.parseAsHtml()
 

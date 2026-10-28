@@ -26,6 +26,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.analytics.analytics
 import com.google.firebase.analytics.logEvent
+import com.yenaly.han1meviewer.BuildConfig
 import com.yenaly.han1meviewer.COMMENT_TYPE
 import com.yenaly.han1meviewer.FROM_DOWNLOAD
 import com.yenaly.han1meviewer.FirebaseConstants
@@ -287,15 +288,17 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                             )
                         )
                         // 使用到这里说明用户可能是关键H帧目标用户
-                        Firebase.analytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT) {
-                            param(
-                                FirebaseAnalytics.Param.ITEM_ID,
-                                FirebaseConstants.H_KEYFRAMES
-                            )
-                            param(
-                                FirebaseAnalytics.Param.CONTENT_TYPE,
-                                FirebaseConstants.H_KEYFRAMES
-                            )
+                        if (BuildConfig.FIREBASE_ENABLED) {
+                            Firebase.analytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT) {
+                                param(
+                                    FirebaseAnalytics.Param.ITEM_ID,
+                                    FirebaseConstants.H_KEYFRAMES
+                                )
+                                param(
+                                    FirebaseAnalytics.Param.CONTENT_TYPE,
+                                    FirebaseConstants.H_KEYFRAMES
+                                )
+                            }
                         }
                     }
                     setNegativeButton(R.string.cancel, null)

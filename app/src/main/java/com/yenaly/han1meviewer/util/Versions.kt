@@ -18,7 +18,10 @@ import java.io.File
 val Context.updateFile: File get() = File(applicationContext.cacheDir, "update.apk")
 
 fun checkNeedUpdate(versionName: String): Boolean {
-    val latestVersionCode = versionName.substringAfter("+", "").toIntOrNull() ?: Int.MAX_VALUE
+    // Tag 形如 v0.15.5+261028058，允许 + 后带额外后缀，只取前导数字。
+    val latestVersionCode = versionName.substringAfter("+", "")
+        .takeWhile(Char::isDigit)
+        .toIntOrNull() ?: Int.MAX_VALUE
     return BuildConfig.VERSION_CODE < latestVersionCode
 }
 

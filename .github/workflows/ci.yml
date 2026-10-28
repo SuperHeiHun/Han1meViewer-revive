@@ -8,7 +8,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -54,3 +58,74 @@ jobs:
           name: Han1meViewer-revive-${{ github.sha }}
           path: app/build/outputs/apk/release/Han1meViewer-revive-v*.apk
           if-no-files-found: error
+
+      # Only the official repository publishes releases. Forks still get the
+      # Actions artifact above, but no release is created in their repository.
+      #
+      # The repository has immutable releases enabled, so the asset must be
+      # uploaded while the release is still a draft and published afterwards.
+      - name: Publish GitHub Release
+        if: github.ref == 'refs/heads/feat/new_download' && github.repository == 'SuperHeiHun/Han1meViewer-revive'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          APK=$(ls -t app/build/outputs/apk/release/Han1meViewer-revive-v*.apk 2>/dev/null | head -n1 || true)
+          if [ -z "$APK" ]; then
+            echo "Release APK not found" >&2
+            exit 1
+          fi
+
+          APK_NAME=$(basename "$APK")
+          VERSION_NAME=${APK_NAME#Han1meViewer-revive-v}
+          VERSION_NAME=${VERSION_NAME%.apk}
+          VERSION_CODE=${VERSION_NAME##*+}
+          TAG="v$(echo "$VERSION_NAME" | sed -E 's/-ci\+/+/')"
+          TITLE="Han1meViewer-revive v${VERSION_NAME}"
+          SHA256=$(sha256sum "$APK" | awk '{print $1}')
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            IS_DRAFT=$(gh release view "$TAG" --json isDraft --jq '.isDraft')
+            if [ "$IS_DRAFT" = "true" ]; then
+              echo "Draft release $TAG already exists; uploading and publishing."
+              gh release upload "$TAG" "$APK" --clobber
+              gh release edit "$TAG" --draft=false --latest
+              exit 0
+            fi
+            echo "Release $TAG already exists; skipping."
+            exit 0
+          fi
+
+          NOTES=$(mktemp)
+          cat > "$NOTES" <<EOF
+          Han1meViewer-revive 社区修复版本。
+
+          ## 修复内容
+          - 适配目标站点新版页面结构
+          - 修复首页、搜索、视频、评论和预览页解析
+          - 更新搜索参数与标签数据
+          - 修复播放列表删除接口
+          - 修复使用示例 Firebase 配置时的启动崩溃
+
+          ## 安装说明
+          - 使用公开测试签名，若已安装原版 Han1meViewer，可能需要先卸载
+          - 该签名仅用于测试，不适用于正式分发
+          - 登录后的部分功能尚未完整验证
+
+          ## 构建信息
+          - Commit: \`${GITHUB_SHA}\`
+          - Version: \`${VERSION_NAME}\`
+          - Version code: \`${VERSION_CODE}\`
+          - SHA-256: \`${SHA256}\`
+          EOF
+
+          gh release create "$TAG" \
+            --draft \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes-file "$NOTES"
+
+          gh release upload "$TAG" "$APK"
+
+          gh release edit "$TAG" --draft=false --latest

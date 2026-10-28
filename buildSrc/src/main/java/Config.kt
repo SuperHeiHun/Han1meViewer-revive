@@ -44,9 +44,13 @@ object Config {
                 }
 
                 else -> {
-                    versionCode = LocalDateTime.now(Clock.systemUTC()).format(
+                    val now = LocalDateTime.now(Clock.systemUTC())
+                    // yyMMddHH 后面追加一位 0-9 的分钟分桶，让同一小时内最多
+                    // 十次 CI 构建都能得到不同且递增的 versionCode。
+                    // 9 位数字仍远低于 Android 的 2,100,000,000 上限。
+                    versionCode = now.format(
                         DateTimeFormatter.ofPattern("yyMMddHH")
-                    ).toInt()
+                    ).toInt() * 10 + now.minute / 6
                     versionName = "${major}.${minor}.${patch}-$source+$versionCode"
                 }
             }

@@ -38,7 +38,7 @@ object HUpdater {
      */
     suspend fun checkForUpdate(forceCheck: Boolean = false): Latest? {
         if (forceCheck || Preferences.isUpdateDialogVisible) {
-            if (Preferences.useCIUpdateChannel && Firebase.remoteConfig.getBoolean(FirebaseConstants.ENABLE_CI_UPDATE)) {
+            if (Preferences.useCIUpdateChannel && BuildConfig.FIREBASE_ENABLED && Firebase.remoteConfig.getBoolean(FirebaseConstants.ENABLE_CI_UPDATE)) {
                 val curSha = BuildConfig.COMMIT_SHA
                 // 特殊情况下才用注释部分，一般情况下 branch 都是固定的，要不然多一次
                 // request 会对我的 API Token 造成负担。

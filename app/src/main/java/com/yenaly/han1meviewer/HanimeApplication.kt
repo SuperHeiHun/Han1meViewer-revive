@@ -47,7 +47,12 @@ class HanimeApplication : YenalyApplication() {
         DynamicColors.applyToActivitiesIfAvailable(this)
         HProxySelector.rebuildNetwork()
 
-        initFirebase()
+        if (BuildConfig.FIREBASE_ENABLED) {
+            initFirebase()
+        } else {
+            // 未配置 Firebase 时，跳过 Remote Config，直接检查 GitHub Releases。
+            AppViewModel.getLatestVersion(delayMillis = 200)
+        }
         initNotificationChannel()
     }
 

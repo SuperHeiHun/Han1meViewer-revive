@@ -24,7 +24,13 @@
 
 ## 下载
 
-推送代码或手动触发后，GitHub Actions 会构建 Release APK。
+推荐直接从 [Releases](https://github.com/SuperHeiHun/Han1meViewer-revive/releases/latest) 下载最新 APK：
+
+1. 打开 Releases 页面。
+2. 在最新版本的 **Assets** 中下载 `Han1meViewer-revive-v*.apk`。
+3. 安装即可；如果已安装原版 Han1meViewer，可能需要先卸载。
+
+CI 构建也会在 Actions 中保留一份构建产物作为备份：
 
 1. 打开 [Actions](https://github.com/SuperHeiHun/Han1meViewer-revive/actions/workflows/ci.yml) 页面。
 2. 选择最新一次成功的 `CI` 构建。
@@ -33,7 +39,7 @@
 
 也可以手动触发构建：进入 Actions → `CI` → `Run workflow`。
 
-> 如果你是刚 Fork 本仓库，请先打开 Actions 页面启用工作流；若推送后没有自动运行，可手动执行 `Run workflow`。
+> 如果你是刚 Fork 本仓库，请先打开 Actions 页面启用工作流；若推送后没有自动运行，可手动执行 `Run workflow`。Fork 仓库只会上传 Actions Artifact，不会自动发布 Release。
 
 ## 本次修复内容
 
@@ -101,14 +107,18 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 工作流文件：`.github/workflows/ci.yml`
 
 - 推送代码或手动触发时构建 `assembleRelease`。
+- 在 `SuperHeiHun/Han1meViewer-revive` 仓库中，`feat/new_download` 分支构建成功后会自动发布 GitHub Release：先创建 draft，上传 APK，再正式发布。
+- Release tag 形如 `v0.15.5+261028058`，应用内更新检查会读取 `+` 后的版本号。
+- Fork 仓库只上传 Actions Artifact，不会自动发布 Release。
 - 默认使用 `app/google-services.json.example` 作为 Firebase 配置占位，因此全新 Fork 也能直接出包。
+- 使用占位配置时，构建会自动关闭 Firebase Analytics、Crashlytics 和 Remote Config，避免无效 API Key 导致启动崩溃；应用内更新会直接检查 GitHub Releases。
 - 如需真实 Firebase 配置，在仓库 Secrets 中添加 `HA1_GOOGLE_SERVICES_JSON_BASE64`（`google-services.json` 的 Base64 内容）。
 
 ## 已知限制
 
 - 登录后的“我的列表”、自定义播放列表、订阅、发表评论/点赞等交互，因缺少测试账号，尚未做完整线上验证。
 - 站点 `/previews/202605` 之后的预览页目前返回 500，最新可用月份为 `202604`；新版首页也已注释掉预览入口，属于站点侧停止维护。
-- 应用内更新检查默认指向本仓库；在发布 GitHub Release 之前，更新检查可能没有结果。
+- 应用内更新检查默认指向本仓库的 Releases；如果最新 Release 的版本号不高于当前安装版本，则不会提示更新。
 - 本项目未在真机上做完整的运行时冒烟测试，如遇问题请提交 Issue（需先在仓库设置中开启 Issues）。
 
 ## 致谢

@@ -12,10 +12,21 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.plugin.parcelize)
     alias(libs.plugins.org.jetbrains.kotlin.plugin.serialization)
     alias(libs.plugins.com.google.devtools.ksp)
-    alias(libs.plugins.com.google.gms.google.services)
-    alias(libs.plugins.com.google.firebase.crashlytics)
-    alias(libs.plugins.com.google.firebase.firebase.pref)
     // alias(libs.plugins.compose.compiler)
+}
+
+// 只有配置了格式有效的 Firebase API Key 才启用 Firebase 相关插件。
+// 示例配置使用占位 Key，CI 构建会跳过 Analytics/Crashlytics/Remote Config。
+val firebaseEnabled = runCatching {
+    val config = File(projectDir, "google-services.json")
+    config.isFile && Regex("\"current_key\"\\s*:\\s*\"AIza[0-9A-Za-z_-]{35}\"")
+        .containsMatchIn(config.readText())
+}.getOrDefault(false)
+
+if (firebaseEnabled) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+    apply(plugin = "com.google.firebase.firebase-perf")
 }
 
 android {
@@ -56,6 +67,7 @@ android {
         buildConfigField("int", "VERSION_CODE", "$versionCode")
         buildConfigField("String", "HA1_GITHUB_TOKEN", "\"${githubToken}\"")
         buildConfigField("String", "HA1_VERSION_SOURCE", "\"${source}\"")
+        buildConfigField("boolean", "FIREBASE_ENABLED", "$firebaseEnabled")
 
         buildConfigField("int", "SEARCH_YEAR_RANGE_END", "${Config.thisYear}")
     }

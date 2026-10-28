@@ -239,7 +239,9 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         }
         useAnalytics.apply {
             setOnPreferenceChangeListener { _, newValue ->
-                Firebase.analytics.setAnalyticsCollectionEnabled(newValue as Boolean)
+                if (BuildConfig.FIREBASE_ENABLED) {
+                    Firebase.analytics.setAnalyticsCollectionEnabled(newValue as Boolean)
+                }
                 return@setOnPreferenceChangeListener true
             }
             setOnPreferenceLongClickListener {
