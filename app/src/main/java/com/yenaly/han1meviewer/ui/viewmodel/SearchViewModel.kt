@@ -40,6 +40,21 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
     var month: Int? = null
     var duration: String? = null
 
+    /**
+     * 新版網站使用單一的 date 參數，例如 "2026 年 3 月"
+     */
+    val date: String?
+        get() {
+            val year = year
+            val month = month
+            return when {
+                year != null && month != null -> "$year 年 $month 月"
+                year != null -> "$year 年"
+                month != null -> "$month 月"
+                else -> null
+            }
+        }
+
     var subscriptionBrand: String? = null
 
     var tagMap = SparseArray<Set<SearchOption>>()
@@ -82,14 +97,14 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
 
     fun getHanimeSearchResult(
         page: Int, query: String?, genre: String?,
-        sort: String?, broad: Boolean, year: Int?, month: Int?,
-        duration: String?, tags: Set<String>, brands: Set<String>,
+        sort: String?, broad: Boolean, date: String?,
+        duration: String?, tags: Set<String>,
     ) {
         viewModelScope.launch {
             NetworkRepo.getHanimeSearchResult(
                 page, query, genre,
-                sort, broad, year, month,
-                duration, tags, brands
+                sort, broad, date,
+                duration, tags
             ).collect { state ->
                 val prev = _searchStateFlow.getAndUpdate { state }
                 if (prev is PageLoadingState.Loading) _searchFlow.value = emptyList()

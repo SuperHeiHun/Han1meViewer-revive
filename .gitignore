@@ -1,5 +1,6 @@
 *.iml
 .gradle
+.kotlin
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -13,3 +14,10 @@
 .externalNativeBuild
 .cxx
 local.properties
+/buildSrc/build
+
+# Local Firebase / signing configuration
+/app/google-services.json
+/app/src/debug/google-services.json
+/app/keystore/ha1_keystore_password.txt
+/app/ha1_github_token.txt

@@ -20,7 +20,9 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // 库模块不做混淆，交由 app 模块统一 shrink/obfuscate。
+            // 否则 R8 会在库中移除仅被 app 引用的类，导致 app 打包时缺类。
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

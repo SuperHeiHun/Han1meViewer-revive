@@ -28,7 +28,7 @@ interface HanimeMyListService {
     ): Response<ResponseBody>
 
     @FormUrlEncoded
-    @POST("deletePlayitem")
+    @POST("playlist/delete")
     suspend fun deleteMyListItems(
         @Field("playlist_id") listType: String,
         @Field("video_id") videoCode: String,

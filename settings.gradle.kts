@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven { url = uri("https://jitpack.io/") }
     }
 }
-rootProject.name = "Han1meViewer"
+rootProject.name = "Han1meViewer-revive"
 include(":app", ":yenaly_libs")

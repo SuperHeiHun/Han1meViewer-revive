@@ -21,3 +21,5 @@
 #-renamesourcefileattribute SourceFile
 
 -keepattributes SourceFile, LineNumberTable
+# R8: java.lang.invoke.StringConcatFactory is not available on Android
+-dontwarn java.lang.invoke.StringConcatFactory

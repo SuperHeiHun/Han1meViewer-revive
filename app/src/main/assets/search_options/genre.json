@@ -33,19 +33,35 @@
   },
   {
     "lang": {
-      "zh-rCN": "3D动画",
-      "en": "3D Animation",
-      "zh-rTW": "3D動畫"
+      "zh-rCN": "3DCG",
+      "en": "3DCG",
+      "zh-rTW": "3DCG"
     },
-    "search_key": "3D動畫"
+    "search_key": "3DCG"
   },
   {
     "lang": {
-      "zh-rCN": "同人作品",
-      "en": "Doujin",
-      "zh-rTW": "同人作品"
+      "zh-rCN": "2.5D动画",
+      "en": "2.5D Animation",
+      "zh-rTW": "2.5D動畫"
     },
-    "search_key": "同人作品"
+    "search_key": "2.5D"
+  },
+  {
+    "lang": {
+      "zh-rCN": "2D动画",
+      "en": "2D Animation",
+      "zh-rTW": "2D動畫"
+    },
+    "search_key": "2D動畫"
+  },
+  {
+    "lang": {
+      "zh-rCN": "AI生成",
+      "en": "AI Generated",
+      "zh-rTW": "AI生成"
+    },
+    "search_key": "AI生成"
   },
   {
     "lang": {
@@ -62,5 +78,13 @@
       "zh-rTW": "Cosplay"
     },
     "search_key": "Cosplay"
+  },
+  {
+    "lang": {
+      "zh-rCN": "新番预告",
+      "en": "Upcoming",
+      "zh-rTW": "新番預告"
+    },
+    "search_key": "新番預告"
   }
 ]

@@ -22,11 +22,10 @@ interface HanimeBaseService {
         @Query("genre") genre: String? = null,
         @Query("sort") sort: String? = null,
         @Query("broad") broad: String? = null,
-        @Query("year") year: Int? = null,
-        @Query("month") month: Int? = null,
+        // 新版網站把年份和月份合併成一個 date 參數，例如 "2026 年 3 月"
+        @Query("date") date: String? = null,
         @Query("duration") duration: String? = null,
         @Query("tags[]") tags: Set<String> = emptySet(),
-        @Query("brands[]") brands: Set<String> = emptySet(),
     ): Response<ResponseBody>
 
     @GET("watch")

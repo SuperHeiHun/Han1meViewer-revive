@@ -29,3 +29,5 @@
 
 -keep class com.google.android.gms.** { *; }
 -keep interface com.google.android.gms.** { *; }
+# R8: java.lang.invoke.StringConcatFactory is not available on Android
+-dontwarn java.lang.invoke.StringConcatFactory

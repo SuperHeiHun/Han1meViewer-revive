@@ -124,8 +124,8 @@ class SearchOptionsPopupFragment :
         PopUpFragmentSearchOptionsBinding.inflate(layoutInflater)
 
     override fun initData(savedInstanceState: Bundle?, dialog: Dialog) {
-        // #issue-199: 片长搜索官网取消了
-        binding.duration.isAvailable = false
+        // 新版網站重新提供了片長搜尋
+        binding.duration.isAvailable = true
         // 简单的厂商搜索官网取消了
         binding.brand.isAvailable = false
 
@@ -223,6 +223,10 @@ class SearchOptionsPopupFragment :
                     addTagScope(
                         R.string.appearance_and_figure,
                         viewModel.tags[R.string.appearance_and_figure]
+                    )
+                    addTagScope(
+                        R.string.situation,
+                        viewModel.tags[R.string.situation]
                     )
                     addTagScope(
                         R.string.story_plot,

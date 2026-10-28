@@ -24,7 +24,7 @@ object HUpdater {
 
     const val TAG = "HUpdater"
 
-    const val DEFAULT_BRANCH = "master"
+    const val DEFAULT_BRANCH = "feat/new_download"
 
     /**
      * Regex to match multiple line feeds to a single line feed

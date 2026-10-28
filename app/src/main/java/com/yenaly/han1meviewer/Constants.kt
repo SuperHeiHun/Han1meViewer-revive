@@ -9,7 +9,7 @@ import kotlinx.datetime.format.char
  */
 const val EMPTY_STRING = ""
 
-const val APP_NAME = "Han1meViewer"
+const val APP_NAME = "Han1meViewer-revive"
 
 // 标准时间格式
 
@@ -98,7 +98,7 @@ val HANIME_LOGIN_URL = HANIME_BASE_URL + "login"
 
 // github url
 
-const val HA1_GITHUB_URL = "https://github.com/YenalyLiew/Han1meViewer"
+const val HA1_GITHUB_URL = "https://github.com/SuperHeiHun/Han1meViewer-revive"
 
 const val HA1_GITHUB_ISSUE_URL = "$HA1_GITHUB_URL/issues"
 
@@ -106,7 +106,7 @@ const val HA1_GITHUB_FORUM_URL = "$HA1_GITHUB_URL/discussions"
 
 const val HA1_GITHUB_RELEASES_URL = "$HA1_GITHUB_URL/releases"
 
-const val HA1_GITHUB_API_URL = "https://api.github.com/repos/YenalyLiew/Han1meViewer/"
+const val HA1_GITHUB_API_URL = "https://api.github.com/repos/SuperHeiHun/Han1meViewer-revive/"
 
 // for Shared Preference
 

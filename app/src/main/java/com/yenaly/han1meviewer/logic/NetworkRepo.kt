@@ -9,6 +9,7 @@ import com.yenaly.han1meviewer.logic.exception.HanimeNotFoundException
 import com.yenaly.han1meviewer.logic.exception.IPBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.model.CommentPlace
+import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.ModifiedPlaylistArgs
 import com.yenaly.han1meviewer.logic.model.MyListType
 import com.yenaly.han1meviewer.logic.model.VideoCommentArgs
@@ -21,6 +22,8 @@ import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.yenaly_libs.utils.applicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -38,21 +41,86 @@ object NetworkRepo {
 
     //<editor-fold desc="Hanime">
 
-    fun getHomePage() = websiteIOFlow(
-        request = { HanimeNetwork.hanimeService.getHomePage() },
-        action = Parser::homePageVer2
-    )
+    fun getHomePage() = flow {
+        val requestResult = HanimeNetwork.hanimeService.getHomePage()
+        val resultBody = requestResult.body()?.string()
+        if (!requestResult.isSuccessful || resultBody == null) {
+            requestResult.throwRequestException()
+        }
+        val state = Parser.homePageVer2(resultBody ?: EMPTY_STRING)
+        if (state is WebsiteState.Success) {
+            val homePage = state.info
+            // 新版網站首頁砍掉了「中文字幕」「本日排行」「本月排行」三個欄位，
+            // 這裡並行地從搜尋頁補齊；任何一個失敗都只是讓該欄位為空，不影響首頁。
+            val (chineseSubtitle, hanimeCurrent, hotHanimeMonthly) = coroutineScope {
+                val chineseSubtitle = async {
+                    getHomeSectionCarousel(tags = setOf("中文字幕"), sort = "最新上傳")
+                }
+                val hanimeCurrent = async {
+                    getHomeSectionCarousel(sort = "本日排行")
+                }
+                val hotHanimeMonthly = async {
+                    getHomeSectionCarousel(sort = "本月排行")
+                }
+                Triple(
+                    chineseSubtitle.await(),
+                    hanimeCurrent.await(),
+                    hotHanimeMonthly.await()
+                )
+            }
+            emit(
+                WebsiteState.Success(
+                    homePage.copy(
+                        chineseSubtitle = chineseSubtitle,
+                        hanimeCurrent = hanimeCurrent,
+                        hotHanimeMonthly = hotHanimeMonthly,
+                    )
+                )
+            )
+        } else {
+            emit(state)
+        }
+    }.catch { e ->
+        emit(WebsiteState.Error(handleException(e)))
+    }.flowOn(Dispatchers.IO)
+
+    /**
+     * 首頁補齊欄位時使用，失敗時回傳空列表
+     */
+    private suspend fun getHomeSectionCarousel(
+        sort: String? = null,
+        tags: Set<String> = emptySet(),
+    ): MutableList<HanimeInfo> = try {
+        val response = HanimeNetwork.hanimeService.getHanimeSearchResult(
+            sort = sort,
+            tags = tags,
+        )
+        val body = response.body()?.string()
+        if (response.isSuccessful && body != null) {
+            val state = Parser.hanimeSearch(body)
+            // 首頁每個橫向欄位只預覽 12 個，和網站首頁保持一致
+            (state as? PageLoadingState.Success)?.info?.take(12)?.toMutableList()
+                ?: mutableListOf()
+        } else {
+            mutableListOf()
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.d("home_page_section", "Failed to load home section: ${e.message}")
+        mutableListOf()
+    }
 
     fun getHanimeSearchResult(
         page: Int, query: String?, genre: String?,
-        sort: String?, broad: Boolean, year: Int?, month: Int?,
-        duration: String?, tags: Set<String>, brands: Set<String>,
+        sort: String?, broad: Boolean, date: String?,
+        duration: String?, tags: Set<String>,
     ) = pageIOFlow(
         request = {
             HanimeNetwork.hanimeService.getHanimeSearchResult(
                 page, query, genre, sort,
                 if (broad) "on" else null,
-                year, month, duration, tags, brands
+                date, duration, tags
             )
         },
         action = Parser::hanimeSearch

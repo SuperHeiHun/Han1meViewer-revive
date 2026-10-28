@@ -38,7 +38,7 @@ fun getHanimeVideoLink(videoCode: String) = HANIME_BASE_URL + "watch?v=" + video
 fun getHanimeShareText(title: String, videoCode: String): String = buildString {
     appendLine(title)
     appendLine(getHanimeVideoLink(videoCode))
-    append("- From Han1meViewer -")
+    append("- From $APP_NAME -")
 }
 
 /**

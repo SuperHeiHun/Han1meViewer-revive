@@ -26,16 +26,16 @@ android {
     // 先 Github Secrets 再读取环境变量，若没有则读取本地文件
     val signPwd = System.getenv("HA1_KEYSTORE_PASSWORD") ?: File(
         projectDir, "keystore/ha1_keystore_password.txt"
-    ).checkIfExists()?.readText().orEmpty()
+    ).checkIfExists()?.readText()?.trim() ?: "han1meviewer-revive"
 
     val githubToken = System.getenv("HA1_GITHUB_TOKEN") ?: File(
         projectDir, "ha1_github_token.txt"
     ).checkIfExists()?.readText().orEmpty()
 
     val signConfig = if (isRelease) signingConfigs.create("release") {
-        storeFile = File(projectDir, "keystore/Han1meViewerKeystore.jks").checkIfExists()
+        storeFile = File(projectDir, "keystore/Han1meViewer-revive.jks").checkIfExists()
         storePassword = signPwd
-        keyAlias = "yenaly"
+        keyAlias = "han1meviewer-revive"
         keyPassword = signPwd
         enableV3Signing = true
         enableV4Signing = true
@@ -70,7 +70,7 @@ android {
             applicationVariants.all variant@{
                 this@variant.outputs.all output@{
                     val output = this@output as BaseVariantOutputImpl
-                    output.outputFileName = "Han1meViewer-v${defaultConfig.versionName}.apk"
+                    output.outputFileName = "Han1meViewer-revive-v${defaultConfig.versionName}.apk"
                 }
             }
         }

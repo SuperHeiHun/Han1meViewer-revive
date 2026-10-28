@@ -26,11 +26,43 @@
     },
     {
       "lang": {
-        "zh-rCN": "1080P",
-        "en": "1080P",
-        "zh-rTW": "1080P"
+        "zh-rCN": "中文配音",
+        "en": "Chinese Dub",
+        "zh-rTW": "中文配音"
       },
-      "search_key": "1080P"
+      "search_key": "中文配音"
+    },
+    {
+      "lang": {
+        "zh-rCN": "同人作品",
+        "en": "Doujin",
+        "zh-rTW": "同人作品"
+      },
+      "search_key": "同人作品"
+    },
+    {
+      "lang": {
+        "zh-rCN": "断面图",
+        "en": "Cross-section",
+        "zh-rTW": "斷面圖"
+      },
+      "search_key": "斷面圖"
+    },
+    {
+      "lang": {
+        "zh-rCN": "ASMR",
+        "en": "ASMR",
+        "zh-rTW": "ASMR"
+      },
+      "search_key": "ASMR"
+    },
+    {
+      "lang": {
+        "zh-rCN": "1080p",
+        "en": "1080p",
+        "zh-rTW": "1080p"
+      },
+      "search_key": "1080p"
     },
     {
       "lang": {
@@ -85,7 +117,7 @@
     {
       "lang": {
         "zh-rCN": "师生",
-        "en": "Teacher Student",
+        "en": "Teacher-Student",
         "zh-rTW": "師生"
       },
       "search_key": "師生"
@@ -105,12 +137,21 @@
         "zh-rTW": "青梅竹馬"
       },
       "search_key": "青梅竹馬"
+    },
+    {
+      "lang": {
+        "zh-rCN": "同事",
+        "en": "Colleague",
+        "zh-rTW": "同事"
+      },
+      "search_key": "同事"
     }
   ],
   "characteristics": [
     {
       "lang": {
         "zh-rCN": "JK",
+        "en": "JK",
         "zh-rTW": "JK"
       },
       "search_key": "JK"
@@ -118,6 +159,7 @@
     {
       "lang": {
         "zh-rCN": "处女",
+        "en": "Virgin",
         "zh-rTW": "處女"
       },
       "search_key": "處女"
@@ -125,6 +167,7 @@
     {
       "lang": {
         "zh-rCN": "御姐",
+        "en": "Mature Woman",
         "zh-rTW": "御姐"
       },
       "search_key": "御姐"
@@ -132,6 +175,7 @@
     {
       "lang": {
         "zh-rCN": "熟女",
+        "en": "MILF",
         "zh-rTW": "熟女"
       },
       "search_key": "熟女"
@@ -139,34 +183,71 @@
     {
       "lang": {
         "zh-rCN": "人妻",
+        "en": "Married Woman",
         "zh-rTW": "人妻"
       },
       "search_key": "人妻"
     },
     {
       "lang": {
-        "zh-rCN": "老师",
-        "zh-rTW": "老師"
+        "zh-rCN": "女教师",
+        "en": "Female Teacher",
+        "zh-rTW": "女教師"
       },
-      "search_key": "老師"
+      "search_key": "女教師"
     },
     {
       "lang": {
-        "zh-rCN": "女医护士",
-        "zh-rTW": "女醫護士"
+        "zh-rCN": "男教师",
+        "en": "Male Teacher",
+        "zh-rTW": "男教師"
       },
-      "search_key": "女醫護士"
+      "search_key": "男教師"
+    },
+    {
+      "lang": {
+        "zh-rCN": "女医生",
+        "en": "Female Doctor",
+        "zh-rTW": "女醫生"
+      },
+      "search_key": "女醫生"
+    },
+    {
+      "lang": {
+        "zh-rCN": "女病人",
+        "en": "Female Patient",
+        "zh-rTW": "女病人"
+      },
+      "search_key": "女病人"
+    },
+    {
+      "lang": {
+        "zh-rCN": "护士",
+        "en": "Nurse",
+        "zh-rTW": "護士"
+      },
+      "search_key": "護士"
     },
     {
       "lang": {
         "zh-rCN": "OL",
+        "en": "OL",
         "zh-rTW": "OL"
       },
       "search_key": "OL"
     },
     {
       "lang": {
+        "zh-rCN": "女警",
+        "en": "Policewoman",
+        "zh-rTW": "女警"
+      },
+      "search_key": "女警"
+    },
+    {
+      "lang": {
         "zh-rCN": "大小姐",
+        "en": "Ojou-sama",
         "zh-rTW": "大小姐"
       },
       "search_key": "大小姐"
@@ -174,6 +255,7 @@
     {
       "lang": {
         "zh-rCN": "偶像",
+        "en": "Idol",
         "zh-rTW": "偶像"
       },
       "search_key": "偶像"
@@ -181,6 +263,7 @@
     {
       "lang": {
         "zh-rCN": "女仆",
+        "en": "Maid",
         "zh-rTW": "女僕"
       },
       "search_key": "女僕"
@@ -188,13 +271,23 @@
     {
       "lang": {
         "zh-rCN": "巫女",
+        "en": "Shrine Maiden",
         "zh-rTW": "巫女"
       },
       "search_key": "巫女"
     },
     {
       "lang": {
+        "zh-rCN": "魔女",
+        "en": "Witch",
+        "zh-rTW": "魔女"
+      },
+      "search_key": "魔女"
+    },
+    {
+      "lang": {
         "zh-rCN": "修女",
+        "en": "Nun",
         "zh-rTW": "修女"
       },
       "search_key": "修女"
@@ -202,6 +295,7 @@
     {
       "lang": {
         "zh-rCN": "风俗娘",
+        "en": "Prostitute",
         "zh-rTW": "風俗娘"
       },
       "search_key": "風俗娘"
@@ -209,20 +303,39 @@
     {
       "lang": {
         "zh-rCN": "公主",
+        "en": "Princess",
         "zh-rTW": "公主"
       },
       "search_key": "公主"
     },
     {
       "lang": {
+        "zh-rCN": "女忍者",
+        "en": "Kunoichi",
+        "zh-rTW": "女忍者"
+      },
+      "search_key": "女忍者"
+    },
+    {
+      "lang": {
         "zh-rCN": "女战士",
+        "en": "Female Warrior",
         "zh-rTW": "女戰士"
       },
       "search_key": "女戰士"
     },
     {
       "lang": {
+        "zh-rCN": "女骑士",
+        "en": "Female Knight",
+        "zh-rTW": "女騎士"
+      },
+      "search_key": "女騎士"
+    },
+    {
+      "lang": {
         "zh-rCN": "魔法少女",
+        "en": "魔法少女",
         "zh-rTW": "魔法少女"
       },
       "search_key": "魔法少女"
@@ -230,13 +343,23 @@
     {
       "lang": {
         "zh-rCN": "异种族",
+        "en": "異種族",
         "zh-rTW": "異種族"
       },
       "search_key": "異種族"
     },
     {
       "lang": {
+        "zh-rCN": "天使",
+        "en": "Angel",
+        "zh-rTW": "天使"
+      },
+      "search_key": "天使"
+    },
+    {
+      "lang": {
         "zh-rCN": "妖精",
+        "en": "Fairy",
         "zh-rTW": "妖精"
       },
       "search_key": "妖精"
@@ -244,20 +367,71 @@
     {
       "lang": {
         "zh-rCN": "魔物娘",
+        "en": "Monster Girl",
         "zh-rTW": "魔物娘"
       },
       "search_key": "魔物娘"
     },
     {
       "lang": {
+        "zh-rCN": "魅魔",
+        "en": "Succubus",
+        "zh-rTW": "魅魔"
+      },
+      "search_key": "魅魔"
+    },
+    {
+      "lang": {
+        "zh-rCN": "吸血鬼",
+        "en": "Vampire",
+        "zh-rTW": "吸血鬼"
+      },
+      "search_key": "吸血鬼"
+    },
+    {
+      "lang": {
+        "zh-rCN": "女鬼",
+        "en": "Ghost Girl",
+        "zh-rTW": "女鬼"
+      },
+      "search_key": "女鬼"
+    },
+    {
+      "lang": {
         "zh-rCN": "兽娘",
+        "en": "Kemonomimi",
         "zh-rTW": "獸娘"
       },
       "search_key": "獸娘"
     },
     {
       "lang": {
+        "zh-rCN": "福瑞",
+        "en": "Furry",
+        "zh-rTW": "福瑞"
+      },
+      "search_key": "福瑞"
+    },
+    {
+      "lang": {
+        "zh-rCN": "乳牛",
+        "en": "Cow Girl",
+        "zh-rTW": "乳牛"
+      },
+      "search_key": "乳牛"
+    },
+    {
+      "lang": {
+        "zh-rCN": "机械娘",
+        "en": "Android Girl",
+        "zh-rTW": "機械娘"
+      },
+      "search_key": "機械娘"
+    },
+    {
+      "lang": {
         "zh-rCN": "碧池",
+        "en": "碧池",
         "zh-rTW": "碧池"
       },
       "search_key": "碧池"
@@ -265,13 +439,23 @@
     {
       "lang": {
         "zh-rCN": "痴女",
+        "en": "痴女",
         "zh-rTW": "痴女"
       },
       "search_key": "痴女"
     },
     {
       "lang": {
+        "zh-rCN": "雌小鬼",
+        "en": "Mesugaki",
+        "zh-rTW": "雌小鬼"
+      },
+      "search_key": "雌小鬼"
+    },
+    {
+      "lang": {
         "zh-rCN": "不良少女",
+        "en": "Delinquent Girl",
         "zh-rTW": "不良少女"
       },
       "search_key": "不良少女"
@@ -279,6 +463,7 @@
     {
       "lang": {
         "zh-rCN": "傲娇",
+        "en": "Tsundere",
         "zh-rTW": "傲嬌"
       },
       "search_key": "傲嬌"
@@ -286,6 +471,7 @@
     {
       "lang": {
         "zh-rCN": "病娇",
+        "en": "Yandere",
         "zh-rTW": "病嬌"
       },
       "search_key": "病嬌"
@@ -293,13 +479,39 @@
     {
       "lang": {
         "zh-rCN": "无口",
+        "en": "Kuudere",
         "zh-rTW": "無口"
       },
       "search_key": "無口"
     },
     {
       "lang": {
+        "zh-rCN": "无表情",
+        "en": "Expressionless",
+        "zh-rTW": "無表情"
+      },
+      "search_key": "無表情"
+    },
+    {
+      "lang": {
+        "zh-rCN": "眼神死",
+        "en": "Dead Eyes",
+        "zh-rTW": "眼神死"
+      },
+      "search_key": "眼神死"
+    },
+    {
+      "lang": {
+        "zh-rCN": "正太",
+        "en": "Shota",
+        "zh-rTW": "正太"
+      },
+      "search_key": "正太"
+    },
+    {
+      "lang": {
         "zh-rCN": "伪娘",
+        "en": "Crossdresser",
         "zh-rTW": "偽娘"
       },
       "search_key": "偽娘"
@@ -307,6 +519,7 @@
     {
       "lang": {
         "zh-rCN": "扶他",
+        "en": "Futanari",
         "zh-rTW": "扶他"
       },
       "search_key": "扶他"
@@ -332,10 +545,18 @@
     {
       "lang": {
         "zh-rCN": "双马尾",
-        "en": "Twin Tail",
+        "en": "Twintails",
         "zh-rTW": "雙馬尾"
       },
       "search_key": "雙馬尾"
+    },
+    {
+      "lang": {
+        "zh-rCN": "丸子头",
+        "en": "Bun Hair",
+        "zh-rTW": "丸子頭"
+      },
+      "search_key": "丸子頭"
     },
     {
       "lang": {
@@ -344,6 +565,22 @@
         "zh-rTW": "巨乳"
       },
       "search_key": "巨乳"
+    },
+    {
+      "lang": {
+        "zh-rCN": "乳环",
+        "en": "Nipple Piercing",
+        "zh-rTW": "乳環"
+      },
+      "search_key": "乳環"
+    },
+    {
+      "lang": {
+        "zh-rCN": "舌环",
+        "en": "Tongue Piercing",
+        "zh-rTW": "舌環"
+      },
+      "search_key": "舌環"
     },
     {
       "lang": {
@@ -363,8 +600,16 @@
     },
     {
       "lang": {
+        "zh-rCN": "晒痕",
+        "en": "Tan Lines",
+        "zh-rTW": "曬痕"
+      },
+      "search_key": "曬痕"
+    },
+    {
+      "lang": {
         "zh-rCN": "眼镜娘",
-        "en": "Glasses",
+        "en": "Glasses Girl",
         "zh-rTW": "眼鏡娘"
       },
       "search_key": "眼鏡娘"
@@ -379,6 +624,22 @@
     },
     {
       "lang": {
+        "zh-rCN": "尖耳朵",
+        "en": "Pointed Ears",
+        "zh-rTW": "尖耳朵"
+      },
+      "search_key": "尖耳朵"
+    },
+    {
+      "lang": {
+        "zh-rCN": "异色瞳",
+        "en": "Heterochromia",
+        "zh-rTW": "異色瞳"
+      },
+      "search_key": "異色瞳"
+    },
+    {
+      "lang": {
         "zh-rCN": "美人痣",
         "en": "Beauty Mark",
         "zh-rTW": "美人痣"
@@ -388,7 +649,7 @@
     {
       "lang": {
         "zh-rCN": "肌肉女",
-        "en": "Muscle",
+        "en": "Muscular Woman",
         "zh-rTW": "肌肉女"
       },
       "search_key": "肌肉女"
@@ -396,10 +657,26 @@
     {
       "lang": {
         "zh-rCN": "白虎",
-        "en": "Virgin",
+        "en": "Shaved",
         "zh-rTW": "白虎"
       },
       "search_key": "白虎"
+    },
+    {
+      "lang": {
+        "zh-rCN": "阴毛",
+        "en": "Pubic Hair",
+        "zh-rTW": "陰毛"
+      },
+      "search_key": "陰毛"
+    },
+    {
+      "lang": {
+        "zh-rCN": "腋毛",
+        "en": "Armpit Hair",
+        "zh-rTW": "腋毛"
+      },
+      "search_key": "腋毛"
     },
     {
       "lang": {
@@ -411,8 +688,24 @@
     },
     {
       "lang": {
+        "zh-rCN": "黑屌",
+        "en": "Black Dick",
+        "zh-rTW": "黑屌"
+      },
+      "search_key": "黑屌"
+    },
+    {
+      "lang": {
+        "zh-rCN": "着衣",
+        "en": "Clothed",
+        "zh-rTW": "著衣"
+      },
+      "search_key": "著衣"
+    },
+    {
+      "lang": {
         "zh-rCN": "水手服",
-        "en": "Sailor Suit",
+        "en": "Sailor Uniform",
         "zh-rTW": "水手服"
       },
       "search_key": "水手服"
@@ -420,7 +713,7 @@
     {
       "lang": {
         "zh-rCN": "体操服",
-        "en": "Gym Clothes",
+        "en": "Gym Uniform",
         "zh-rTW": "體操服"
       },
       "search_key": "體操服"
@@ -440,6 +733,14 @@
         "zh-rTW": "比基尼"
       },
       "search_key": "比基尼"
+    },
+    {
+      "lang": {
+        "zh-rCN": "死库水",
+        "en": "School Swimsuit",
+        "zh-rTW": "死庫水"
+      },
+      "search_key": "死庫水"
     },
     {
       "lang": {
@@ -475,16 +776,8 @@
     },
     {
       "lang": {
-        "zh-rCN": "旗袍",
-        "en": "Cheongsam",
-        "zh-rTW": "旗袍"
-      },
-      "search_key": "旗袍"
-    },
-    {
-      "lang": {
         "zh-rCN": "丝袜",
-        "en": "Stockings",
+        "en": "Pantyhose",
         "zh-rTW": "絲襪"
       },
       "search_key": "絲襪"
@@ -503,12 +796,12 @@
         "en": "Hot Pants",
         "zh-rTW": "熱褲"
       },
-      "search_key": "��褲"
+      "search_key": "熱褲"
     },
     {
       "lang": {
         "zh-rCN": "迷你裙",
-        "en": "Mini Skirt",
+        "en": "Miniskirt",
         "zh-rTW": "迷你裙"
       },
       "search_key": "迷你裙"
@@ -516,10 +809,18 @@
     {
       "lang": {
         "zh-rCN": "性感内衣",
-        "en": "Sexy Lingerie",
+        "en": "Lingerie",
         "zh-rTW": "性感內衣"
       },
       "search_key": "性感內衣"
+    },
+    {
+      "lang": {
+        "zh-rCN": "紧身衣",
+        "en": "Leotard",
+        "zh-rTW": "緊身衣"
+      },
+      "search_key": "緊身衣"
     },
     {
       "lang": {
@@ -539,17 +840,284 @@
     },
     {
       "lang": {
-        "zh-rCN": "\u6deb\u7eb9",
-        "en": "Sexy Tattoo",
-        "zh-rTW": "\u6deb\u7d0b"
+        "zh-rCN": "睡衣",
+        "en": "Pajamas",
+        "zh-rTW": "睡衣"
       },
-      "search_key": "\u6deb\u7d0b"
+      "search_key": "睡衣"
+    },
+    {
+      "lang": {
+        "zh-rCN": "婚纱",
+        "en": "Wedding Dress",
+        "zh-rTW": "婚紗"
+      },
+      "search_key": "婚紗"
+    },
+    {
+      "lang": {
+        "zh-rCN": "旗袍",
+        "en": "Qipao",
+        "zh-rTW": "旗袍"
+      },
+      "search_key": "旗袍"
+    },
+    {
+      "lang": {
+        "zh-rCN": "古装",
+        "en": "Ancient Costume",
+        "zh-rTW": "古裝"
+      },
+      "search_key": "古裝"
+    },
+    {
+      "lang": {
+        "zh-rCN": "哥德",
+        "en": "Gothic",
+        "zh-rTW": "哥德"
+      },
+      "search_key": "哥德"
+    },
+    {
+      "lang": {
+        "zh-rCN": "口罩",
+        "en": "Mask",
+        "zh-rTW": "口罩"
+      },
+      "search_key": "口罩"
+    },
+    {
+      "lang": {
+        "zh-rCN": "刺青",
+        "en": "Tattoo",
+        "zh-rTW": "刺青"
+      },
+      "search_key": "刺青"
+    },
+    {
+      "lang": {
+        "zh-rCN": "淫纹",
+        "en": "Womb Tattoo",
+        "zh-rTW": "淫紋"
+      },
+      "search_key": "淫紋"
+    },
+    {
+      "lang": {
+        "zh-rCN": "身体写字",
+        "en": "Body Writing",
+        "zh-rTW": "身體寫字"
+      },
+      "search_key": "身體寫字"
+    }
+  ],
+  "situations": [
+    {
+      "lang": {
+        "zh-rCN": "校园",
+        "en": "School",
+        "zh-rTW": "校園"
+      },
+      "search_key": "校園"
+    },
+    {
+      "lang": {
+        "zh-rCN": "教室",
+        "en": "Classroom",
+        "zh-rTW": "教室"
+      },
+      "search_key": "教室"
+    },
+    {
+      "lang": {
+        "zh-rCN": "图书馆",
+        "en": "Library",
+        "zh-rTW": "圖書館"
+      },
+      "search_key": "圖書館"
+    },
+    {
+      "lang": {
+        "zh-rCN": "保健室",
+        "en": "Infirmary",
+        "zh-rTW": "保健室"
+      },
+      "search_key": "保健室"
+    },
+    {
+      "lang": {
+        "zh-rCN": "体育仓库",
+        "en": "Sports Storage",
+        "zh-rTW": "體育倉庫"
+      },
+      "search_key": "體育倉庫"
+    },
+    {
+      "lang": {
+        "zh-rCN": "游泳池",
+        "en": "Pool",
+        "zh-rTW": "游泳池"
+      },
+      "search_key": "游泳池"
+    },
+    {
+      "lang": {
+        "zh-rCN": "爱情宾馆",
+        "en": "Love Hotel",
+        "zh-rTW": "愛情賓館"
+      },
+      "search_key": "愛情賓館"
+    },
+    {
+      "lang": {
+        "zh-rCN": "医院",
+        "en": "Hospital",
+        "zh-rTW": "醫院"
+      },
+      "search_key": "醫院"
+    },
+    {
+      "lang": {
+        "zh-rCN": "办公室",
+        "en": "Office",
+        "zh-rTW": "辦公室"
+      },
+      "search_key": "辦公室"
+    },
+    {
+      "lang": {
+        "zh-rCN": "浴室",
+        "en": "Bathroom",
+        "zh-rTW": "浴室"
+      },
+      "search_key": "浴室"
+    },
+    {
+      "lang": {
+        "zh-rCN": "窗边",
+        "en": "By the Window",
+        "zh-rTW": "窗邊"
+      },
+      "search_key": "窗邊"
+    },
+    {
+      "lang": {
+        "zh-rCN": "公共厕所",
+        "en": "Public Toilet",
+        "zh-rTW": "公共廁所"
+      },
+      "search_key": "公共廁所"
+    },
+    {
+      "lang": {
+        "zh-rCN": "公众场合",
+        "en": "Public Place",
+        "zh-rTW": "公眾場合"
+      },
+      "search_key": "公眾場合"
+    },
+    {
+      "lang": {
+        "zh-rCN": "户外野战",
+        "en": "Outdoor Sex",
+        "zh-rTW": "戶外野戰"
+      },
+      "search_key": "戶外野戰"
+    },
+    {
+      "lang": {
+        "zh-rCN": "电车",
+        "en": "Train",
+        "zh-rTW": "電車"
+      },
+      "search_key": "電車"
+    },
+    {
+      "lang": {
+        "zh-rCN": "车震",
+        "en": "Car Sex",
+        "zh-rTW": "車震"
+      },
+      "search_key": "車震"
+    },
+    {
+      "lang": {
+        "zh-rCN": "游艇",
+        "en": "Yacht",
+        "zh-rTW": "遊艇"
+      },
+      "search_key": "遊艇"
+    },
+    {
+      "lang": {
+        "zh-rCN": "露营帐篷",
+        "en": "Camping Tent",
+        "zh-rTW": "露營帳篷"
+      },
+      "search_key": "露營帳篷"
+    },
+    {
+      "lang": {
+        "zh-rCN": "电影院",
+        "en": "Cinema",
+        "zh-rTW": "電影院"
+      },
+      "search_key": "電影院"
+    },
+    {
+      "lang": {
+        "zh-rCN": "健身房",
+        "en": "Gym",
+        "zh-rTW": "健身房"
+      },
+      "search_key": "健身房"
+    },
+    {
+      "lang": {
+        "zh-rCN": "沙滩",
+        "en": "Beach",
+        "zh-rTW": "沙灘"
+      },
+      "search_key": "沙灘"
+    },
+    {
+      "lang": {
+        "zh-rCN": "温泉",
+        "en": "Hot Spring",
+        "zh-rTW": "溫泉"
+      },
+      "search_key": "溫泉"
+    },
+    {
+      "lang": {
+        "zh-rCN": "夜店",
+        "en": "Nightclub",
+        "zh-rTW": "夜店"
+      },
+      "search_key": "夜店"
+    },
+    {
+      "lang": {
+        "zh-rCN": "监狱",
+        "en": "Prison",
+        "zh-rTW": "監獄"
+      },
+      "search_key": "監獄"
+    },
+    {
+      "lang": {
+        "zh-rCN": "教堂",
+        "en": "Church",
+        "zh-rTW": "教堂"
+      },
+      "search_key": "教堂"
     }
   ],
   "story_plot": [
     {
       "lang": {
         "zh-rCN": "纯爱",
+        "en": "純愛",
         "zh-rTW": "純愛"
       },
       "search_key": "純愛"
@@ -557,6 +1125,7 @@
     {
       "lang": {
         "zh-rCN": "恋爱喜剧",
+        "en": "戀愛喜劇",
         "zh-rTW": "戀愛喜劇"
       },
       "search_key": "戀愛喜劇"
@@ -564,27 +1133,31 @@
     {
       "lang": {
         "zh-rCN": "后宫",
+        "en": "後宮",
         "zh-rTW": "後宮"
       },
       "search_key": "後宮"
     },
     {
       "lang": {
+        "zh-rCN": "十指紧扣",
+        "en": "Holding Hands",
+        "zh-rTW": "十指緊扣"
+      },
+      "search_key": "十指緊扣"
+    },
+    {
+      "lang": {
         "zh-rCN": "开大车",
+        "en": "Age Gap",
         "zh-rTW": "開大車"
       },
       "search_key": "開大車"
     },
     {
       "lang": {
-        "zh-rCN": "公众场合",
-        "zh-rTW": "公眾場合"
-      },
-      "search_key": "公眾場合"
-    },
-    {
-      "lang": {
         "zh-rCN": "NTR",
+        "en": "NTR",
         "zh-rTW": "NTR"
       },
       "search_key": "NTR"
@@ -592,6 +1165,7 @@
     {
       "lang": {
         "zh-rCN": "精神控制",
+        "en": "Mind Control",
         "zh-rTW": "精神控制"
       },
       "search_key": "精神控制"
@@ -599,6 +1173,7 @@
     {
       "lang": {
         "zh-rCN": "药物",
+        "en": "Drugs",
         "zh-rTW": "藥物"
       },
       "search_key": "藥物"
@@ -606,6 +1181,7 @@
     {
       "lang": {
         "zh-rCN": "痴汉",
+        "en": "Molestation",
         "zh-rTW": "痴漢"
       },
       "search_key": "痴漢"
@@ -613,13 +1189,23 @@
     {
       "lang": {
         "zh-rCN": "阿嘿颜",
+        "en": "Ahegao",
         "zh-rTW": "阿嘿顏"
       },
       "search_key": "阿嘿顏"
     },
     {
       "lang": {
+        "zh-rCN": "哭泣",
+        "en": "Crying",
+        "zh-rTW": "哭泣"
+      },
+      "search_key": "哭泣"
+    },
+    {
+      "lang": {
         "zh-rCN": "精神崩溃",
+        "en": "Mental Breakdown",
         "zh-rTW": "精神崩潰"
       },
       "search_key": "精神崩潰"
@@ -627,6 +1213,7 @@
     {
       "lang": {
         "zh-rCN": "猎奇",
+        "en": "Guro",
         "zh-rTW": "獵奇"
       },
       "search_key": "獵奇"
@@ -634,6 +1221,7 @@
     {
       "lang": {
         "zh-rCN": "BDSM",
+        "en": "BDSM",
         "zh-rTW": "BDSM"
       },
       "search_key": "BDSM"
@@ -641,6 +1229,7 @@
     {
       "lang": {
         "zh-rCN": "捆绑",
+        "en": "Bondage",
         "zh-rTW": "綑綁"
       },
       "search_key": "綑綁"
@@ -648,6 +1237,7 @@
     {
       "lang": {
         "zh-rCN": "眼罩",
+        "en": "Blindfold",
         "zh-rTW": "眼罩"
       },
       "search_key": "眼罩"
@@ -655,6 +1245,7 @@
     {
       "lang": {
         "zh-rCN": "项圈",
+        "en": "Collar",
         "zh-rTW": "項圈"
       },
       "search_key": "項圈"
@@ -662,55 +1253,111 @@
     {
       "lang": {
         "zh-rCN": "调教",
+        "en": "Training",
         "zh-rTW": "調教"
       },
       "search_key": "調教"
     },
     {
       "lang": {
-        "zh-rCN": "\u5f02\u7269\u63d2\u5165",
-        "zh-rTW": "\u7570\u7269\u63d2\u5165"
+        "zh-rCN": "异物插入",
+        "en": "Object Insertion",
+        "zh-rTW": "異物插入"
       },
-      "search_key": "\u7570\u7269\u63d2\u5165"
+      "search_key": "異物插入"
     },
     {
       "lang": {
-        "zh-rCN": "\u8089\u4fbf\u5668",
-        "zh-rTW": "\u8089\u4fbf\u5668"
+        "zh-rCN": "寻欢洞",
+        "en": "Glory Hole",
+        "zh-rTW": "尋歡洞"
       },
-      "search_key": "\u8089\u4fbf\u5668"
+      "search_key": "尋歡洞"
     },
     {
       "lang": {
-        "zh-rCN": "\u80c3\u51f8",
-        "zh-rTW": "\u80c3\u51f8"
+        "zh-rCN": "肉便器",
+        "en": "Cum Dumpster",
+        "zh-rTW": "肉便器"
       },
-      "search_key": "\u80c3\u51f8"
+      "search_key": "肉便器"
+    },
+    {
+      "lang": {
+        "zh-rCN": "性奴隶",
+        "en": "Sex Slave",
+        "zh-rTW": "性奴隸"
+      },
+      "search_key": "性奴隸"
+    },
+    {
+      "lang": {
+        "zh-rCN": "胃凸",
+        "en": "Stomach Bulge",
+        "zh-rTW": "胃凸"
+      },
+      "search_key": "胃凸"
     },
     {
       "lang": {
         "zh-rCN": "强制",
+        "en": "Forced",
         "zh-rTW": "強制"
       },
       "search_key": "強制"
     },
     {
       "lang": {
+        "zh-rCN": "轮奸",
+        "en": "Gangbang",
+        "zh-rTW": "輪姦"
+      },
+      "search_key": "輪姦"
+    },
+    {
+      "lang": {
+        "zh-rCN": "凌辱",
+        "en": "Humiliation",
+        "zh-rTW": "凌辱"
+      },
+      "search_key": "凌辱"
+    },
+    {
+      "lang": {
+        "zh-rCN": "性暴力",
+        "en": "Sexual Violence",
+        "zh-rTW": "性暴力"
+      },
+      "search_key": "性暴力"
+    },
+    {
+      "lang": {
         "zh-rCN": "逆强制",
+        "en": "Reverse Forced",
         "zh-rTW": "逆強制"
       },
       "search_key": "逆強制"
     },
     {
       "lang": {
-        "zh-rCN": "女王大人",
+        "zh-rCN": "女王样",
+        "en": "Dominatrix",
         "zh-rTW": "女王樣"
       },
       "search_key": "女王樣"
     },
     {
       "lang": {
+        "zh-rCN": "榨精",
+        "en": "Milking",
+        "zh-rTW": "榨精"
+      },
+      "search_key": "榨精"
+    },
+    {
+      "lang": {
         "zh-rCN": "母女丼",
+        "en": "Mother-Daughter",
         "zh-rTW": "母女丼"
       },
       "search_key": "母女丼"
@@ -718,34 +1365,63 @@
     {
       "lang": {
         "zh-rCN": "姐妹丼",
+        "en": "Sister-Sister",
         "zh-rTW": "姐妹丼"
       },
       "search_key": "姐妹丼"
     },
     {
       "lang": {
-        "zh-rCN": "凌辱",
-        "zh-rTW": "凌辱"
-      },
-      "search_key": "凌辱"
-    },
-    {
-      "lang": {
         "zh-rCN": "出轨",
+        "en": "Cheating",
         "zh-rTW": "出軌"
       },
       "search_key": "出軌"
     },
     {
       "lang": {
+        "zh-rCN": "醉酒",
+        "en": "Drunk",
+        "zh-rTW": "醉酒"
+      },
+      "search_key": "醉酒"
+    },
+    {
+      "lang": {
         "zh-rCN": "摄影",
+        "en": "Filming",
         "zh-rTW": "攝影"
       },
       "search_key": "攝影"
     },
     {
       "lang": {
+        "zh-rCN": "睡眠奸",
+        "en": "Sleep Sex",
+        "zh-rTW": "睡眠姦"
+      },
+      "search_key": "睡眠姦"
+    },
+    {
+      "lang": {
+        "zh-rCN": "机械奸",
+        "en": "Machine Sex",
+        "zh-rTW": "機械姦"
+      },
+      "search_key": "機械姦"
+    },
+    {
+      "lang": {
+        "zh-rCN": "虫奸",
+        "en": "Insect Sex",
+        "zh-rTW": "蟲姦"
+      },
+      "search_key": "蟲姦"
+    },
+    {
+      "lang": {
         "zh-rCN": "性转换",
+        "en": "Gender Bender",
         "zh-rTW": "性轉換"
       },
       "search_key": "性轉換"
@@ -753,6 +1429,7 @@
     {
       "lang": {
         "zh-rCN": "百合",
+        "en": "Yuri",
         "zh-rTW": "百合"
       },
       "search_key": "百合"
@@ -760,13 +1437,23 @@
     {
       "lang": {
         "zh-rCN": "耽美",
+        "en": "BL",
         "zh-rTW": "耽美"
       },
       "search_key": "耽美"
     },
     {
       "lang": {
+        "zh-rCN": "时间停止",
+        "en": "Time Stop",
+        "zh-rTW": "時間停止"
+      },
+      "search_key": "時間停止"
+    },
+    {
+      "lang": {
         "zh-rCN": "异世界",
+        "en": "Isekai",
         "zh-rTW": "異世界"
       },
       "search_key": "異世界"
@@ -774,13 +1461,23 @@
     {
       "lang": {
         "zh-rCN": "怪兽",
+        "en": "Monster",
         "zh-rTW": "怪獸"
       },
       "search_key": "怪獸"
     },
     {
       "lang": {
+        "zh-rCN": "哥布林",
+        "en": "Goblin",
+        "zh-rTW": "哥布林"
+      },
+      "search_key": "哥布林"
+    },
+    {
+      "lang": {
         "zh-rCN": "世界末日",
+        "en": "Apocalypse",
         "zh-rTW": "世界末日"
       },
       "search_key": "世界末日"
@@ -789,189 +1486,451 @@
   "sex_positions": [
     {
       "lang": {
-        "zh-rTW": "\u624b\u4ea4"
+        "zh-rCN": "手交",
+        "en": "Handjob",
+        "zh-rTW": "手交"
       },
-      "search_key": "\u624b\u4ea4"
+      "search_key": "手交"
     },
     {
       "lang": {
-        "zh-rTW": "\u6307\u4ea4"
+        "zh-rCN": "指交",
+        "en": "Fingering",
+        "zh-rTW": "指交"
       },
-      "search_key": "\u6307\u4ea4"
+      "search_key": "指交"
     },
     {
       "lang": {
-        "zh-rTW": "\u4e73\u4ea4"
+        "zh-rCN": "玩乳头",
+        "en": "Nipple Play",
+        "zh-rTW": "玩乳頭"
       },
-      "search_key": "\u4e73\u4ea4"
+      "search_key": "玩乳頭"
     },
     {
       "lang": {
-        "zh-rTW": "\u809b\u4ea4"
+        "zh-rCN": "乳交",
+        "en": "Paellatio",
+        "zh-rTW": "乳交"
       },
-      "search_key": "\u809b\u4ea4"
+      "search_key": "乳交"
     },
     {
       "lang": {
-        "zh-rTW": "\u8173\u4ea4"
+        "zh-rCN": "乳头交",
+        "en": "Nipple Fuck",
+        "zh-rTW": "乳頭交"
       },
-      "search_key": "\u8173\u4ea4"
+      "search_key": "乳頭交"
     },
     {
       "lang": {
-        "zh-rTW": "\u62f3\u4ea4"
+        "zh-rCN": "肛交",
+        "en": "Anal",
+        "zh-rTW": "肛交"
       },
-      "search_key": "\u62f3\u4ea4"
+      "search_key": "肛交"
     },
     {
       "lang": {
+        "zh-rCN": "双洞齐下",
+        "en": "Double Penetration",
+        "zh-rTW": "雙洞齊下"
+      },
+      "search_key": "雙洞齊下"
+    },
+    {
+      "lang": {
+        "zh-rCN": "脚交",
+        "en": "Footjob",
+        "zh-rTW": "腳交"
+      },
+      "search_key": "腳交"
+    },
+    {
+      "lang": {
+        "zh-rCN": "素股",
+        "en": "Intercrural",
+        "zh-rTW": "素股"
+      },
+      "search_key": "素股"
+    },
+    {
+      "lang": {
+        "zh-rCN": "拳交",
+        "en": "Fisting",
+        "zh-rTW": "拳交"
+      },
+      "search_key": "拳交"
+    },
+    {
+      "lang": {
+        "zh-rCN": "3P",
+        "en": "Threesome",
         "zh-rTW": "3P"
       },
       "search_key": "3P"
     },
     {
       "lang": {
-        "zh-rTW": "\u7fa4\u4ea4"
+        "zh-rCN": "群交",
+        "en": "Orgy",
+        "zh-rTW": "群交"
       },
-      "search_key": "\u7fa4\u4ea4"
+      "search_key": "群交"
     },
     {
       "lang": {
-        "zh-rTW": "\u53e3\u4ea4"
+        "zh-rCN": "口交",
+        "en": "Oral",
+        "zh-rTW": "口交"
       },
-      "search_key": "\u53e3\u4ea4"
+      "search_key": "口交"
     },
     {
       "lang": {
-        "zh-rTW": "\u53e3\u7206"
+        "zh-rCN": "跪舔",
+        "en": "Kneeling Lick",
+        "zh-rTW": "跪舔"
       },
-      "search_key": "\u53e3\u7206"
+      "search_key": "跪舔"
     },
     {
       "lang": {
-        "zh-rTW": "\u541e\u7cbe"
+        "zh-rCN": "深喉咙",
+        "en": "Deep Throat",
+        "zh-rTW": "深喉嚨"
       },
-      "search_key": "\u541e\u7cbe"
+      "search_key": "深喉嚨"
     },
     {
       "lang": {
-        "zh-rTW": "\u8214\u86cb\u86cb"
+        "zh-rCN": "口爆",
+        "en": "Cum in Mouth",
+        "zh-rTW": "口爆"
       },
-      "search_key": "\u8214\u86cb\u86cb"
+      "search_key": "口爆"
     },
     {
       "lang": {
-        "zh-rTW": "\u8214\u7a74"
+        "zh-rCN": "吞精",
+        "en": "Swallowing",
+        "zh-rTW": "吞精"
       },
-      "search_key": "\u8214\u7a74"
+      "search_key": "吞精"
     },
     {
       "lang": {
+        "zh-rCN": "舔蛋蛋",
+        "en": "Ball Licking",
+        "zh-rTW": "舔蛋蛋"
+      },
+      "search_key": "舔蛋蛋"
+    },
+    {
+      "lang": {
+        "zh-rCN": "舔穴",
+        "en": "Cunnilingus",
+        "zh-rTW": "舔穴"
+      },
+      "search_key": "舔穴"
+    },
+    {
+      "lang": {
+        "zh-rCN": "69",
+        "en": "69",
         "zh-rTW": "69"
       },
       "search_key": "69"
     },
     {
       "lang": {
-        "zh-rTW": "\u81ea\u6170"
+        "zh-rCN": "自慰",
+        "en": "Masturbation",
+        "zh-rTW": "自慰"
       },
-      "search_key": "\u81ea\u6170"
+      "search_key": "自慰"
     },
     {
       "lang": {
-        "zh-rTW": "\u814b\u6bdb"
+        "zh-rCN": "腋交",
+        "en": "Armpit Sex",
+        "zh-rTW": "腋交"
       },
-      "search_key": "\u814b\u6bdb"
+      "search_key": "腋交"
     },
     {
       "lang": {
-        "zh-rTW": "\u814b\u4ea4"
+        "zh-rCN": "舔腋下",
+        "en": "Armpit Licking",
+        "zh-rTW": "舔腋下"
       },
-      "search_key": "\u814b\u4ea4"
+      "search_key": "舔腋下"
     },
     {
       "lang": {
-        "zh-rTW": "\u8214\u814b\u4e0b"
+        "zh-rCN": "发交",
+        "en": "Hairjob",
+        "zh-rTW": "髮交"
       },
-      "search_key": "\u8214\u814b\u4e0b"
+      "search_key": "髮交"
     },
     {
       "lang": {
-        "zh-rTW": "\u5167\u5c04"
+        "zh-rCN": "舔耳朵",
+        "en": "Ear Licking",
+        "zh-rTW": "舔耳朵"
       },
-      "search_key": "\u5167\u5c04"
+      "search_key": "舔耳朵"
     },
     {
       "lang": {
-        "zh-rTW": "\u984f\u5c04"
+        "zh-rCN": "舔脚",
+        "en": "Foot Licking",
+        "zh-rTW": "舔腳"
       },
-      "search_key": "\u984f\u5c04"
+      "search_key": "舔腳"
     },
     {
       "lang": {
-        "zh-rTW": "\u96d9\u6d1e\u9f4a\u4e0b"
+        "zh-rCN": "内射",
+        "en": "Creampie",
+        "zh-rTW": "內射"
       },
-      "search_key": "\u96d9\u6d1e\u9f4a\u4e0b"
+      "search_key": "內射"
     },
     {
       "lang": {
-        "zh-rTW": "\u61f7\u5b55"
+        "zh-rCN": "外射",
+        "en": "External Ejaculation",
+        "zh-rTW": "外射"
       },
-      "search_key": "\u61f7\u5b55"
+      "search_key": "外射"
     },
     {
       "lang": {
-        "zh-rTW": "\u5674\u5976"
+        "zh-rCN": "颜射",
+        "en": "Facial",
+        "zh-rTW": "顏射"
       },
-      "search_key": "\u5674\u5976"
+      "search_key": "顏射"
     },
     {
       "lang": {
-        "zh-rTW": "\u653e\u5c3f"
+        "zh-rCN": "潮吹",
+        "en": "Squirting",
+        "zh-rTW": "潮吹"
       },
-      "search_key": "\u653e\u5c3f"
+      "search_key": "潮吹"
     },
     {
       "lang": {
-        "zh-rTW": "\u6392\u4fbf"
+        "zh-rCN": "怀孕",
+        "en": "Pregnancy",
+        "zh-rTW": "懷孕"
       },
-      "search_key": "\u6392\u4fbf"
+      "search_key": "懷孕"
     },
     {
       "lang": {
-        "zh-rTW": "\u984f\u9762\u9a0e\u4e58"
+        "zh-rCN": "喷奶",
+        "en": "Lactation",
+        "zh-rTW": "噴奶"
       },
-      "search_key": "\u984f\u9762\u9a0e\u4e58"
+      "search_key": "噴奶"
     },
     {
       "lang": {
-        "zh-rTW": "\u8eca\u9707"
+        "zh-rCN": "放尿",
+        "en": "Urination",
+        "zh-rTW": "放尿"
       },
-      "search_key": "\u8eca\u9707"
+      "search_key": "放尿"
     },
     {
       "lang": {
-        "zh-rTW": "\u6027\u73a9\u5177"
+        "zh-rCN": "排便",
+        "en": "Defecation",
+        "zh-rTW": "排便"
       },
-      "search_key": "\u6027\u73a9\u5177"
+      "search_key": "排便"
     },
     {
       "lang": {
-        "zh-rTW": "\u6bd2\u9f8d\u947d"
+        "zh-rCN": "骑乘位",
+        "en": "Cowgirl",
+        "zh-rTW": "騎乘位"
       },
-      "search_key": "\u6bd2\u9f8d\u947d"
+      "search_key": "騎乘位"
     },
     {
       "lang": {
-        "zh-rTW": "\u89f8\u624b"
+        "zh-rCN": "背后位",
+        "en": "Doggy Style",
+        "zh-rTW": "背後位"
       },
-      "search_key": "\u89f8\u624b"
+      "search_key": "背後位"
     },
     {
       "lang": {
-        "zh-rTW": "\u9838\u624b\u67b7"
+        "zh-rCN": "侧面位",
+        "en": "Side Position",
+        "zh-rTW": "側面位"
       },
-      "search_key": "\u9838\u624b\u67b7"
+      "search_key": "側面位"
+    },
+    {
+      "lang": {
+        "zh-rCN": "颜面骑乘",
+        "en": "Facesitting",
+        "zh-rTW": "顏面騎乘"
+      },
+      "search_key": "顏面騎乘"
+    },
+    {
+      "lang": {
+        "zh-rCN": "火车便当",
+        "en": "Standing Carry",
+        "zh-rTW": "火車便當"
+      },
+      "search_key": "火車便當"
+    },
+    {
+      "lang": {
+        "zh-rCN": "一字马",
+        "en": "Splits",
+        "zh-rTW": "一字馬"
+      },
+      "search_key": "一字馬"
+    },
+    {
+      "lang": {
+        "zh-rCN": "性玩具",
+        "en": "Sex Toys",
+        "zh-rTW": "性玩具"
+      },
+      "search_key": "性玩具"
+    },
+    {
+      "lang": {
+        "zh-rCN": "飞机杯",
+        "en": "Onahole",
+        "zh-rTW": "飛機杯"
+      },
+      "search_key": "飛機杯"
+    },
+    {
+      "lang": {
+        "zh-rCN": "跳蛋",
+        "en": "Vibrator",
+        "zh-rTW": "跳蛋"
+      },
+      "search_key": "跳蛋"
+    },
+    {
+      "lang": {
+        "zh-rCN": "毒龙钻",
+        "en": "Rimjob",
+        "zh-rTW": "毒龍鑽"
+      },
+      "search_key": "毒龍鑽"
+    },
+    {
+      "lang": {
+        "zh-rCN": "触手",
+        "en": "Tentacles",
+        "zh-rTW": "觸手"
+      },
+      "search_key": "觸手"
+    },
+    {
+      "lang": {
+        "zh-rCN": "兽交",
+        "en": "Bestiality",
+        "zh-rTW": "獸交"
+      },
+      "search_key": "獸交"
+    },
+    {
+      "lang": {
+        "zh-rCN": "颈手枷",
+        "en": "Stocks",
+        "zh-rTW": "頸手枷"
+      },
+      "search_key": "頸手枷"
+    },
+    {
+      "lang": {
+        "zh-rCN": "扯头发",
+        "en": "Hair Pulling",
+        "zh-rTW": "扯頭髮"
+      },
+      "search_key": "扯頭髮"
+    },
+    {
+      "lang": {
+        "zh-rCN": "掐脖子",
+        "en": "Choking",
+        "zh-rTW": "掐脖子"
+      },
+      "search_key": "掐脖子"
+    },
+    {
+      "lang": {
+        "zh-rCN": "打屁股",
+        "en": "Spanking",
+        "zh-rTW": "打屁股"
+      },
+      "search_key": "打屁股"
+    },
+    {
+      "lang": {
+        "zh-rCN": "肉棒打脸",
+        "en": "Cock Slap",
+        "zh-rTW": "肉棒打臉"
+      },
+      "search_key": "肉棒打臉"
+    },
+    {
+      "lang": {
+        "zh-rCN": "阴道外翻",
+        "en": "Vaginal Prolapse",
+        "zh-rTW": "陰道外翻"
+      },
+      "search_key": "陰道外翻"
+    },
+    {
+      "lang": {
+        "zh-rCN": "男乳首责",
+        "en": "Male Nipple Torture",
+        "zh-rTW": "男乳首責"
+      },
+      "search_key": "男乳首責"
+    },
+    {
+      "lang": {
+        "zh-rCN": "接吻",
+        "en": "Kissing",
+        "zh-rTW": "接吻"
+      },
+      "search_key": "接吻"
+    },
+    {
+      "lang": {
+        "zh-rCN": "舌吻",
+        "en": "French Kiss",
+        "zh-rTW": "舌吻"
+      },
+      "search_key": "舌吻"
+    },
+    {
+      "lang": {
+        "zh-rCN": "POV",
+        "en": "POV",
+        "zh-rTW": "POV"
+      },
+      "search_key": "POV"
     }
   ]
 }

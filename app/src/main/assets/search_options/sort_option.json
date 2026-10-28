@@ -9,7 +9,7 @@
   },
   {
     "lang": {
-      "zh-rCN": "最新上傳",
+      "zh-rCN": "最新上传",
       "en": "New Upload",
       "zh-rTW": "最新上傳"
     },
@@ -25,7 +25,7 @@
   },
   {
     "lang": {
-      "zh-rCN": "本週排行",
+      "zh-rCN": "本周排行",
       "en": "Weekly Ranking",
       "zh-rTW": "本週排行"
     },
@@ -46,6 +46,22 @@
       "zh-rTW": "觀看次數"
     },
     "search_key": "觀看次數"
+  },
+  {
+    "lang": {
+      "zh-rCN": "点赞比例",
+      "en": "Like Ratio",
+      "zh-rTW": "讚好比例"
+    },
+    "search_key": "讚好比例"
+  },
+  {
+    "lang": {
+      "zh-rCN": "时长最长",
+      "en": "Longest Duration",
+      "zh-rTW": "時長最長"
+    },
+    "search_key": "時長最長"
   },
   {
     "lang": {

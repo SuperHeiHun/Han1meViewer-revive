@@ -221,15 +221,14 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
     private fun getHanimeSearchResult() {
         Log.d("SearchActivity", buildString {
             appendLine("page: ${viewModel.page}, query: ${viewModel.query}, genre: ${viewModel.genre}, ")
-            appendLine("sort: ${viewModel.sort}, broad: ${viewModel.broad}, year: ${viewModel.year}, ")
-            appendLine("month: ${viewModel.month}, duration: ${viewModel.duration}, ")
-            appendLine("tagMap: ${viewModel.tagMap}, brandMap: ${viewModel.brandMap}")
+            appendLine("sort: ${viewModel.sort}, broad: ${viewModel.broad}, date: ${viewModel.date}, ")
+            appendLine("duration: ${viewModel.duration}, tagMap: ${viewModel.tagMap}")
         })
         viewModel.getHanimeSearchResult(
             viewModel.page,
             viewModel.query, viewModel.genre, viewModel.sort, viewModel.broad,
-            viewModel.year, viewModel.month, viewModel.duration,
-            viewModel.tagMap.flatten(), viewModel.brandMap.flatten()
+            viewModel.date, viewModel.duration,
+            viewModel.tagMap.flatten()
         )
     }
 
