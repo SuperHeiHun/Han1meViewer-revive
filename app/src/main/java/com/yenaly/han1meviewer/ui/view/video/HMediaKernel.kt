@@ -61,7 +61,21 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
         const val TAG = "ExoMediaKernel"
     }
 
+    @Volatile
     private var _exoPlayer: ExoPlayer? = null
+
+    // ExoPlayer 只能在创建它的 JZVD 线程访问。JZVD 的进度条、速度设置等
+    // 会从主线程同步读取这些状态，因此用快照缓存避免跨线程访问。
+    @Volatile
+    private var isPlayingCache = false
+
+    @Volatile
+    private var currentPositionCache = 0L
+
+    @Volatile
+    private var durationCache = 0L
+
+    private var snapshotRunnable: Runnable? = null
 
     /**
      * 尽量少用，用了之后容易出bug
@@ -77,6 +91,11 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
         val context = jzvd.context
 
         release()
+        // 新播放器创建完成前先置空，避免旧的 media handler 访问到跨线程播放器
+        _exoPlayer = null
+        isPlayingCache = false
+        currentPositionCache = 0L
+        durationCache = 0L
         mMediaHandlerThread = HandlerThread("JZVD")
         mMediaHandlerThread.start()
         mMediaHandler = Handler(mMediaHandlerThread.looper)
@@ -126,17 +145,41 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             } else {
                 exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
             }
+            currentPositionCache = 0L
+            durationCache = 0L
             exoPlayer.setMediaSource(videoSource)
             exoPlayer.prepare()
             exoPlayer.playWhenReady = true
-            callback = OnBufferingUpdate()
+            isPlayingCache = true
+            callback = OnBufferingUpdate(exoPlayer)
 
             val surfaceTexture = jzvd.textureView?.surfaceTexture
             surfaceTexture?.let { exoPlayer.setVideoSurface(Surface(it)) }
+            startSnapshot()
         }
     }
 
+    /**
+     * 在 JZVD 线程定期刷新状态快照，供主线程同步读取。
+     */
+    private fun startSnapshot() {
+        snapshotRunnable?.let { mMediaHandler?.removeCallbacks(it) }
+        val runnable = object : Runnable {
+            override fun run() {
+                val player = _exoPlayer ?: return
+                if (player !== _exoPlayer) return
+                currentPositionCache = player.currentPosition.coerceAtLeast(0L)
+                durationCache = player.duration.coerceAtLeast(0L)
+                isPlayingCache = player.playWhenReady
+                mMediaHandler?.postDelayed(this, 200)
+            }
+        }
+        snapshotRunnable = runnable
+        mMediaHandler?.post(runnable)
+    }
+
     override fun start() {
+        isPlayingCache = true
         mMediaHandler?.post {
             _exoPlayer?.playWhenReady = true
         }
@@ -161,13 +204,14 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun pause() {
+        isPlayingCache = false
         mMediaHandler?.post {
             _exoPlayer?.playWhenReady = false
         }
     }
 
     override fun isPlaying(): Boolean {
-        return _exoPlayer?.playWhenReady ?: false
+        return isPlayingCache
     }
 
     override fun seekTo(time: Long) {
@@ -175,7 +219,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             if (time != prevSeek) {
                 _exoPlayer?.let { exoPlayer ->
                     if (time >= exoPlayer.bufferedPosition) {
-                        jzvd.onStatePreparingPlaying()
+                        handler?.post { jzvd.onStatePreparingPlaying() }
                     }
                     exoPlayer.seekTo(time)
                     prevSeek = time
@@ -190,20 +234,28 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             val tmpHandlerThread = mMediaHandlerThread
             val tmpMediaPlayer = exoPlayer
             SAVED_SURFACE = null
+            snapshotRunnable?.let { mMediaHandler?.removeCallbacks(it) }
+            callback?.let { mMediaHandler?.removeCallbacks(it) }
             mMediaHandler?.post {
                 tmpMediaPlayer.release() //release就不能放到主线程里，界面会卡顿
                 tmpHandlerThread.quit()
-                _exoPlayer = null
+                // 避免旧播放器的延迟释放把刚创建的新播放器置空
+                if (_exoPlayer === tmpMediaPlayer) {
+                    _exoPlayer = null
+                    currentPositionCache = 0L
+                    durationCache = 0L
+                    isPlayingCache = false
+                }
             }
         }
     }
 
     override fun getCurrentPosition(): Long {
-        return _exoPlayer?.currentPosition ?: 0L
+        return currentPositionCache
     }
 
     override fun getDuration(): Long {
-        return _exoPlayer?.duration ?: 0L
+        return durationCache
     }
 
     override fun setVolume(leftVolume: Float, rightVolume: Float) {
@@ -228,6 +280,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+        isPlayingCache = playWhenReady
         if (playWhenReady && _exoPlayer?.playbackState == Player.STATE_READY) {
             handler?.post {
                 jzvd.onStatePlaying()
@@ -240,7 +293,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             when (playbackState) {
                 Player.STATE_BUFFERING -> {
                     jzvd.onStatePreparingPlaying()
-                    callback?.let(handler::post)
+                    callback?.let { cb -> mMediaHandler?.post(cb) }
                 }
 
                 Player.STATE_READY -> {
@@ -248,6 +301,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
                 }
 
                 Player.STATE_ENDED -> {
+                    isPlayingCache = false
                     jzvd.onCompletion()
                 }
 
@@ -274,7 +328,9 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun setSurface(surface: Surface?) {
-        _exoPlayer?.setVideoSurface(surface)
+        mMediaHandler?.post {
+            _exoPlayer?.setVideoSurface(surface)
+        }
     }
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
@@ -293,20 +349,18 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
 
 
-    private inner class OnBufferingUpdate : Runnable {
+    private inner class OnBufferingUpdate(private val player: ExoPlayer) : Runnable {
         override fun run() {
-            _exoPlayer?.bufferedPercentage?.let { per ->
-                handler.post {
-                    jzvd.setBufferProgress(per)
-                }
-                if (per < 100) {
-                    handler.postDelayed(this, 300)
-                } else {
-                    handler.removeCallbacks(this)
-                }
-                return
+            if (player !== _exoPlayer) return
+            val per = player.bufferedPercentage
+            handler.post {
+                jzvd.setBufferProgress(per)
             }
-            handler.removeCallbacks(this)
+            if (per < 100) {
+                mMediaHandler?.postDelayed(this, 300)
+            } else {
+                mMediaHandler?.removeCallbacks(this)
+            }
         }
     }
 }
