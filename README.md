@@ -24,7 +24,7 @@
 
 ## 下载
 
-每次推送到 `feat/new_download` 分支，GitHub Actions 都会自动构建 Release APK。
+推送代码或手动触发后，GitHub Actions 会构建 Release APK。
 
 1. 打开 [Actions](https://github.com/SuperHeiHun/Han1meViewer-revive/actions/workflows/ci.yml) 页面。
 2. 选择最新一次成功的 `CI` 构建。
@@ -32,6 +32,8 @@
 4. 解压后得到 `Han1meViewer-revive-v*.apk`，安装即可。
 
 也可以手动触发构建：进入 Actions → `CI` → `Run workflow`。
+
+> 如果你是刚 Fork 本仓库，请先打开 Actions 页面启用工作流；若推送后没有自动运行，可手动执行 `Run workflow`。
 
 ## 本次修复内容
 
@@ -98,7 +100,7 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 
 工作流文件：`.github/workflows/ci.yml`
 
-- 每次推送到 `feat/new_download` 或 `master` 时自动构建 `assembleRelease`。
+- 推送代码或手动触发时构建 `assembleRelease`。
 - 默认使用 `app/google-services.json.example` 作为 Firebase 配置占位，因此全新 Fork 也能直接出包。
 - 如需真实 Firebase 配置，在仓库 Secrets 中添加 `HA1_GOOGLE_SERVICES_JSON_BASE64`（`google-services.json` 的 Base64 内容）。
 
