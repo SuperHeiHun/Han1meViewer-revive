@@ -171,6 +171,26 @@ object Preferences {
     val proxyPort: Int
         get() = preferenceSp.getInt(NetworkSettingsFragment.PROXY_PORT, -1)
 
+    // Cloudflare 驗證相關
+
+    private const val CLOUDFLARE_USER_AGENT = "cloudflare_user_agent"
+
+    /**
+     * 手動完成 Cloudflare 驗證時 WebView 實際使用的 User-Agent。
+     *
+     * cf_clearance 與解決挑戰時的 UA 綁定，站點請求需要保持一致；
+     * 未驗證過時為空，此時沿用 [USER_AGENT]。
+     */
+    var cloudflareUserAgent: String
+        get() = getSpValue(CLOUDFLARE_USER_AGENT, EMPTY_STRING)
+        set(value) = putSpValue(CLOUDFLARE_USER_AGENT, value)
+
+    /**
+     * 站點請求實際使用的 User-Agent。
+     */
+    val effectiveUserAgent: String
+        get() = cloudflareUserAgent.ifBlank { USER_AGENT }
+
     // 隐私 相關
 
     val isAnalyticsEnabled: Boolean

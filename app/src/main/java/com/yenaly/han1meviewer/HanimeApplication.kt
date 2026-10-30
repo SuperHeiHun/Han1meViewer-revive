@@ -12,6 +12,7 @@ import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.scwang.smart.refresh.footer.ClassicsFooter
 import com.scwang.smart.refresh.header.MaterialHeader
 import com.scwang.smart.refresh.layout.SmartRefreshLayout
+import com.yenaly.han1meviewer.logic.network.HCookieJar
 import com.yenaly.han1meviewer.logic.network.HProxySelector
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel
 import com.yenaly.yenaly_libs.base.YenalyApplication
@@ -46,6 +47,8 @@ class HanimeApplication : YenalyApplication() {
         super.onCreate()
         DynamicColors.applyToActivitiesIfAvailable(this)
         HProxySelector.rebuildNetwork()
+        // 恢復上次同步的 Cookie（如 cf_clearance），驗證仍有效時無需重新驗證。
+        HCookieJar.restore()
 
         if (BuildConfig.FIREBASE_ENABLED) {
             initFirebase()

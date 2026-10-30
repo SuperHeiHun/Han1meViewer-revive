@@ -1,7 +1,10 @@
 package com.yenaly.han1meviewer.logic.network
 
+import com.yenaly.han1meviewer.EMPTY_STRING
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.util.toLoginCookieList
+import com.yenaly.yenaly_libs.utils.getSpValue
+import com.yenaly.yenaly_libs.utils.putSpValue
 import okhttp3.Cookie
 import okhttp3.CookieJar
 import okhttp3.HttpUrl
@@ -20,8 +23,17 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 class HCookieJar : CookieJar {
 
     companion object {
+        private const val SP_KEY_RAW_COOKIES = "hcookiejar_raw_cookies"
+        private const val HOST_SEPARATOR = '\u0001'
+        private const val COOKIE_SEPARATOR = '\u0002'
+
         @JvmStatic
         val cookieMap: MutableMap<String, MutableList<Cookie>> = mutableMapOf()
+
+        /**
+         * 各 host 最近一次從 WebView 同步的原始 Cookie 字符串，用於本地持久化。
+         */
+        private val rawCookieStrings = mutableMapOf<String, String>()
 
         /**
          * 把 WebView 中的 Cookie 同步給 OkHttp，主要用於 Cloudflare 的 cf_clearance。
@@ -39,6 +51,42 @@ class HCookieJar : CookieJar {
                 cookieMap[httpUrl.host].orEmpty(),
                 parsedCookies + loginCookies
             )
+            rawCookieStrings[httpUrl.host] = cookieString
+            persistRawCookies()
+        }
+
+        /**
+         * 從本地恢復上次同步的 Cookie（主要是 cf_clearance），
+         * 讓應用重啟後在驗證仍有效時不必再次彈出驗證頁。
+         */
+        @JvmStatic
+        fun restore() {
+            if (cookieMap.isNotEmpty()) return
+            val data = getSpValue(SP_KEY_RAW_COOKIES, EMPTY_STRING)
+            if (data.isBlank()) return
+            data.split(HOST_SEPARATOR).forEach { entry ->
+                val separatorIndex = entry.indexOf(COOKIE_SEPARATOR)
+                if (separatorIndex <= 0) return@forEach
+                val host = entry.substring(0, separatorIndex)
+                val cookieString = entry.substring(separatorIndex + 1)
+                val httpUrl = "https://$host/".toHttpUrlOrNull() ?: return@forEach
+                val parsedCookies = cookieString.split(';').mapNotNull { cookie ->
+                    Cookie.parse(httpUrl, cookie.trim())
+                }
+                if (parsedCookies.isEmpty()) return@forEach
+                rawCookieStrings[host] = cookieString
+                cookieMap[host] = mergeCookies(
+                    cookieMap[host].orEmpty(),
+                    parsedCookies + Preferences.loginCookieStateFlow.value.toLoginCookieList(host)
+                )
+            }
+        }
+
+        private fun persistRawCookies() {
+            val data = rawCookieStrings.entries.joinToString(HOST_SEPARATOR.toString()) {
+                "${it.key}$COOKIE_SEPARATOR${it.value}"
+            }
+            putSpValue(SP_KEY_RAW_COOKIES, data)
         }
 
         private fun mergeCookies(
@@ -54,8 +102,9 @@ class HCookieJar : CookieJar {
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
+        val now = System.currentTimeMillis()
         val loginCookies = Preferences.loginCookieStateFlow.value.toLoginCookieList(url.host)
-        val storedCookies = cookieMap[url.host].orEmpty()
+        val storedCookies = cookieMap[url.host].orEmpty().filter { it.expiresAt > now }
         if (storedCookies.isEmpty()) return loginCookies
         return mergeCookies(storedCookies, loginCookies)
     }
