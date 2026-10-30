@@ -44,6 +44,7 @@ import com.yenaly.han1meviewer.ui.adapter.HanimePreviewTourRvAdapter
 import com.yenaly.han1meviewer.ui.view.CenterLinearLayoutManager
 import com.yenaly.han1meviewer.ui.viewmodel.PreviewCommentPrefetcher
 import com.yenaly.han1meviewer.ui.viewmodel.PreviewViewModel
+import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.han1meviewer.util.addUpdateListener
 import com.yenaly.han1meviewer.util.colorTransition
 import com.yenaly.han1meviewer.util.toColorStateList
@@ -226,6 +227,16 @@ class PreviewActivity : YenalyActivity<ActivityPreviewBinding>() {
         //binding.srlPreview.setOnRefreshListener {
         //    viewModel.getHanimePreview(dateUtils.current.second)
         //}
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (CloudflareVerificationManager.consumePendingRetry()) {
+            dateUtils.current.format(DateUtils.FORMATTED_FORMAT).let { format ->
+                viewModel.getHanimePreview(format)
+                loadComments(format)
+            }
+        }
     }
 
     @OptIn(ExperimentalBadgeUtils::class)

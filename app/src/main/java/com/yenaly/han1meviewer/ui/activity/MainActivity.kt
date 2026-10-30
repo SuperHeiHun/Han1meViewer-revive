@@ -41,6 +41,7 @@ import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.logout
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.MainViewModel
+import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.han1meviewer.util.logScreenViewEvent
 import com.yenaly.han1meviewer.util.showAlertDialog
 import com.yenaly.han1meviewer.util.showUpdateDialog
@@ -121,6 +122,13 @@ class MainActivity : YenalyActivity<ActivityMainBinding>(), DrawerListener {
                     showFindRelatedLinkSnackBar(videoCode)
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (CloudflareVerificationManager.consumePendingRetry()) {
+            viewModel.getHomePage()
         }
     }
 

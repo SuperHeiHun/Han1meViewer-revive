@@ -76,6 +76,18 @@
     <string name="preference">Preferences</string>
     <string name="other">Other</string>
     <string name="about">About</string>
+    <string name="about_intro">Introduction</string>
+    <string name="about_description">Han1meViewer-revive is an unofficial client for the target site, providing browsing, search, playback, downloads and favorites.\nThis app is for learning and research only and is not affiliated with the target site.</string>
+    <string name="about_contributors">Contributors</string>
+    <string-array name="about_eggs">
+        <item>Why are you clicking here? Looking for an easter egg?</item>
+        <item>Stop clicking!</item>
+        <item>4 more clicks to enter crash mode</item>
+        <item>3 more clicks to enter crash mode</item>
+        <item>2 more clicks to enter crash mode</item>
+        <item>1 more click to enter crash mode</item>
+        <item>Just kidding, you actually believed it?</item>
+    </string-array>
     <string name="check_update">Check Update</string>
     <string name="new_version_found">New Version Found</string>
     <string name="checking_update">Checking for Updates…</string>
@@ -358,5 +370,11 @@ Recommendations are as follows:\n
     <string name="no_limit">No Limit</string>
     <string name="check_video_exists_in_download">I noticed you seem to have downloaded the video with resolution %s</string>
     <string name="retry">Retry</string>
+
+    <string name="cloudflare_verification_title">Verification Required</string>
+    <string name="cloudflare_verification_message">The target site requires human verification. Tap &quot;Start&quot; and complete it in the page that opens. The app will return and reload automatically after success.</string>
+    <string name="cloudflare_verification_start">Start</string>
+    <string name="cloudflare_verification_hint">Complete the verification below. The app will return automatically after success.</string>
+    <string name="cloudflare_verification_success">Verified. Reloading…</string>
 
 </resources>

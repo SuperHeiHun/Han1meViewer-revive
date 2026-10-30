@@ -118,5 +118,14 @@
             android:name=".ui.activity.DownloadActivity"
             android:configChanges="orientation|screenSize"
             android:exported="true"></activity>
+        <activity
+            android:name=".ui.activity.AboutActivity"
+            android:configChanges="screenSize|orientation"
+            android:exported="false"
+            android:theme="@style/Theme.Hanime1.About" />
+        <activity
+            android:name=".ui.activity.CloudflareVerificationActivity"
+            android:configChanges="screenSize|orientation"
+            android:exported="false" />
     </application>
 </manifest>

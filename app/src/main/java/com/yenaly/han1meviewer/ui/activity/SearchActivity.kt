@@ -45,6 +45,7 @@ import com.yenaly.han1meviewer.ui.fragment.search.HMultiChoicesDialog
 import com.yenaly.han1meviewer.ui.fragment.search.SearchOptionsPopupFragment
 import com.yenaly.han1meviewer.ui.viewmodel.MyListViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.SearchViewModel
+import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.han1meviewer.util.logScreenViewEvent
 import com.yenaly.yenaly_libs.base.YenalyActivity
 import com.yenaly.yenaly_libs.utils.dp
@@ -207,6 +208,13 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
                     searchAdapter.submitList(it)
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (CloudflareVerificationManager.consumePendingRetry()) {
+            getNewHanimeSearchResult()
         }
     }
 

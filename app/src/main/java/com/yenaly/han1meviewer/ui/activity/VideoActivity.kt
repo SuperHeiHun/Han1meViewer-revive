@@ -38,6 +38,7 @@ import com.yenaly.han1meviewer.databinding.ActivityVideoBinding
 import com.yenaly.han1meviewer.getHanimeVideoLink
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
+import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.ui.fragment.video.CommentFragment
@@ -46,6 +47,7 @@ import com.yenaly.han1meviewer.ui.view.video.HMediaKernel
 import com.yenaly.han1meviewer.ui.view.video.HanimeDataSource
 import com.yenaly.han1meviewer.ui.viewmodel.CommentViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
+import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.han1meviewer.util.getOrCreateBadgeOnTextViewAt
 import com.yenaly.han1meviewer.util.logScreenViewEvent
 import com.yenaly.han1meviewer.util.showAlertDialog
@@ -133,6 +135,11 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                 viewModel.hanimeVideoStateFlow.collect { state ->
                     when (state) {
                         is VideoLoadingState.Error -> {
+                            // Cloudflare 驗證期間保留頁面，驗證成功後由 onResume 重新載入
+                            if (state.throwable is CloudFlareBlockedException) {
+                                showShortToast(state.throwable.localizedMessage)
+                                return@collect
+                            }
                             showShortToast(state.throwable.localizedMessage)
                             if (state.throwable is ParseException) {
                                 browse(getHanimeVideoLink(viewModel.videoCode))
@@ -194,6 +201,13 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             viewModel.modifyHKeyframeFlow.collect { (_, reason) ->
                 showShortToast(reason)
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!fromDownload && CloudflareVerificationManager.consumePendingRetry()) {
+            viewModel.getHanimeVideo(viewModel.videoCode)
         }
     }
 

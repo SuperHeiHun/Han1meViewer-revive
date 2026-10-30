@@ -77,6 +77,18 @@
     <string name="preference">偏好</string>
     <string name="other">其他</string>
     <string name="about">關於</string>
+    <string name="about_intro">介紹</string>
+    <string name="about_description">Han1meViewer-revive 是目標站點的非官方用戶端，提供瀏覽、搜尋、播放、下載與收藏等功能。\n本軟體僅供學習與研究使用，與目標站點沒有任何關聯。</string>
+    <string name="about_contributors">貢獻者</string>
+    <string-array name="about_eggs">
+        <item>為什麼點擊這裡，以為這裡有彩蛋嗎？</item>
+        <item>別點了！</item>
+        <item>再點 4 次進入崩壞模式</item>
+        <item>再點 3 次進入崩壞模式</item>
+        <item>再點 2 次進入崩壞模式</item>
+        <item>再點 1 次進入崩壞模式</item>
+        <item>逗你玩的，你還真信了？</item>
+    </string-array>
     <string name="check_update">檢查更新</string>
     <string name="new_version_found">已發現新版本</string>
     <string name="checking_update">檢查更新中…</string>
@@ -368,5 +380,11 @@
     <string name="no_limit">無限制</string>
     <string name="check_video_exists_in_download">我注意到你好像下載過畫質為 %s 的該影片</string>
     <string name="retry">重試</string>
+
+    <string name="cloudflare_verification_title">需要人機驗證</string>
+    <string name="cloudflare_verification_message">目標站點要求完成人機驗證。點擊「開始驗證」後，在開啟的頁面中完成驗證；驗證成功會自動返回並重新載入。</string>
+    <string name="cloudflare_verification_start">開始驗證</string>
+    <string name="cloudflare_verification_hint">請在下方完成站點驗證，驗證成功後會自動返回。</string>
+    <string name="cloudflare_verification_success">驗證成功，正在重新載入…</string>
 
 </resources>

@@ -19,6 +19,7 @@ import com.yenaly.han1meviewer.logic.network.HanimeNetwork
 import com.yenaly.han1meviewer.logic.state.PageLoadingState
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
+import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.yenaly_libs.utils.applicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,7 @@ object NetworkRepo {
         if (!requestResult.isSuccessful || resultBody == null) {
             requestResult.throwRequestException()
         }
+        checkCloudflareChallenge(resultBody)
         val state = Parser.homePageVer2(resultBody ?: EMPTY_STRING)
         if (state is WebsiteState.Success) {
             val homePage = state.info
@@ -97,6 +99,7 @@ object NetworkRepo {
         )
         val body = response.body()?.string()
         if (response.isSuccessful && body != null) {
+            checkCloudflareChallenge(body)
             val state = Parser.hanimeSearch(body)
             // 首頁每個橫向欄位只預覽 12 個，和網站首頁保持一致
             (state as? PageLoadingState.Success)?.info?.take(12)?.toMutableList()
@@ -434,6 +437,7 @@ object NetworkRepo {
         val resultBody = requestResult.body()?.string()
         val permitted = permittedSuccessCode?.contains(requestResult.code()) == true
         if ((permitted || requestResult.isSuccessful)) {
+            checkCloudflareChallenge(resultBody)
             emit(action.invoke(resultBody ?: EMPTY_STRING))
         } else {
             requestResult.throwRequestException()
@@ -452,6 +456,7 @@ object NetworkRepo {
         val requestResult = request.invoke()
         val resultBody = requestResult.body()?.string()
         if (requestResult.isSuccessful && resultBody != null) {
+            checkCloudflareChallenge(resultBody)
             emit(action.invoke(resultBody))
         } else {
             requestResult.throwRequestException()
@@ -470,6 +475,7 @@ object NetworkRepo {
         val requestResult = request.invoke()
         val resultBody = requestResult.body()?.string()
         if (requestResult.isSuccessful && resultBody != null) {
+            checkCloudflareChallenge(resultBody)
             emit(action.invoke(resultBody))
         } else {
             requestResult.throwRequestException()
@@ -480,14 +486,21 @@ object NetworkRepo {
 
     private fun Response<ResponseBody>.throwRequestException(): Nothing {
         val body = errorBody()?.string()
-        when (val code = code()) {
+        val code = code()
+        val isIPBlocked = body?.contains("you have been blocked") == true
+        val isCloudflareChallenge =
+            headers()["cf-mitigated"]?.equals("challenge", true) == true ||
+                    ((code == 403 || code == 503) && body.looksLikeCloudflareChallenge())
+
+        if (isCloudflareChallenge && !isIPBlocked) {
+            throwCloudflareVerification()
+        }
+
+        when (code) {
             403 -> if (!body.isNullOrBlank()) {
                 when {
-                    "you have been blocked" in body ->
+                    isIPBlocked ->
                         throw IPBlockedException(getString(R.string.do_not_use_japan_ip))
-
-                    "Just a moment" in body ->
-                        throw CloudFlareBlockedException(getString(CloudFlareBlockedException.localizedMessages.random()))
 
                     else ->
                         throw HanimeNotFoundException(getString(R.string.video_might_not_exist)) // 主要出現在影片界面，當你v數不大時會報403
@@ -504,6 +517,28 @@ object NetworkRepo {
 
             else -> throw IllegalStateException("$code ${message()}")
         }
+    }
+
+    private fun checkCloudflareChallenge(body: String?) {
+        if (body.looksLikeCloudflareChallenge()) {
+            throwCloudflareVerification()
+        }
+    }
+
+    private fun throwCloudflareVerification(): Nothing {
+        CloudflareVerificationManager.onChallengeDetected()
+        throw CloudFlareBlockedException(
+            getString(CloudFlareBlockedException.localizedMessages.random())
+        )
+    }
+
+    private fun String?.looksLikeCloudflareChallenge(): Boolean {
+        if (this.isNullOrBlank()) return false
+        return contains("<title>Just a moment", ignoreCase = true) ||
+                contains("Enable JavaScript and cookies to continue", ignoreCase = true) ||
+                contains("cf-challenge-running", ignoreCase = true) ||
+                contains("id=\"challenge-form\"", ignoreCase = true) ||
+                contains("_cf_chl_opt", ignoreCase = true)
     }
 
     private fun handleException(e: Throwable): Throwable {

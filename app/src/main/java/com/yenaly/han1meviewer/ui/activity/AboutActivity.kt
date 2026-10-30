@@ -1,0 +1,129 @@
+package com.yenaly.han1meviewer.ui.activity
+
+import android.annotation.SuppressLint
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.graphics.ColorUtils
+import androidx.core.view.WindowCompat
+import coil.load
+import coil.transform.CircleCropTransformation
+import com.drakeet.about.AbsAboutActivity
+import com.drakeet.about.Card
+import com.drakeet.about.Category
+import com.drakeet.about.Contributor
+import com.google.android.material.appbar.AppBarLayout
+import com.yenaly.circularrevealswitch.SwitchAnimation
+import com.yenaly.circularrevealswitch.ext.setDayNightModeSwitcher
+import com.yenaly.han1meviewer.BuildConfig
+import com.yenaly.han1meviewer.R
+import com.yenaly.yenaly_libs.utils.showSnackBar
+
+/**
+ * 關於界面。
+ *
+ * 原項目的 AboutActivity 在後續提交中被誤刪，這裡恢復並適配 revive 分支。
+ *
+ * @project Han1meViewer
+ * @author Yenaly Liew
+ * @time 2022/07/06 006 22:42
+ */
+class AboutActivity : AbsAboutActivity() {
+
+    private val eggArray by lazy { resources.getStringArray(R.array.about_eggs) }
+
+    private var clickIconTimes = 0
+
+    @SuppressLint("SetTextI18n")
+    override fun onCreateHeader(icon: ImageView, slogan: TextView, version: TextView) {
+        val randomHeaderColor = Color.rgb(
+            (0..255).random(),
+            (0..255).random(),
+            (0..255).random()
+        )
+
+        val gradientDrawable = GradientDrawable(
+            GradientDrawable.Orientation.BL_TR,
+            intArrayOf(
+                randomHeaderColor,
+                Color.rgb((0..255).random(), (0..255).random(), (0..255).random())
+            )
+        ).apply {
+            cornerRadius = 0F
+        }
+
+        val controller = WindowCompat.getInsetsController(window, window.decorView)
+        if (ColorUtils.calculateLuminance(randomHeaderColor) > 0.5) {
+            slogan.setTextColor(Color.BLACK)
+            version.setTextColor(Color.BLACK)
+            controller.isAppearanceLightStatusBars = true
+        } else {
+            slogan.setTextColor(Color.WHITE)
+            version.setTextColor(Color.WHITE)
+            controller.isAppearanceLightStatusBars = false
+        }
+
+        findViewById<AppBarLayout>(com.drakeet.about.R.id.header_layout).apply {
+            setBackgroundColor(randomHeaderColor)
+            setDayNightModeSwitcher(
+                duration = 1000L,
+                animToDayMode = SwitchAnimation.entries.random(),
+                animToNightMode = SwitchAnimation.entries.random()
+            )
+        }
+        setHeaderContentScrim(gradientDrawable)
+
+        icon.load(R.drawable.icon_transparent_han1me_viewer_rurires) {
+            transformations(CircleCropTransformation())
+        }
+        icon.setOnClickListener {
+            if (eggArray.isNotEmpty()) {
+                showSnackBar(eggArray[clickIconTimes++ % eggArray.size])
+            }
+        }
+        slogan.setText(R.string.app_slogan)
+        version.text = "v${BuildConfig.VERSION_NAME}"
+    }
+
+    override fun onItemsCreated(items: MutableList<Any>) {
+        items.apply {
+            add(Category(getString(R.string.about_intro)))
+            add(Card(getString(R.string.about_description).trimIndent()))
+
+            add(Category(getString(R.string.about_contributors)))
+            add(
+                Contributor(
+                    R.drawable.yenaly_liew,
+                    "Yenaly",
+                    "Original developer",
+                    "https://github.com/YenalyLiew"
+                )
+            )
+            add(
+                Contributor(
+                    0,
+                    "rurires",
+                    "Icon creator",
+                    "https://github.com/rurires"
+                )
+            )
+            add(
+                Contributor(
+                    R.drawable.neko_ouo,
+                    "NeKoOuO",
+                    "Contributor",
+                    "https://github.com/NeKoOuO"
+                )
+            )
+            add(
+                Contributor(
+                    0,
+                    "SuperHeiHun",
+                    "Revive maintainer",
+                    "https://github.com/SuperHeiHun"
+                )
+            )
+        }
+    }
+}
