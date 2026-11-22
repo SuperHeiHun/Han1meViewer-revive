@@ -289,6 +289,11 @@ object NetworkRepo {
         action = Parser::comments
     )
 
+    fun getMoreComments(type: String, code: String, offset: Int) = websiteIOFlow(
+        request = { HanimeNetwork.commentService.getComments(type, code, offset) },
+        action = Parser::moreComments
+    )
+
     fun getCommentReply(commentId: String) = websiteIOFlow(
         request = { HanimeNetwork.commentService.getCommentReply(commentId) },
         action = Parser::commentReply

@@ -29,6 +29,13 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
 
     var currentUserId: String? = null
 
+    private var commentType: String? = null
+    private var commentCode: String? = null
+    private var nextCommentOffset: Int? = null
+    private var hasMoreComments = false
+    private var isLoadingMoreComments = false
+    private var commentRequestVersion = 0
+
     private val _videoCommentStateFlow =
         MutableStateFlow<WebsiteState<VideoComments>>(WebsiteState.Loading)
     val videoCommentStateFlow = _videoCommentStateFlow.asStateFlow()
@@ -56,9 +63,20 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
     val commentLikeFlow = _commentLikeFlow.asSharedFlow()
 
     fun getComment(type: String, code: String) {
+        commentType = type
+        commentCode = code
+        nextCommentOffset = null
+        hasMoreComments = false
+        isLoadingMoreComments = false
+        val version = ++commentRequestVersion
         viewModelScope.launch {
             _videoCommentStateFlow.value = WebsiteState.Loading
             NetworkRepo.getComments(type, code).collect { state ->
+                if (version != commentRequestVersion) return@collect
+                if (state is WebsiteState.Success) {
+                    nextCommentOffset = state.info.nextOffset
+                    hasMoreComments = state.info.hasMore
+                }
                 _videoCommentStateFlow.value = state
                 _videoCommentFlow.update { prevList ->
                     when (state) {
@@ -66,6 +84,49 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
                         is WebsiteState.Loading -> emptyList()
                         else -> prevList
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * 加載評論區下一頁（新版介面使用 offset 分頁）。
+     */
+    fun loadMoreComments() {
+        val type = commentType ?: return
+        val code = commentCode ?: return
+        val offset = nextCommentOffset ?: return
+        if (!hasMoreComments || isLoadingMoreComments) return
+
+        isLoadingMoreComments = true
+        val version = commentRequestVersion
+        viewModelScope.launch {
+            NetworkRepo.getMoreComments(type, code, offset).collect { state ->
+                if (version != commentRequestVersion) return@collect
+                when (state) {
+                    is WebsiteState.Success -> {
+                        nextCommentOffset = state.info.nextOffset
+                        hasMoreComments = state.info.hasMore
+                        _videoCommentFlow.update { it + state.info.videoComment }
+                        _videoCommentStateFlow.update { prev ->
+                            if (prev is WebsiteState.Success) {
+                                WebsiteState.Success(
+                                    prev.info.copy(
+                                        videoComment = (prev.info.videoComment + state.info.videoComment)
+                                            .toMutableList(),
+                                        hasMore = state.info.hasMore,
+                                        nextOffset = state.info.nextOffset,
+                                    )
+                                )
+                            } else {
+                                prev
+                            }
+                        }
+                        isLoadingMoreComments = false
+                    }
+
+                    is WebsiteState.Error -> isLoadingMoreComments = false
+                    WebsiteState.Loading -> Unit
                 }
             }
         }

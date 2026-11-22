@@ -14,6 +14,7 @@ interface HanimeCommentService {
     suspend fun getComments(
         @Query("type") type: String, // 類似 "video", "preview"
         @Query("id") code: String,
+        @Query("offset") offset: Int? = null,
     ): Response<ResponseBody>
 
     @GET("loadReplies")

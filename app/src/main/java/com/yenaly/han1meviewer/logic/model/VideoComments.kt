@@ -9,6 +9,9 @@ data class VideoComments(
     val videoComment: MutableList<VideoComment>,
     val currentUserId: String? = null,
     val csrfToken: String? = null,
+    // 新版評論區採用 offset 分頁，首批評論帶有 scroll sentinel
+    val hasMore: Boolean = false,
+    val nextOffset: Int? = null,
 ) {
     data class VideoComment(
         // 頭像

@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.core.BasePopupView
 import com.lxj.xpopup.interfaces.SimpleCallback
@@ -76,6 +77,15 @@ class CommentFragment : YenalyFragment<FragmentCommentBinding>(), StateLayoutMix
         binding.rvComment.layoutManager = LinearLayoutManager(context)
         binding.rvComment.adapter = commentAdapter
         binding.rvComment.clipToPadding = false
+        binding.rvComment.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (dy <= 0 || commentAdapter.itemCount == 0) return
+                val layoutManager = recyclerView.layoutManager as? LinearLayoutManager ?: return
+                if (layoutManager.findLastVisibleItemPosition() >= commentAdapter.itemCount - 3) {
+                    viewModel.loadMoreComments()
+                }
+            }
+        })
 
         if (context is PreviewCommentActivity) {
             val comments = PreviewCommentPrefetcher.here().commentFlow.value

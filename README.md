@@ -50,6 +50,7 @@ CI 构建也会在 Actions 中保留一份构建产物作为备份：
 - 新增第 7 组搜索标签「情境场所」，并更新全部搜索选项为当前站点数据。
 - 修复视频页标题、观看次数、上传日期、点赞数、标签、社团信息和播放源解析。
 - 修复评论、回复、子评论 ID 解析，避免未登录状态下回复时崩溃。
+- 适配评论区新版 `comment-item-block` 结构，并支持 offset 分页自动加载更多评论。
 - 修复预览页左右切换按钮检测。
 - 删除已返回 404 的 `deletePlayitem` 接口，改用 `playlist/delete`。
 - 恢复“关于”页面，并修复设置中“关于”无法点击的问题。
@@ -112,7 +113,7 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 
 - 推送代码或手动触发时构建 `assembleRelease`。
 - 在 `SuperHeiHun/Han1meViewer-revive` 仓库中，`feat/new_download` 分支构建成功后会自动发布 GitHub Release：先创建 draft，上传 APK，再正式发布。
-- Release tag 形如 `v0.15.5+261028058`，应用内更新检查会读取 `+` 后的版本号。
+- Release tag 形如 `v0.16.0+261122058`，应用内更新检查会读取 `+` 后的版本号。
 - Fork 仓库只上传 Actions Artifact，不会自动发布 Release。
 - 默认使用 `app/google-services.json.example` 作为 Firebase 配置占位，因此全新 Fork 也能直接出包。
 - 使用占位配置时，构建会自动关闭 Firebase Analytics、Crashlytics 和 Remote Config，避免无效 API Key 导致启动崩溃；应用内更新会直接检查 GitHub Releases。

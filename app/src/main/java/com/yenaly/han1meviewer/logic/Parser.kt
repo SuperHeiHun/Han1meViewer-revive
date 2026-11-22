@@ -769,37 +769,86 @@ object Parser {
     @SuppressLint("BuildListAdds")
     fun comments(body: String): WebsiteState<VideoComments> {
         val jsonObject = JSONObject(body)
-        val commentBody = jsonObject.get("comments").toString()
+        val commentBody = jsonObject.optString("comments")
         val parseBody = Jsoup.parse(commentBody).body()
         val csrfToken = parseBody.selectFirst("input[name=_token]")?.attr("value")
         val currentUserId = parseBody.selectFirst("input[name=comment-user-id]")?.attr("value")
-        val commentList = mutableListOf<VideoComments.VideoComment>()
-        val allCommentsClass = parseBody.getElementById("comment-start")
 
-        // 新版網站的每則留言結構為：
-        // <a>頭像</a> + <div class=report-btn-wrapper>內容</div> +
-        // <div id=comment-like-form-wrapper>點讚</div> + <br>
-        allCommentsClass?.children()?.forEach { child ->
-            if (!child.hasClass("report-btn-wrapper")) return@forEach
+        // 新版評論區使用 offset 分頁，首批評論末尾帶有 scroll sentinel。
+        val sentinel = parseBody.getElementById("comment-scroll-sentinel")
+        val hasMore = sentinel?.attr("data-has-more") == "1"
+        val nextOffset = sentinel?.attr("data-next-offset")?.toIntOrNull()
+
+        return WebsiteState.Success(
+            VideoComments(
+                videoComment = parseCommentItems(commentBody, Parser::comments.name),
+                currentUserId = currentUserId,
+                csrfToken = csrfToken,
+                hasMore = hasMore,
+                nextOffset = nextOffset,
+            )
+        )
+    }
+
+    /**
+     * 解析 offset 分頁返回的後續評論。
+     *
+     * 新版介面返回：`{"items_html": "...", "has_more": true, "next_offset": 200}`
+     */
+    fun moreComments(body: String): WebsiteState<VideoComments> {
+        val jsonObject = JSONObject(body)
+        val itemsHtml = jsonObject.optString("items_html")
+        return WebsiteState.Success(
+            VideoComments(
+                videoComment = parseCommentItems(itemsHtml, Parser::moreComments.name),
+                hasMore = jsonObject.optBoolean("has_more"),
+                nextOffset = jsonObject.optInt("next_offset").takeIf { it > 0 },
+            )
+        )
+    }
+
+    private fun parseCommentItems(
+        html: String,
+        functionName: String,
+    ): MutableList<VideoComments.VideoComment> {
+        val parseBody = Jsoup.parse(html).body()
+        val allCommentsClass = parseBody.getElementById("comment-start") ?: parseBody
+        val commentList = mutableListOf<VideoComments.VideoComment>()
+
+        // 新版網站的每則留言都包在 div.comment-item-block 中：
+        // <div class=comment-item-block data-comment-id=...>
+        //     <a>頭像</a> + <div class=report-btn-wrapper>內容</div> +
+        //     <div id=comment-like-form-wrapper>點讚</div> + <br>
+        // </div>
+        // 舊版則直接以 report-btn-wrapper 作為 #comment-start 的子元素，兩種都兼容。
+        allCommentsClass.children().forEach { block ->
+            val child = when {
+                block.hasClass("report-btn-wrapper") -> block
+                block.hasClass("comment-item-block") ->
+                    block.selectFirst("div.report-btn-wrapper") ?: return@forEach
+
+                else -> return@forEach
+            }
             val avatarUrl = (child.selectFirst("img")
                 ?: child.previousElementSibling()?.selectFirst("img"))?.absUrl("src")
-                .throwIfParseNull(Parser::comments.name, "avatarUrl")
+                .throwIfParseNull(functionName, "avatarUrl")
             val textClass = child.getElementsByClass("comment-index-text")
             val nameAndDateClass = textClass.firstOrNull()
             val username = nameAndDateClass?.selectFirst("a")?.ownText()?.trim()
-                .throwIfParseNull(Parser::comments.name, "username")
+                .throwIfParseNull(functionName, "username")
             val date = nameAndDateClass?.selectFirst("span")?.ownText()?.trim()
-                .throwIfParseNull(Parser::comments.name, "date")
+                .throwIfParseNull(functionName, "date")
             val content = textClass.getOrNull(1)?.text()
-                .throwIfParseNull(Parser::comments.name, "content")
+                .throwIfParseNull(functionName, "content")
             val likeWrapper = child.nextElementSibling()
                 ?.takeIf { it.id() == "comment-like-form-wrapper" }
             val hasMoreReplies = likeWrapper?.selectFirst("div[class^=load-replies-btn]") != null
             val thumbUp = likeWrapper
                 ?.select("span[style]")?.getOrNull(1)
                 ?.text()?.toIntOrNull()
-            val id = likeWrapper?.selectFirst("div[class^=load-replies-btn]")
-                ?.attr("data-commentid")?.takeIf { it.isNotBlank() }
+            val id = block.attr("data-comment-id").takeIf { it.isNotBlank() }
+                ?: likeWrapper?.selectFirst("div[class^=load-replies-btn]")
+                    ?.attr("data-commentid")?.takeIf { it.isNotBlank() }
                 ?: likeWrapper?.selectFirst("div[id^=reply-section-wrapper]")
                     ?.id()?.substringAfterLast("-")
                 ?: child.selectFirst("span[data-reportable-id]")
@@ -820,15 +869,15 @@ object Parser {
                 postContainer.selectFirst("input[name=unlike-comment-status]")?.attr("value")
 
             val post = VideoComments.VideoComment.POST(
-                foreignId.logIfParseNull(Parser::comments.name, "foreignId", loginNeeded = true),
+                foreignId.logIfParseNull(functionName, "foreignId", loginNeeded = true),
                 isPositive == "1",
-                likeUserId.logIfParseNull(Parser::comments.name, "likeUserId", loginNeeded = true),
+                likeUserId.logIfParseNull(functionName, "likeUserId", loginNeeded = true),
                 commentLikesCount?.toIntOrNull().logIfParseNull(
-                    Parser::comments.name,
+                    functionName,
                     "commentLikesCount", loginNeeded = true
                 ),
                 commentLikesSum?.toIntOrNull().logIfParseNull(
-                    Parser::comments.name,
+                    functionName,
                     "commentLikesSum", loginNeeded = true
                 ),
                 likeCommentStatus == "1",
@@ -838,20 +887,14 @@ object Parser {
                 VideoComments.VideoComment(
                     avatar = avatarUrl, username = username, date = date,
                     content = content, hasMoreReplies = hasMoreReplies,
-                    thumbUp = thumbUp.logIfParseNull(Parser::comments.name, "thumbUp"),
-                    id = id.logIfParseNull(Parser::comments.name, "id"),
+                    thumbUp = thumbUp.logIfParseNull(functionName, "thumbUp"),
+                    id = id.logIfParseNull(functionName, "id"),
                     isChildComment = false, post = post
                 )
             )
         }
         Log.d("commentList", commentList.toString())
-        return WebsiteState.Success(
-            VideoComments(
-                commentList,
-                currentUserId,
-                csrfToken
-            )
-        )
+        return commentList
     }
 
     fun commentReply(body: String): WebsiteState<VideoComments> {
