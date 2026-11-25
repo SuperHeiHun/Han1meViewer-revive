@@ -317,6 +317,12 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun setUp(jzDataSource: JZDataSource?, screen: Int, clazz: Class<*>) {
+        // A new Jzvd starts with screen = -1, which skips its control/poster UI updates.
+        // Default only uninitialized/invalid modes; keep fullscreen when reusing this view.
+        val setupScreen = when (screen) {
+            SCREEN_NORMAL, SCREEN_FULLSCREEN, SCREEN_TINY -> screen
+            else -> SCREEN_NORMAL
+        }
         playerGestureController?.cancel()
         if (isVideoLoading) {
             // JzvdStd silently ignores setUp within 200 ms of a fullscreen transition.
@@ -329,7 +335,7 @@ class HJzvdStd @JvmOverloads constructor(
         clarity.isEnabled = true
         startButton.setOnClickListener(this)
         mRetryBtn.setOnClickListener(this)
-        super.setUp(jzDataSource, screen, clazz)
+        super.setUp(jzDataSource, setupScreen, clazz)
         Log.d("CustomJzvdStd-Settings", buildString {
             append("showBottomProgress: ")
             appendLine(showBottomProgress)
@@ -340,7 +346,7 @@ class HJzvdStd @JvmOverloads constructor(
             append("userDefSlideSensitivity: ")
             appendLine(Preferences.slideSensitivity)
         })
-        titleTextView.isInvisible = screen != SCREEN_FULLSCREEN
+        titleTextView.isInvisible = setupScreen != SCREEN_FULLSCREEN
         if (bottomProgressBar != null && !showBottomProgress) {
             bottomProgressBar.removeItself()
             bottomProgressBar = ProgressBar(context)

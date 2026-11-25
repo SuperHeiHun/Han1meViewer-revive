@@ -34,7 +34,10 @@ class PlayerVideoSwitchTest {
                 val player = HJzvdStd(activity)
                 root.addView(player, FrameLayout.LayoutParams(900, 600))
                 player.videoCode = "a"
-                player.setUp(JZDataSource("file:///not-opened-a.mp4", "A"), Jzvd.SCREEN_NORMAL)
+                // Match VideoActivity's first Loading -> Success without pre-setting a mode.
+                assertEquals(-1, player.screen)
+                player.prepareForVideoSwitch()
+                player.setUp(JZDataSource("file:///not-opened-a.mp4", "A"), player.screen)
                 val media = FakeMedia(player)
                 player.mediaInterface = media
                 player.onStatePause()
@@ -47,6 +50,34 @@ class PlayerVideoSwitchTest {
                 }
             }
         }
+    }
+
+    @Test fun firstLoadDefaultsToNormalAndPlayingClearsPosterAndLoading() = withPlayer { player, _ ->
+        assertEquals(Jzvd.SCREEN_NORMAL, player.screen)
+        player.onStatePreparing()
+        assertEquals(View.VISIBLE, player.posterImageView.visibility)
+        assertEquals(View.VISIBLE, player.loadingProgressBar.visibility)
+        player.onStatePlaying()
+        assertEquals(View.INVISIBLE, player.posterImageView.visibility)
+        assertEquals(View.INVISIBLE, player.loadingProgressBar.visibility)
+        assertEquals(View.INVISIBLE, player.bottomContainer.visibility)
+        player.onClickUiToggle()
+        assertEquals(View.VISIBLE, player.bottomContainer.visibility)
+        player.onClickUiToggle()
+        assertEquals(View.INVISIBLE, player.bottomContainer.visibility)
+        assertEquals(View.INVISIBLE, player.posterImageView.visibility)
+        assertEquals(View.INVISIBLE, player.loadingProgressBar.visibility)
+    }
+
+    @Test fun retryAfterLoadingKeepsNormalModeAndRestoresStartControls() = withPlayer { player, _ ->
+        player.prepareForVideoSwitch()
+        player.setUp(JZDataSource("file:///not-opened-a.mp4", "A"), player.screen)
+        assertEquals(Jzvd.SCREEN_NORMAL, player.screen)
+        assertEquals(Jzvd.STATE_NORMAL, player.state)
+        assertTrue(player.startButton.isEnabled)
+        assertEquals(View.VISIBLE, player.startButton.visibility)
+        assertEquals(View.VISIBLE, player.posterImageView.visibility)
+        assertEquals(View.INVISIBLE, player.loadingProgressBar.visibility)
     }
 
     @Test fun switchingReleasesOldMediaButRetainsTheFullscreenViewAndContainer() = withPlayer { player, media ->
@@ -74,6 +105,15 @@ class PlayerVideoSwitchTest {
         assertEquals(Jzvd.SCREEN_FULLSCREEN, player.screen)
         assertTrue(player.startButton.isEnabled)
         assertEquals("B", player.titleTextView.text.toString())
+        player.mediaInterface = FakeMedia(player)
+        player.onStatePreparing()
+        player.onStatePlaying()
+        assertEquals(View.INVISIBLE, player.posterImageView.visibility)
+        assertEquals(View.INVISIBLE, player.loadingProgressBar.visibility)
+        player.onClickUiToggle()
+        assertEquals(View.VISIBLE, player.bottomContainer.visibility)
+        assertEquals(Jzvd.SCREEN_FULLSCREEN, player.screen)
+        assertSame(parent, player.parent)
     }
 
     @Test fun failedLoadRetriesDetailsWithoutRestartingOldMedia() = withPlayer { player, media ->
