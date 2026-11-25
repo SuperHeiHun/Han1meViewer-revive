@@ -3,6 +3,7 @@ package com.yenaly.han1meviewer
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
@@ -10,6 +11,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.ui.activity.SettingsActivity
+import com.yenaly.han1meviewer.ui.adapter.RvWrapper
+import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
+import com.yenaly.han1meviewer.ui.view.video.PlaybackSeriesPositioner
 import com.yenaly.han1meviewer.ui.view.video.positionPlaybackVideo
 import org.junit.Assert.*
 import org.junit.Test
@@ -191,6 +195,181 @@ class PlaybackPlaylistPositioningTest {
             val saved = fixture.manager.onSaveInstanceState()
             fixture.manager.requests.clear()
             fixture.list.positionPlaybackVideo(videos, "30") { true }
+            fixture.manager.onRestoreInstanceState(saved)
+            fixture.layoutNow()
+        }
+        assertAfterPosition(scenario, fixture) { fixture.assertPosition(30) }
+    }
+
+    private class PortraitSeries(
+        val outer: Fixture,
+        val rows: Rows,
+        val wrapper: RvWrapper<Rows.Holder>,
+        val positioner: PlaybackSeriesPositioner,
+    ) {
+        val list get() = requireNotNull(wrapper.wrapper)
+        val manager get() = list.layoutManager as RecordingManager
+
+        fun rebind() {
+            wrapper.item = Unit
+            outer.layoutNow()
+        }
+
+        fun assertPosition(position: Int) {
+            Fixture(outer.root, list, manager).assertPosition(position)
+        }
+    }
+
+    /** A real nested series row and ConcatAdapter, not just a standalone horizontal list. */
+    private fun withPortraitSeries(test: (ActivityScenario<SettingsActivity>, PortraitSeries) -> Unit) =
+        withList { scenario, outer ->
+            lateinit var series: PortraitSeries
+            scenario.onActivity { activity ->
+                val rows = Rows(videos.size)
+                val positioner = PlaybackSeriesPositioner(rows)
+                val wrapper = rows.wrappedWith { RecordingManager(activity, RecyclerView.HORIZONTAL) }
+                wrapper.doOnBind { positioner.position(this) }
+                outer.list.adapter = ConcatAdapter(wrapper)
+                outer.layoutNow()
+                series = PortraitSeries(outer, rows, wrapper, positioner)
+            }
+            test(scenario, series)
+        }
+
+    @Test fun portraitRebindPositionsAnAlreadyCreatedNestedRow() = withPortraitSeries { scenario, series ->
+        lateinit var originalList: RecyclerView
+        scenario.onActivity {
+            originalList = series.list
+            series.positioner.submit(videos, "30") { true }
+            series.rebind()
+        }
+        assertAfterPosition(scenario, series.outer) {
+            assertSame(originalList, series.list)
+            series.assertPosition(30)
+        }
+    }
+
+    @Test fun portraitRebindUsesTheVisibleHolderNotTheLastCreatedPrefetchHolder() =
+        withPortraitSeries { scenario, series ->
+            lateinit var visibleList: RecyclerView
+            lateinit var unusedList: RecyclerView
+            scenario.onActivity {
+                visibleList = series.list
+                val unusedHolder = series.wrapper.createViewHolder(series.outer.list, 0)
+                unusedList = unusedHolder.itemView.findViewById(R.id.rv)
+                assertSame(unusedList, series.wrapper.wrapper)
+                series.positioner.submit(videos, "40") { true }
+                series.rebind()
+            }
+            assertAfterPosition(scenario, series.outer) {
+                assertSame(visibleList, series.list)
+                series.assertPosition(40)
+                assertTrue((unusedList.layoutManager as RecordingManager).requests.isEmpty())
+            }
+        }
+
+    @Test fun portraitDetachedBindingQueuesThePositionWithoutWaitingForAttachment() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                val holder = series.wrapper.createViewHolder(series.outer.list, 0)
+                val detachedList = holder.itemView.findViewById<RecyclerView>(R.id.rv)
+                series.positioner.submit(videos, "30") { true }
+                series.wrapper.bindViewHolder(holder, 0)
+                assertFalse(detachedList.isAttachedToWindow)
+                val manager = detachedList.layoutManager as RecordingManager
+                assertEquals(listOf(30 to 0), manager.requests)
+                series.outer.root.addView(holder.itemView, FrameLayout.LayoutParams(480, 80))
+                val fixture = Fixture(series.outer.root, detachedList, manager)
+                fixture.layoutNow()
+                fixture.assertPosition(30)
+            }
+        }
+
+    @Test fun portraitSameSizeOrderChangeRepositionsWithoutAnInnerAdapterNotification() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                series.positioner.submit(videos, "5") { true }
+                series.rebind()
+                series.assertPosition(5)
+                series.manager.requests.clear()
+                series.positioner.submit(videos.asReversed(), "5") { true }
+                series.rebind()
+            }
+            assertAfterPosition(scenario, series.outer) { series.assertPosition(54) }
+        }
+
+    @Test fun portraitRepeatedBindingDoesNotUndoTheUsersManualScroll() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                series.positioner.submit(videos, "30") { true }
+                series.rebind()
+                series.assertPosition(30)
+                series.manager.scrollToPositionWithOffset(2, 0)
+                series.outer.layoutNow()
+                series.manager.requests.clear()
+                series.rebind()
+            }
+            assertAfterPosition(scenario, series.outer) {
+                assertTrue(series.manager.requests.isEmpty())
+                assertEquals(2, series.manager.findFirstVisibleItemPosition())
+            }
+        }
+
+    @Test fun portraitEveryNewHolderReceivesTheCurrentRequestOnce() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                series.positioner.submit(videos, "30") { true }
+                series.rebind()
+                series.assertPosition(30)
+                val holder = series.wrapper.createViewHolder(series.outer.list, 0)
+                val otherList = holder.itemView.findViewById<RecyclerView>(R.id.rv)
+                series.wrapper.bindViewHolder(holder, 0)
+                series.wrapper.bindViewHolder(holder, 0)
+                assertEquals(listOf(30 to 0), (otherList.layoutManager as RecordingManager).requests)
+            }
+        }
+
+    @Test fun portraitClearedOrStaleRequestsCannotRepositionAReboundRow() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                var current = true
+                series.positioner.submit(videos, "30") { current }
+                current = false
+                series.rebind()
+                assertTrue(series.manager.requests.isEmpty())
+                series.positioner.submit(videos, "40") { true }
+                series.positioner.clear()
+                series.rebind()
+            }
+            assertAfterPosition(scenario, series.outer) { assertTrue(series.manager.requests.isEmpty()) }
+        }
+
+    @Test fun portraitRejectsAnUncommittedCountOrMissingCurrentVideo() =
+        withPortraitSeries { scenario, series ->
+            scenario.onActivity {
+                series.positioner.submit(videos.dropLast(1), "30") { true }
+                series.rebind()
+                series.positioner.submit(videos, "missing") { true }
+                series.rebind()
+                series.positioner.submit(videos, "") { true }
+                series.rebind()
+                val unrelated = PlaybackSeriesPositioner(Rows(videos.size))
+                unrelated.submit(videos, "30") { true }
+                unrelated.position(series.list)
+            }
+            assertAfterPosition(scenario, series.outer) { assertTrue(series.manager.requests.isEmpty()) }
+        }
+
+    @Test fun portraitPendingPositionWinsOverLaterRestoredScrollState() = withList(RecyclerView.HORIZONTAL) { scenario, fixture ->
+        scenario.onActivity {
+            val adapter = requireNotNull(fixture.list.adapter)
+            val positioner = PlaybackSeriesPositioner(adapter)
+            fixture.manager.scrollToPositionWithOffset(2, 0)
+            fixture.layoutNow()
+            val saved = fixture.manager.onSaveInstanceState()
+            fixture.manager.requests.clear()
+            positioner.submit(videos, "30") { true }
+            positioner.position(fixture.list)
             fixture.manager.onRestoreInstanceState(saved)
             fixture.layoutNow()
         }

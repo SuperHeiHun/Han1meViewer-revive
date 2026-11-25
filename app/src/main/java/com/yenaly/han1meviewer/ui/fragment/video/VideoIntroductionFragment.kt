@@ -63,7 +63,7 @@ import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.PlaybackPlaylistControlsAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
 import com.yenaly.han1meviewer.ui.adapter.VideoColumnTitleAdapter
-import com.yenaly.han1meviewer.ui.view.video.positionPlaybackVideo
+import com.yenaly.han1meviewer.ui.view.video.PlaybackSeriesPositioner
 import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.requestPostNotificationPermission
@@ -148,7 +148,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
     }
     private var playlistPositionGeneration = 0L
-    private var committedPlaylistCode: String? = null
+    private val playlistPositioner = PlaybackSeriesPositioner(playlistAdapter)
     private val relatedTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.related_video)
     private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT)
@@ -182,7 +182,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     }
 
     override fun initData(savedInstanceState: Bundle?) {
-        playlistWrapper.doOnWrap { positionPlaylist(this) }
+        playlistWrapper.doOnBind { playlistPositioner.position(this) }
         binding.rvVideoIntro.layoutManager = layoutManager
         binding.rvVideoIntro.adapter = multi
         binding.rvVideoIntro.addOnItemTouchListener(VideoIntroTouchListener())
@@ -405,7 +405,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
     private fun invalidatePlaylistPosition() {
         playlistPositionGeneration++
-        committedPlaylistCode = null
+        playlistPositioner.clear()
     }
 
     private fun submitPlaylist(reversed: Boolean) {
@@ -419,23 +419,16 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 owner.lifecycle.currentState == Lifecycle.State.DESTROYED || viewModel.videoCode != code ||
                 viewModel.fromDownload || Preferences.playbackPlaylistReversed != reversed ||
                 viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return@submitList
-            committedPlaylistCode = code
-            playlistWrapper.wrapper?.let(::positionPlaylist)
-        }
-    }
-
-    private fun positionPlaylist(list: RecyclerView) {
-        val code = committedPlaylistCode ?: return
-        val owner = viewLifecycleOwnerLiveData.value ?: return
-        val generation = playlistPositionGeneration
-        val reversed = Preferences.playbackPlaylistReversed
-        list.positionPlaybackVideo(playlistAdapter.items, code) {
-            generation == playlistPositionGeneration && committedPlaylistCode == code &&
-                    viewModel.videoCode == code && playlistWrapper.wrapper === list &&
+            playlistPositioner.submit(playlistAdapter.items, code) {
+                generation == playlistPositionGeneration && viewModel.videoCode == code &&
                     viewLifecycleOwnerLiveData.value === owner &&
                     owner.lifecycle.currentState != Lifecycle.State.DESTROYED &&
                     !viewModel.fromDownload && Preferences.playbackPlaylistReversed == reversed &&
                     viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success
+            }
+            // Rebind the actual row, not whichever detached holder was created most recently.
+            // Offscreen cached rows will receive the same request when they are bound again.
+            playlistWrapper.item = Unit
         }
     }
 

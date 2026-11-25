@@ -34,12 +34,22 @@ class RvWrapper<VH : ViewHolder>(
         private set
 
     private var onWrap: (RecyclerView.() -> Unit)? = null
+    private var onBind: (RecyclerView.() -> Unit)? = null
 
     fun doOnWrap(block: RecyclerView.() -> Unit) {
         onWrap = block
     }
 
-    override fun onBindViewHolder(holder: QuickViewHolder, item: Unit?) = Unit
+    /** Runs for the actual bound row, including recycled or prefetched holders. */
+    fun doOnBind(block: RecyclerView.() -> Unit) {
+        onBind = block
+    }
+
+    override fun onBindViewHolder(holder: QuickViewHolder, item: Unit?) {
+        val list = holder.getView<RecyclerView>(R.id.rv)
+        wrapper = list
+        onBind?.invoke(list)
+    }
 
     override fun onCreateViewHolder(
         context: Context,
