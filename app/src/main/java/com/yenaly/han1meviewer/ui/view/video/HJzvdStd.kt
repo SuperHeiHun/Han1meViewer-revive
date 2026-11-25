@@ -177,6 +177,7 @@ class HJzvdStd @JvmOverloads constructor(
     private var playlistPopup: PopupWindow? = null
     private var controlsPopup: PopupWindow? = null
     private var isVideoLoading = false
+    private var wifiListenerContext: Context? = null
     var onPlaylistVideoSelected: ((String) -> Unit)? = null
     var onVideoCompleted: ((String) -> Unit)? = null
 
@@ -386,6 +387,19 @@ class HJzvdStd @JvmOverloads constructor(
         dismissPlaybackPlaylist()
         controlsPopup?.dismiss()
         super.reset()
+    }
+
+    override fun registerWifiListener(context: Context?) {
+        if (context == null || wifiListenerContext != null) return
+        super.registerWifiListener(context)
+        wifiListenerContext = context
+    }
+
+    override fun unregisterWifiListener(context: Context?) {
+        // JzvdStd.reset also runs before first playback and more than once when switching.
+        val registeredContext = wifiListenerContext ?: return
+        super.unregisterWifiListener(registeredContext)
+        wifiListenerContext = null
     }
 
     /** Release only this media session, without reparenting the fullscreen view. */

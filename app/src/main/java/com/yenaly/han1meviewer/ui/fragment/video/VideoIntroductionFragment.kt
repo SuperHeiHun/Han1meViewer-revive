@@ -229,7 +229,6 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
                         is VideoLoadingState.Loading -> {
                             blockFilterJob?.cancel()
-                            binding.rvVideoIntro.findParent<ViewPager2>().isUserInputEnabled = true
                         }
 
                         is VideoLoadingState.Success -> {

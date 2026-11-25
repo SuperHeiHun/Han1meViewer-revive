@@ -1,5 +1,10 @@
 package com.yenaly.han1meviewer
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.SurfaceTexture
 import android.view.Surface
 import android.view.View
@@ -122,6 +127,47 @@ class PlayerVideoSwitchTest {
         assertEquals(View.VISIBLE, button.visibility)
         player.updatePlaybackPlaylist(PlaybackPlaylist())
         assertEquals(View.GONE, button.visibility)
+    }
+
+    @Test fun cleanupWithoutWifiRegistrationDoesNotUnregisterReceiver() = withPlayer { player, _ ->
+        val context = RecordingWifiContext(player.context)
+        player.unregisterWifiListener(context)
+        assertEquals(0, context.unregisterCount)
+    }
+
+    @Test fun repeatedLoadingAndResetUnregisterWifiExactlyOnce() = withPlayer { player, _ ->
+        val context = RecordingWifiContext(player.context)
+        player.registerWifiListener(context)
+        player.registerWifiListener(context)
+        assertEquals(1, context.registerCount)
+        player.prepareForVideoSwitch()
+        player.prepareForVideoSwitch()
+        player.reset()
+        assertEquals(1, context.unregisterCount)
+        player.registerWifiListener(context)
+        player.reset()
+        assertEquals(2, context.registerCount)
+        assertEquals(2, context.unregisterCount)
+    }
+
+    /** Records the library's receiver calls without registering a real broadcast receiver. */
+    private class RecordingWifiContext(base: Context) : ContextWrapper(base) {
+        var registerCount = 0
+        var unregisterCount = 0
+        private var registeredReceiver: BroadcastReceiver? = null
+
+        override fun registerReceiver(receiver: BroadcastReceiver?, filter: IntentFilter?): Intent? {
+            check(registeredReceiver == null)
+            registeredReceiver = requireNotNull(receiver)
+            registerCount++
+            return null
+        }
+
+        override fun unregisterReceiver(receiver: BroadcastReceiver) {
+            unregisterCount++
+            check(receiver === registeredReceiver)
+            registeredReceiver = null
+        }
     }
 
     private class FakeMedia(player: HJzvdStd) : JZMediaInterface(player) {

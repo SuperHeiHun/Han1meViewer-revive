@@ -157,6 +157,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                         }
 
                         is VideoLoadingState.Loading -> {
+                            // The introduction fragment may not be attached to this pager yet.
+                            binding.videoVp.isUserInputEnabled = true
                             binding.videoPlayer.prepareForVideoSwitch()
                         }
 
