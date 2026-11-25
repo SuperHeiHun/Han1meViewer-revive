@@ -2,6 +2,7 @@ package com.yenaly.han1meviewer.ui.view.video
 
 import android.content.pm.ActivityInfo
 import android.graphics.SurfaceTexture
+import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.PlaybackParams
 import android.os.Handler
@@ -10,6 +11,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.Surface
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -366,6 +368,45 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
 }
 
 class SystemMediaKernel(jzvd: Jzvd) : JZMediaSystem(jzvd), HMediaKernel {
+    override fun prepare() {
+        val uri = jzvd.jzDataSource.currentUrl.toString().toUri()
+        if (uri.scheme != "content") {
+            super.prepare()
+            return
+        }
+        // The upstream String data-source overload cannot resolve our SAF grant.
+        // Only local content uses this branch; online playback keeps the upstream path.
+        val texture = SAVED_SURFACE ?: jzvd.textureView?.surfaceTexture
+        release()
+        SAVED_SURFACE = texture
+        mMediaHandlerThread = HandlerThread("JZVD").also { it.start() }
+        mMediaHandler = Handler(mMediaHandlerThread.looper)
+        handler = Handler(Looper.getMainLooper())
+        mMediaHandler.post {
+            try {
+                val player = MediaPlayer()
+                mediaPlayer = player
+                player.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE).build())
+                player.isLooping = jzvd.jzDataSource.looping
+                player.setScreenOnWhilePlaying(true)
+                player.setOnPreparedListener(this)
+                player.setOnCompletionListener(this)
+                player.setOnBufferingUpdateListener(this)
+                player.setOnSeekCompleteListener(this)
+                player.setOnErrorListener(this)
+                player.setOnInfoListener(this)
+                player.setOnVideoSizeChangedListener(this)
+                player.setDataSource(jzvd.context, uri)
+                texture?.let { Surface(it).also { surface -> player.setSurface(surface); surface.release() } }
+                player.prepareAsync()
+            } catch (e: Exception) {
+                Log.e("SystemMediaKernel", "Cannot open downloaded content", e)
+                handler.post { jzvd.onError(MediaPlayer.MEDIA_ERROR_UNKNOWN, 0) }
+            }
+        }
+    }
+
     // #issue-26: 有的手機長按快進會報錯，合理懷疑是不是因爲沒有加 post
     // #issue-28: 有的平板长按快进也会报错，结果是 IllegalArgumentException，很奇怪，两次 try-catch 处理试试。
     override fun setSpeed(speed: Float) {

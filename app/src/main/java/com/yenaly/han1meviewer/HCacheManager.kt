@@ -1,9 +1,10 @@
 package com.yenaly.han1meviewer
 
+import android.net.Uri
 import androidx.annotation.WorkerThread
 import com.yenaly.han1meviewer.logic.DatabaseRepo
+import com.yenaly.han1meviewer.logic.download.DownloadStorage
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
-import com.yenaly.yenaly_libs.utils.createFileIfNotExists
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -11,7 +12,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
-import java.io.File
 
 /**
  * @project Han1meViewer
@@ -20,38 +20,35 @@ import java.io.File
  */
 object HCacheManager {
 
-    private const val CACHE_INFO_FILE = "info.json"
-
     /**
      * 保存 HanimeVideo 信息，用于下载后直接在 APP 内观看
      */
     @OptIn(ExperimentalSerializationApi::class)
     @WorkerThread
-    fun saveHanimeVideoInfo(videoCode: String, info: HanimeVideo) {
-        val folder = HFileManager.getDownloadVideoFolder(videoCode)
-        val file = File(folder, CACHE_INFO_FILE)
-        file.createFileIfNotExists()
-        HJson.encodeToStream(info, file.outputStream())
+    fun saveHanimeVideoInfo(folder: Uri, info: HanimeVideo) {
+        val file = requireNotNull(DownloadStorage.file(folder, DownloadStorage.INFO_FILE, "application/json", create = true))
+        DownloadStorage.output(file).use { HJson.encodeToStream(info, it) }
     }
 
     /**
      * 加载 HanimeVideo 信息，用于下载后直接在 APP 内观看
      */
     @OptIn(ExperimentalSerializationApi::class)
-    fun loadHanimeVideoInfo(videoCode: String): Flow<HanimeVideo?> {
+    fun loadHanimeVideoInfo(videoCode: String, quality: String? = null): Flow<HanimeVideo?> {
         return flow {
-            val entity = DatabaseRepo.HanimeDownload.find(videoCode)
+            val entity = if (quality == null) DatabaseRepo.HanimeDownload.find(videoCode)
+                else DatabaseRepo.HanimeDownload.find(videoCode, quality)
             if (entity != null) {
-                val folder = HFileManager.getDownloadVideoFolder(videoCode)
-                val cacheFile = File(folder, CACHE_INFO_FILE)
                 val info = kotlin.runCatching {
-                    if (cacheFile.exists()) HJson.decodeFromStream<HanimeVideo?>(cacheFile.inputStream()) else null
+                    val folder = DownloadStorage.folderForVideo(entity.videoUri, videoCode)
+                    val cacheFile = folder?.let { DownloadStorage.file(it, DownloadStorage.INFO_FILE, "application/json", create = false) }
+                    cacheFile?.let { uri -> DownloadStorage.input(uri).use { HJson.decodeFromStream<HanimeVideo?>(it) } }
                 }.getOrNull()
                 emit(
                     info?.copy(
                         videoUrls = linkedMapOf(
                             entity.quality to HanimeLink(
-                                entity.videoUri, HFileManager.DEF_VIDEO_TYPE
+                                entity.videoUri, runCatching { DownloadStorage.suffix(entity.videoUri) }.getOrDefault(HFileManager.DEF_VIDEO_TYPE)
                             )
                         ),
                         coverUrl = entity.coverUri ?: entity.coverUrl

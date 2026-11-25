@@ -22,6 +22,7 @@ import cn.jzvd.JZMediaInterface
 import cn.jzvd.Jzvd
 import coil.load
 import com.yenaly.han1meviewer.COMMENT_TYPE
+import com.yenaly.han1meviewer.DOWNLOAD_QUALITY
 import com.yenaly.han1meviewer.FROM_DOWNLOAD
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.R
@@ -96,6 +97,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
 
         // 必须 fromDownload 在前，videoCode 在后
         viewModel.fromDownload = fromDownload
+        viewModel.downloadQuality = intent.getStringExtra(DOWNLOAD_QUALITY)
         requireNotNull(videoCodeByWebsite ?: videoCode).let {
             viewModel.videoCode = it
             commentViewModel.code = it

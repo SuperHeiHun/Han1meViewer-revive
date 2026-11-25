@@ -10,6 +10,7 @@ import androidx.work.await
 import androidx.work.workDataOf
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.logic.dao.DownloadDatabase
+import com.yenaly.han1meviewer.logic.download.DownloadStorage
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
 import com.yenaly.han1meviewer.logic.state.DownloadState
 import com.yenaly.han1meviewer.util.runSuspendCatching
@@ -192,7 +193,8 @@ object HanimeDownloadManagerV2 {
         args: HanimeDownloadWorker.Args,
         redownload: Boolean = false, waiting: Boolean = false
     ) {
-        scope.launch { downloadChannel.send(DownloadMsg.Add(args, redownload, waiting)) }
+        val task = args.copy(downloadRoot = args.downloadRoot ?: DownloadStorage.currentRoot)
+        scope.launch { downloadChannel.send(DownloadMsg.Add(task, redownload, waiting)) }
     }
 
     /**
@@ -279,6 +281,8 @@ object HanimeDownloadManagerV2 {
                     HanimeDownloadWorker.HANIME_NAME to args.hanimeName,
                     HanimeDownloadWorker.VIDEO_CODE to args.videoCode,
                     HanimeDownloadWorker.COVER_URL to args.coverUrl,
+                    HanimeDownloadWorker.DOWNLOAD_ROOT to args.downloadRoot,
+                    HanimeDownloadWorker.SAVED_VIDEO_URI to args.videoUri,
                     HanimeDownloadWorker.REDOWNLOAD to redownload,
                     HanimeDownloadWorker.IN_WAITING_QUEUE to waiting,
                     HanimeDownloadWorker.DELETE to delete

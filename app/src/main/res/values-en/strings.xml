@@ -115,6 +115,12 @@
     <string name="cancel_download">Cancel Download</string>
     <string name="local_playback">Local Playback</string>
     <string name="download_path">Download Path</string>
+    <string name="download_path_choose">Choose folder</string>
+    <string name="download_path_reset">Use default path</string>
+    <string name="download_path_change_note">Use the system picker to select a readable, writable folder that supports resumable downloads. Changes apply only to new tasks. Existing tasks (including re-downloads) keep their original location; old files are not moved or deleted. Long-press to copy the current path or folder URI.</string>
+    <string name="download_path_select_failed">Cannot use this folder. The previous setting is unchanged. Choose a readable, writable local folder and allow access.</string>
+    <string name="download_path_unavailable">The download location is unavailable or the file is missing. Check storage and folder access. Downloads will not be redirected to another location.</string>
+    <string name="download_file_incomplete">The download file length is incorrect. Please re-download this task.</string>
     <string name="help">Help</string>
     <string name="reply">Reply</string>
     <string name="reply_child_comment">Reply to Child Comment</string>

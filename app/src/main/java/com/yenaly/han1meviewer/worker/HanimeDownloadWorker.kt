@@ -4,10 +4,12 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.content.Context
 import android.content.pm.ServiceInfo
+import android.graphics.Bitmap
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.graphics.drawable.toBitmapOrNull
 import androidx.core.net.toUri
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
@@ -25,16 +27,16 @@ import com.yenaly.han1meviewer.EMPTY_STRING
 import com.yenaly.han1meviewer.HFileManager
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.DatabaseRepo
+import com.yenaly.han1meviewer.logic.download.DownloadStorage
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
 import com.yenaly.han1meviewer.logic.network.ServiceCreator
 import com.yenaly.han1meviewer.logic.state.DownloadState
 import com.yenaly.han1meviewer.util.HImageMeower
 import com.yenaly.han1meviewer.util.await
-import com.yenaly.yenaly_libs.utils.createFileIfNotExists
-import com.yenaly.yenaly_libs.utils.saveTo
 import com.yenaly.yenaly_libs.utils.showShortToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -44,9 +46,8 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody
 import okhttp3.internal.closeQuietly
-import java.io.File
+import java.io.IOException
 import java.io.InputStream
-import java.io.RandomAccessFile
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
@@ -68,6 +69,8 @@ class HanimeDownloadWorker(
         val hanimeName: String,
         val videoCode: String,
         val coverUrl: String,
+        val downloadRoot: String? = null,
+        val videoUri: String? = null,
     ) {
         companion object {
             fun fromEntity(entity: HanimeDownloadEntity): Args {
@@ -78,6 +81,7 @@ class HanimeDownloadWorker(
                     hanimeName = entity.title,
                     videoCode = entity.videoCode,
                     coverUrl = entity.coverUrl,
+                    videoUri = entity.videoUri,
                 )
             }
         }
@@ -98,6 +102,8 @@ class HanimeDownloadWorker(
         const val HANIME_NAME = "hanime_name"
         const val VIDEO_CODE = "video_code"
         const val COVER_URL = "cover_url"
+        const val DOWNLOAD_ROOT = "download_root"
+        const val SAVED_VIDEO_URI = "saved_video_uri"
         const val REDOWNLOAD = "redownload"
         const val IN_WAITING_QUEUE = "in_waiting_queue"
         // const val RELEASE_DATE = "release_date"
@@ -150,6 +156,9 @@ class HanimeDownloadWorker(
     private val quality by inputData(QUALITY, EMPTY_STRING)
     private val videoCode by inputData(VIDEO_CODE, EMPTY_STRING)
     private val coverUrl by inputData(COVER_URL, EMPTY_STRING)
+    // Requests persisted before directory selection existed belong to the legacy root.
+    private val downloadRoot by inputData(DOWNLOAD_ROOT, DownloadStorage.legacyRoot)
+    private val savedVideoUri by inputData(SAVED_VIDEO_URI, EMPTY_STRING)
 
     private val fastPathCancel by inputData(FAST_PATH_CANCEL, false)
     private val shouldDelete by inputData(DELETE, false)
@@ -159,7 +168,6 @@ class HanimeDownloadWorker(
     private val downloadId = Random.nextInt()
 
     private val mainScope = CoroutineScope(Dispatchers.Main.immediate)
-    private val dbScope = CoroutineScope(Dispatchers.IO)
 
     override suspend fun doWork(): Result {
         if (fastPathCancel) return Result.success()
@@ -167,90 +175,63 @@ class HanimeDownloadWorker(
         return download()
     }
 
-    private suspend fun createNewRaf(file: File) {
-        return withContext(Dispatchers.IO) {
-            var raf: RandomAccessFile? = null
-            var response: Response? = null
-            var body: ResponseBody? = null
+    private suspend fun createDownload(existing: HanimeDownloadEntity?): HanimeDownloadEntity {
+        val request = Request.Builder().url(downloadUrl).get().build()
+        ServiceCreator.downloadClient.newCall(request).await().use { response ->
+            if (!response.isSuccessful) throw IOException(response.message)
+            val len = response.body?.contentLength() ?: -1L
+            if (len <= 0) throw IOException(context.getString(R.string.get_file_info_failed))
+            val uri = existing?.videoUri?.toUri() ?: DownloadStorage.createVideo(
+                downloadRoot, videoCode, hanimeName, quality, videoType)
             try {
-                file.createFileIfNotExists()
-                raf = RandomAccessFile(file, "rwd")
-                val request = Request.Builder().url(downloadUrl).get().build()
-                response = ServiceCreator.downloadClient.newCall(request).await()
-                if (response.isSuccessful) {
-                    body = response.body
-                    body?.let {
-                        val len = body.contentLength()
-                        if (len > 0) {
-                            raf.setLength(len)
-                            val entity = HanimeDownloadEntity(
-                                // 创建文件时不需要下载 coverImage
-                                coverUrl = coverUrl, coverUri = null,
-                                title = hanimeName,
-                                addDate = System.currentTimeMillis(), videoCode = videoCode,
-                                videoUri = file.toUri().toString(), quality = quality,
-                                videoUrl = downloadUrl, length = len, downloadedLength = 0,
-                                // isDownloading = false
-                                state = DownloadState.Queued
-                            )
-                            DatabaseRepo.HanimeDownload.insert(entity)
-                        }
-                    }
-                }
+                DownloadStorage.openVideo(uri).use { it.setLength(len) }
             } catch (e: Exception) {
-                // 创建，但是并没有下载接收到文件大小，删除文件
-                if (file.exists() && file.length() == 0L) {
-                    // HFileManager.getDownloadVideoFolder(videoCode).deleteRecursively()
-                    // 不应该直接删除文件夹，因为可能存在其他分辨率的文件
-                    dbScope.launch {
-//                        val count = DatabaseRepo.HanimeDownload.countBy(videoCode)
-//                        HFileManager.deleteDownload(videoCode, count, file)
-                        HFileManager.getDownloadVideoFolder(videoCode).deleteRecursively()
-                    }
-                }
-                e.printStackTrace()
-            } finally {
-                raf?.closeQuietly()
-                response?.closeQuietly()
-                body?.closeQuietly()
+                // Only a newly created target may be cleaned up; never delete sibling resolutions.
+                if (existing == null) runCatching { DownloadStorage.delete(uri) }
+                throw e
             }
+            val entity = HanimeDownloadEntity(
+                coverUrl = coverUrl, coverUri = existing?.coverUri,
+                title = hanimeName, addDate = System.currentTimeMillis(), videoCode = videoCode,
+                videoUri = uri.toString(), quality = quality, videoUrl = downloadUrl,
+                length = len, downloadedLength = 0, state = DownloadState.Queued,
+                id = existing?.id ?: 0)
+            if (existing == null) DatabaseRepo.HanimeDownload.insert(entity)
+            else DatabaseRepo.HanimeDownload.update(entity)
+            return DatabaseRepo.HanimeDownload.find(videoCode, quality)
+                ?: throw IOException(context.getString(R.string.get_file_info_failed))
         }
     }
 
     private suspend fun download(): Result {
         return withContext(Dispatchers.IO) {
-            val file = HFileManager.getDownloadVideoFile(
-                videoCode, hanimeName, quality, suffix = videoType
-            )
-            // redownload 不一定要删除全部文件夹，因为可能有不同分辨率
-            if (shouldRedownload || shouldDelete) {
-                // 注意顺序
-//                val count = DatabaseRepo.HanimeDownload.countBy(videoCode)
-//                HFileManager.deleteDownload(videoCode, count, file)
-                HFileManager.getDownloadVideoFolder(videoCode).deleteRecursively()
-                DatabaseRepo.HanimeDownload.delete(videoCode)
+            val entity = try {
+                val existing = DatabaseRepo.HanimeDownload.find(videoCode, quality)
+                if (savedVideoUri.isNotBlank() && existing != null && existing.videoUri != savedVideoUri) {
+                    // A stale resume/delete request must never operate on a replacement task.
+                    throw IOException(context.getString(R.string.download_path_unavailable))
+                }
                 if (shouldDelete) {
+                    if (existing != null) {
+                        DownloadStorage.delete(existing.videoUri.toUri())
+                        DatabaseRepo.HanimeDownload.delete(existing)
+                        runCatching { DownloadStorage.cleanupSidecars(existing) }
+                    }
+                    cancelDownloadNotification()
                     return@withContext Result.success()
                 }
-            }
-            val entity = DatabaseRepo.HanimeDownload.find(videoCode, quality) ?: kotlin.run {
-                // 如果不存在，创建新的 raf
-                createNewRaf(file)
-                DatabaseRepo.HanimeDownload.find(videoCode, quality)
-                    ?: return@withContext kotlin.run {
-                        Log.d(TAG, "entity is null, create new raf failed")
-                        showFailureNotification(context.getString(R.string.get_file_info_failed))
-                        mainScope.launch {
-                            showShortToast(
-                                context.getString(R.string.download_task_failed_s, hanimeName)
-                            )
-                        }
-                        Result.failure()
-                    }
-            }
-
-            if (entity.coverUri == null) {
-                updateCoverImage(entity)
+                if (existing == null && savedVideoUri.isNotBlank()) {
+                    // A removed task must not silently reappear in the newly selected directory.
+                    throw IOException(context.getString(R.string.download_path_unavailable))
+                }
+                val prepared = if (existing == null || shouldRedownload) createDownload(existing) else existing
+                if (prepared.coverUri == null) updateCoverImage(prepared) else prepared
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                showFailureNotification(e.localizedMessage)
+                mainScope.launch { showShortToast(R.string.download_path_unavailable) }
+                return@withContext Result.failure(workDataOf(DownloadState.STATE to DownloadState.Failed.mask))
             }
             if (isInWaitingQueue) {
                 DatabaseRepo.HanimeDownload.update(
@@ -261,14 +242,17 @@ class HanimeDownloadWorker(
 
             var downloadedLength = entity.downloadedLength
             val needRange = entity.downloadedLength > 0
-            var raf: RandomAccessFile? = null
+            var raf: DownloadStorage.SeekableOutput? = null
             var response: Response? = null
             var body: ResponseBody? = null
             var bodyStream: InputStream? = null
 
             var result: Result = Result.failure()
             try {
-                raf = RandomAccessFile(file, "rwd")
+                raf = DownloadStorage.openVideo(entity.videoUri.toUri())
+                if (raf.length < entity.downloadedLength) {
+                    throw IOException(context.getString(R.string.download_file_incomplete))
+                }
                 val request = Request.Builder().url(downloadUrl)
                     .also { if (needRange) it.header("Range", "bytes=${entity.downloadedLength}-") }
                     .get().build()
@@ -285,6 +269,7 @@ class HanimeDownloadWorker(
                             raf.write(buffer, 0, len)
                             downloadedLength += len
                             if (System.currentTimeMillis() - delayTime > RESPONSE_INTERVAL) {
+                                raf.flush()
                                 val progress = downloadedLength * 100 / entity.length
                                 setProgress(workDataOf(PROGRESS to progress.toInt()))
                                 updateDownloadNotification(progress.toInt())
@@ -300,6 +285,8 @@ class HanimeDownloadWorker(
                             len = bodyStream.read(buffer)
                         }
                     }
+                    if (downloadedLength != entity.length) throw IOException(context.getString(R.string.download_file_incomplete))
+                    raf.flush()
                     showSuccessNotification()
                     result = Result.success(
                         workDataOf(DownloadState.STATE to DownloadState.Finished.mask)
@@ -334,44 +321,46 @@ class HanimeDownloadWorker(
                     )
                 }
             } finally {
-                // HanimeDownloadManager.notify(newEntity)
-
                 val state = DownloadState.from(
                     result.outputData.getInt(DownloadState.STATE, DownloadState.Unknown.mask)
                 )
-                // 为什么要用 dbScope 包住？
-                // 使用 dbScope 是为了确保即使当前协程因任务取消而失效，
-                // “update”挂起函数仍然能够找到有效的协程作用域来更新数据库。
-                // 这也是一个历史遗留问题。
-                dbScope.launch {
-                    val newEntity = entity.copy(
-                        // isDownloading = false,
-                        state = state,
-                        downloadedLength = downloadedLength
-                    )
-                    DatabaseRepo.HanimeDownload.update(newEntity)
-                    Log.d(TAG, "finally -> $newEntity")
+                try {
+                    // Finish persisting a pause before this worker exits.
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        runCatching { raf?.flush() }
+                        val newEntity = entity.copy(
+                            state = state,
+                            downloadedLength = downloadedLength
+                        )
+                        DatabaseRepo.HanimeDownload.update(newEntity)
+                        Log.d(TAG, "finally -> $newEntity")
+                    }
+                } finally {
+                    raf?.closeQuietly()
+                    response?.closeQuietly()
+                    body?.closeQuietly()
+                    bodyStream?.closeQuietly()
                 }
-                raf?.closeQuietly()
-                response?.closeQuietly()
-                body?.closeQuietly()
-                bodyStream?.closeQuietly()
             }
             return@withContext result
         }
     }
 
-    private fun CoroutineScope.updateCoverImage(entity: HanimeDownloadEntity) {
-        launch {
+    private suspend fun updateCoverImage(entity: HanimeDownloadEntity): HanimeDownloadEntity {
+        return try {
             val imgRes = HImageMeower.execute(entity.coverUrl)
-            val file = HFileManager.getDownloadVideoCoverFile(videoCode, hanimeName)
-            val isSuccess = imgRes.drawable?.saveTo(file) == true
-            if (isSuccess) {
-                val coverUri = file.toUri().toString()
-                DatabaseRepo.HanimeDownload.update(entity.copy(coverUri = coverUri))
-                // 不得不用 var，要不然有点难搞
-                entity.coverUri = coverUri
-            }
+            val bitmap = imgRes.drawable?.toBitmapOrNull() ?: return entity
+            val folder = DownloadStorage.folderForVideo(entity.videoUri, entity.videoCode) ?: return entity
+            val file = DownloadStorage.file(folder, HFileManager.createVideoCoverName(entity.title), "image/png", create = true)
+                ?: return entity
+            val saved = DownloadStorage.output(file).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            if (!saved) return entity
+            entity.copy(coverUri = file.toString()).also { DatabaseRepo.HanimeDownload.update(it) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // A missing cover must not prevent the video download.
+            entity
         }
     }
 

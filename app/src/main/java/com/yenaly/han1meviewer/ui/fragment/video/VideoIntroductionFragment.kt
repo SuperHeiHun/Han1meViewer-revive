@@ -46,8 +46,10 @@ import com.yenaly.han1meviewer.databinding.ItemVideoIntroductionBinding
 import com.yenaly.han1meviewer.getHanimeShareText
 import com.yenaly.han1meviewer.getHanimeVideoDownloadLink
 import com.yenaly.han1meviewer.getHanimeVideoLink
-import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
+import com.yenaly.han1meviewer.logic.DatabaseRepo
 import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
+import com.yenaly.han1meviewer.logic.download.DownloadStorage
+import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 import com.yenaly.han1meviewer.logic.search.quotedSearchText
@@ -77,12 +79,15 @@ import com.yenaly.yenaly_libs.utils.unsafeLazy
 import com.yenaly.yenaly_libs.utils.view.clickTrigger
 import com.yenaly.yenaly_libs.utils.view.clickWithCondition
 import com.yenaly.yenaly_libs.utils.view.findParent
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.format
 
 /**
@@ -400,7 +405,23 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private suspend fun enqueueDownloadWork(videoData: HanimeVideo, redownload: Boolean = false) {
         requireContext().requestPostNotificationPermission()
         val checkedQuality = requireNotNull(checkedQuality)
-        HCacheManager.saveHanimeVideoInfo(viewModel.videoCode, videoData)
+        val root = DownloadStorage.currentRoot
+        try {
+            withContext(Dispatchers.IO) {
+                val existing = DatabaseRepo.HanimeDownload.find(viewModel.videoCode, checkedQuality)
+                val folder = if (existing != null) {
+                    DownloadStorage.folderForVideo(existing.videoUri, existing.videoCode)
+                } else {
+                    DownloadStorage.videoFolder(root, viewModel.videoCode, create = true)
+                }
+                HCacheManager.saveHanimeVideoInfo(requireNotNull(folder), videoData)
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            showShortToast(R.string.download_path_unavailable)
+            return
+        }
         // HanimeDownloadManager.addTask(
         HanimeDownloadManagerV2.addTask(
             HanimeDownloadWorker.Args(
@@ -410,6 +431,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 hanimeName = videoData.title,
                 videoCode = viewModel.videoCode,
                 coverUrl = videoData.coverUrl,
+                downloadRoot = root,
             ),
             redownload = redownload
         )

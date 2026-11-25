@@ -197,6 +197,10 @@ object Preferences {
 
     // 下载 相關
 
+    /** Device-specific SAF grant; deliberately excluded from portable backups. */
+    val downloadTreeUri: String
+        get() = preferenceSp.getString(DownloadSettingsFragment.DOWNLOAD_PATH, EMPTY_STRING).orEmpty()
+
     val downloadCountLimit: Int
         get() = preferenceSp.getInt(
             DownloadSettingsFragment.DOWNLOAD_COUNT_LIMIT,

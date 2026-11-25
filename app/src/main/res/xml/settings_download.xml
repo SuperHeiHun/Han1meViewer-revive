@@ -5,7 +5,14 @@
     <com.yenaly.yenaly_libs.base.preference.LongClickablePreference
         app:iconSpaceReserved="false"
         app:key="download_path"
+        app:persistent="false"
         app:title="@string/download_path" />
+
+    <Preference
+        app:iconSpaceReserved="false"
+        app:key="download_path_help"
+        app:selectable="false"
+        app:summary="@string/download_path_change_note" />
 
     <SeekBarPreference
         android:max="10"

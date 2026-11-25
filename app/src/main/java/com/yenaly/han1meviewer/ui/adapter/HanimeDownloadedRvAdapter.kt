@@ -6,13 +6,10 @@ import android.graphics.Shader
 import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.core.net.toFile
-import androidx.core.net.toUri
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.DiffUtil
 import com.chad.library.adapter4.BaseDifferAdapter
 import com.chad.library.adapter4.viewholder.DataBindingHolder
-import com.yenaly.han1meviewer.HFileManager
 import com.yenaly.han1meviewer.LOCAL_DATE_TIME_FORMAT
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VIDEO_CODE
@@ -23,6 +20,7 @@ import com.yenaly.han1meviewer.ui.fragment.home.download.DownloadedFragment
 import com.yenaly.han1meviewer.util.HImageMeower.loadUnhappily
 import com.yenaly.han1meviewer.util.openDownloadedHanimeVideoInActivity
 import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.worker.HanimeDownloadManagerV2
 import com.yenaly.yenaly_libs.utils.activity
 import com.yenaly.yenaly_libs.utils.dpF
 import com.yenaly.yenaly_libs.utils.formatFileSizeV2
@@ -99,8 +97,7 @@ class HanimeDownloadedRvAdapter(private val fragment: DownloadedFragment) :
                 TimeZone.currentSystemDefault()
             ).format(LOCAL_DATE_TIME_FORMAT)
 
-        val realSize = item.video.videoUri.toUri().toFile().length()
-        holder.binding.tvSize.text = if (realSize == 0L) {
+        holder.binding.tvSize.text = if (item.video.length <= 0L) {
             "???"
         } else {
             item.video.length.formatFileSizeV2()
@@ -132,14 +129,7 @@ class HanimeDownloadedRvAdapter(private val fragment: DownloadedFragment) :
                         setTitle(R.string.sure_to_delete)
                         setMessage(context.getString(R.string.prepare_to_delete_s, it.video.title))
                         setPositiveButton(R.string.confirm) { _, _ ->
-                            // if (file.exists()) file.delete()
-                            HFileManager.getDownloadVideoFolder(
-                                it.video.videoCode
-                            ).deleteRecursively()
-                            fragment.viewModel.deleteDownloadHanimeBy(
-                                it.video.videoCode,
-                                it.video.quality
-                            )
+                            HanimeDownloadManagerV2.deleteTask(it.video)
                         }
                         setNegativeButton(R.string.cancel, null)
                     }
@@ -161,7 +151,7 @@ class HanimeDownloadedRvAdapter(private val fragment: DownloadedFragment) :
 //                        setNegativeButton(R.string.cancel, null)
 //                    }
 //                })
-                context.openDownloadedHanimeVideoInActivity(item.video.videoCode)
+                context.openDownloadedHanimeVideoInActivity(item.video.videoCode, item.video.quality)
             }
         }
     }

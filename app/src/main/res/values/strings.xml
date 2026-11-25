@@ -116,6 +116,12 @@
     <string name="cancel_download">取消下載</string>
     <string name="local_playback">本地觀看</string>
     <string name="download_path">下載路徑</string>
+    <string name="download_path_choose">選擇資料夾</string>
+    <string name="download_path_reset">恢復預設路徑</string>
+    <string name="download_path_change_note">使用系統選擇器選取可讀寫、支援續傳的資料夾。變更僅影響之後新增的下載；已有任務（含重新下載）繼續使用原位置，不會搬移或刪除舊檔案。長按可複製目前路徑或資料夾 URI。</string>
+    <string name="download_path_select_failed">無法使用此資料夾，原設定未變。請選擇可讀寫的本機資料夾並允許存取。</string>
+    <string name="download_path_unavailable">下載位置不可用或檔案不存在，請檢查儲存裝置與資料夾授權；不會自動改存其他位置。</string>
+    <string name="download_file_incomplete">下載檔案長度異常，請重新下載此任務。</string>
     <string name="help">幫助</string>
     <string name="reply">回覆</string>
     <string name="reply_child_comment">回覆子評論</string>

@@ -44,6 +44,7 @@ const val SEARCH_YEAR_RANGE_END = BuildConfig.SEARCH_YEAR_RANGE_END
 // intent傳值用名稱
 
 const val FROM_DOWNLOAD = "FROM_DOWNLOAD"
+const val DOWNLOAD_QUALITY = "DOWNLOAD_QUALITY"
 
 const val VIDEO_CODE = "VIDEO_CODE"
 

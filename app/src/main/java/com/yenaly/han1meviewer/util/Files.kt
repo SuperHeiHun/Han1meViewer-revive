@@ -7,6 +7,7 @@ import android.os.Environment
 import androidx.core.content.FileProvider
 import androidx.core.net.toFile
 import androidx.core.net.toUri
+import com.yenaly.han1meviewer.DOWNLOAD_QUALITY
 import com.yenaly.han1meviewer.FILE_PROVIDER_AUTHORITY
 import com.yenaly.han1meviewer.FROM_DOWNLOAD
 import com.yenaly.han1meviewer.HJson
@@ -76,14 +77,29 @@ fun checkDownloadedHanimeFile(startsWith: String): Boolean {
 fun Context.openDownloadedHanimeVideoLocally(
     uri: String, onFileNotFound: (() -> Unit)? = null,
 ) {
-    val videoFile = uri.toUri().toFile()
-    if (!videoFile.exists()) {
+    val parsed = uri.toUri()
+    val fileUri = try {
+        when (parsed.scheme) {
+            "file" -> {
+                val videoFile = parsed.toFile()
+                if (!videoFile.exists()) {
+                    onFileNotFound?.invoke()
+                    return
+                }
+                FileProvider.getUriForFile(this, FILE_PROVIDER_AUTHORITY, videoFile)
+            }
+            "content" -> {
+                contentResolver.openFileDescriptor(parsed, "r")?.use { }
+                    ?: throw java.io.FileNotFoundException()
+                parsed
+            }
+            else -> throw java.io.FileNotFoundException()
+        }
+    } catch (_: Exception) {
         onFileNotFound?.invoke()
+        showShortToast(R.string.download_path_unavailable)
         return
     }
-    val fileUri = FileProvider.getUriForFile(
-        this, FILE_PROVIDER_AUTHORITY, videoFile
-    )
     val intent = Intent(Intent.ACTION_VIEW)
     intent.setDataAndType(fileUri, "video/*")
     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -95,10 +111,11 @@ fun Context.openDownloadedHanimeVideoLocally(
     }
 }
 
-fun Context.openDownloadedHanimeVideoInActivity(videoCode: String) {
+fun Context.openDownloadedHanimeVideoInActivity(videoCode: String, quality: String? = null) {
     val intent = Intent(this, VideoActivity::class.java)
     intent.putExtra(FROM_DOWNLOAD, true)
     intent.putExtra(VIDEO_CODE, videoCode)
+    intent.putExtra(DOWNLOAD_QUALITY, quality)
     startActivity(intent)
 }
 

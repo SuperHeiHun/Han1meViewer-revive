@@ -53,6 +53,7 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         }
 
     var fromDownload = false
+    var downloadQuality: String? = null
 
     private val watchHistoryRecorder = WatchHistoryRecorder(DatabaseRepo.WatchHistory::insert)
 
@@ -69,7 +70,7 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         val historyTicket = HistoryPrivacy.ticket()
         viewModelScope.launch {
             val flow = if (fromDownload) {
-                HCacheManager.loadHanimeVideoInfo(videoCode).map { hv ->
+                HCacheManager.loadHanimeVideoInfo(videoCode, downloadQuality).map { hv ->
                     if (hv == null) {
                         VideoLoadingState.NoContent
                     } else {

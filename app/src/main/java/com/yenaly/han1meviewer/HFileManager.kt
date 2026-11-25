@@ -10,11 +10,15 @@ object HFileManager {
 
     private val illegalCharsRegex = Regex("""["*/:<>?\\|\x00-\x1F\x7F]""")
 
-    val appDownloadFolder: File
+    // Legacy location. SAF destinations must be accessed through DownloadStorage, not File.
+    val defaultDownloadFolder: File
         get() = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             APP_NAME
-        ).also { file -> file.makeFolderNoMedia() }
+        )
+
+    val appDownloadFolder: File
+        get() = defaultDownloadFolder.also { file -> file.makeFolderNoMedia() }
 
     const val DEF_VIDEO_TYPE = "mp4"
     const val DEF_VIDEO_COVER_TYPE = "png"
