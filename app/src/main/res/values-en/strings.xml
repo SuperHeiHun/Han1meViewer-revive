@@ -351,13 +351,6 @@ Recommendations are as follows:\n
     <string name="sure_to_redownload">Are you sure you want to redownload?</string>
     <string name="subscription">Subscription</string>
     <string name="login_expired_auto_logout">Login expired, automatically logged out</string>
-    <string name="crashlytics_summary">After enabling, crash logs will be automatically reported without manual submission</string>
-    <string name="analytics_summary">Long press to understand the importance of enabling this for developers</string>
-    <string name="crashlytics_title">Automatic Crash Logs Reporting</string>
-    <string name="analytics_title">Collect Usage Data</string>
-    <string name="privacy">Privacy</string>
-    <string name="about_analytics_summary">Would you mind if the developer collected your device information and your usage? It will help the developer a lot.&lt;br&gt;&lt;br&gt;Data analysis service is provided by Google Analytics for Firebase. Its privacy policy can be found at &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt;.&lt;br&gt;&lt;br&gt;If you agree to join data analysis, your device information and your usage will be collected, including but not limited to Android API version, equipment model, language residence, the application version, conversion time, function times. The developer promise that these information will NOT be collected, including phone number, e-mail address, IMEI.&lt;br&gt;&lt;br&gt;Your information will not be collected until you agree to join data analysis.&lt;br&gt;&lt;br&gt;The collected information will be analyzed by Google Analytics for Firebase. The analysis report can only be viewed by the developer of this application.</string>
-    <string name="about_analytics">About Analytics</string>
     <string name="refresh_page_or_login_expired">Try refreshing the page\nor your login may have expired</string>
     <string name="website_blocked_msg_2">The website is blocked, changing to another domain name might work!</string>
     <string name="website_blocked_msg_3">You can notify the developer, but don\'t rush them, the website being blocked is not their fault~</string>
@@ -377,4 +370,16 @@ Recommendations are as follows:\n
     <string name="cloudflare_verification_hint">Complete the verification below. The app will return automatically after success.</string>
     <string name="cloudflare_verification_success">Verified. Reloading…</string>
 
+    <string name="local_lists">Local Lists</string>
+    <string name="local_favorites">Local Favorites</string>
+    <string name="local_watch_later">Local Watch Later</string>
+    <string name="add_to_local_favorites">Save to Local Favorites</string>
+    <string name="remove_local_favorite">Remove Local Favorite</string>
+    <string name="add_to_local_watch_later">Add to Local Watch Later</string>
+    <string name="remove_local_watch_later">Remove from Local Watch Later</string>
+    <string name="local_list_remove">Remove from Local List</string>
+    <string name="local_list_clear_confirm">Clear %s? Online lists will not be affected.</string>
+    <string name="local_list_help">Save videos from their introduction page without signing in. These lists stay on this device and are not synced to the website. Tap a video to play it; long press to remove it. Watch Later uses the order videos were added and does not remove videos automatically when opened. Playing videos that have not been downloaded still requires a network connection.</string>
+    <string name="local_list_save_failed">Could not save the local list. Please try again.</string>
+    <string name="local_list_load_failed">Could not load the local list. Please reopen this page.</string>
 </resources>

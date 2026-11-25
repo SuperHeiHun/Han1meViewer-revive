@@ -46,6 +46,7 @@ import com.yenaly.han1meviewer.databinding.ItemVideoIntroductionBinding
 import com.yenaly.han1meviewer.getHanimeShareText
 import com.yenaly.han1meviewer.getHanimeVideoDownloadLink
 import com.yenaly.han1meviewer.getHanimeVideoLink
+import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
@@ -56,6 +57,7 @@ import com.yenaly.han1meviewer.ui.adapter.BaseSingleDifferAdapter
 import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
 import com.yenaly.han1meviewer.ui.adapter.VideoColumnTitleAdapter
+import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.requestPostNotificationPermission
 import com.yenaly.han1meviewer.util.setDrawableTop
@@ -72,6 +74,8 @@ import com.yenaly.yenaly_libs.utils.unsafeLazy
 import com.yenaly.yenaly_libs.utils.view.clickTrigger
 import com.yenaly.yenaly_libs.utils.view.clickWithCondition
 import com.yenaly.yenaly_libs.utils.view.findParent
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -112,6 +116,9 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     }
 
     val viewModel by activityViewModels<VideoViewModel>()
+    private val localListViewModel by activityViewModels<LocalVideoListViewModel>()
+    private var localListTypes: Set<String>? = null
+    private var isLocalListSaving = false
 
     private var checkedQuality: String? = null
 
@@ -166,6 +173,32 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     }
 
     override fun bindDataObservers() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(
+                    localListViewModel.observeMembership(viewModel.videoCode),
+                    localListViewModel.isSaving,
+                ) { types, saving -> types to saving }
+                    .catch {
+                        localListTypes = null
+                        videoIntroAdapter.updateLocalListButtons()
+                        showShortToast(R.string.local_list_load_failed)
+                    }
+                    .collect { (types, saving) ->
+                        localListTypes = types
+                        isLocalListSaving = saving
+                        videoIntroAdapter.updateLocalListButtons()
+                    }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                localListViewModel.errors.collect {
+                    showShortToast(R.string.local_list_save_failed)
+                }
+            }
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.hanimeVideoStateFlow.collect { state ->
@@ -466,6 +499,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 initArtist(item.artist)
                 initDownloadButton(item)
                 initFunctionBar(item)
+                initLocalListButtons()
             }
         }
 
@@ -500,6 +534,44 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                     LayoutInflater.from(context), parent, false
                 )
             )
+        }
+
+        fun updateLocalListButtons() {
+            binding?.initLocalListButtons()
+        }
+
+        private fun ItemVideoIntroductionBinding.initLocalListButtons() {
+            val types = localListTypes
+            val isFavorite = types?.contains(LocalVideoEntity.FAVORITES) == true
+            val isPending = types?.contains(LocalVideoEntity.WATCH_LATER) == true
+            btnLocalFavorite.apply {
+                isEnabled = types != null && !isLocalListSaving
+                setText(if (isFavorite) R.string.remove_local_favorite else R.string.add_to_local_favorites)
+                setDrawableTop(
+                    if (isFavorite) R.drawable.ic_baseline_favorite_24
+                    else R.drawable.ic_baseline_favorite_border_24
+                )
+                setOnClickListener {
+                    val video = viewModel.hanimeVideoFlow.value ?: return@setOnClickListener
+                    localListViewModel.setSaved(
+                        viewModel.videoCode, video, LocalVideoEntity.FAVORITES, !isFavorite
+                    )
+                }
+            }
+            btnLocalWatchLater.apply {
+                isEnabled = types != null && !isLocalListSaving
+                setText(if (isPending) R.string.remove_local_watch_later else R.string.add_to_local_watch_later)
+                setDrawableTop(
+                    if (isPending) R.drawable.ic_baseline_watch_later_24
+                    else R.drawable.ic_outline_watch_later_24
+                )
+                setOnClickListener {
+                    val video = viewModel.hanimeVideoFlow.value ?: return@setOnClickListener
+                    localListViewModel.setSaved(
+                        viewModel.videoCode, video, LocalVideoEntity.WATCH_LATER, !isPending
+                    )
+                }
+            }
         }
 
         private fun ItemVideoIntroductionBinding.initTitle(info: HanimeVideo) {

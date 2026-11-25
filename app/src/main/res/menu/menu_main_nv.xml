@@ -19,6 +19,21 @@
 
     </group>
 
+    <item android:title="@string/local_lists">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item
+                    android:id="@+id/nv_local_favorites"
+                    android:icon="@drawable/ic_baseline_favorite_24"
+                    android:title="@string/local_favorites" />
+                <item
+                    android:id="@+id/nv_local_watch_later"
+                    android:icon="@drawable/ic_baseline_watch_later_24"
+                    android:title="@string/local_watch_later" />
+            </group>
+        </menu>
+    </item>
+
     <item android:title="@string/my_list">
         <menu>
             <group android:checkableBehavior="single">

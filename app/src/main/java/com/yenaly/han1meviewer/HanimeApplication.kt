@@ -4,9 +4,6 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationManagerCompat
 import com.google.android.material.color.DynamicColors
 import com.google.firebase.Firebase
-import com.google.firebase.analytics.analytics
-import com.google.firebase.crashlytics.crashlytics
-import com.google.firebase.crashlytics.setCustomKeys
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.scwang.smart.refresh.footer.ClassicsFooter
@@ -16,7 +13,6 @@ import com.yenaly.han1meviewer.logic.network.HCookieJar
 import com.yenaly.han1meviewer.logic.network.HProxySelector
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel
 import com.yenaly.yenaly_libs.base.YenalyApplication
-import com.yenaly.yenaly_libs.utils.LanguageHelper
 
 /**
  * @project Hanime1
@@ -60,22 +56,6 @@ class HanimeApplication : YenalyApplication() {
     }
 
     private fun initFirebase() {
-        // 用于处理 Firebase Analytics 初始化
-        Firebase.analytics.setAnalyticsCollectionEnabled(Preferences.isAnalyticsEnabled)
-        // 用于处理 Firebase Crashlytics 初始化
-        Firebase.crashlytics.apply {
-            isCrashlyticsCollectionEnabled = !BuildConfig.DEBUG
-            setCustomKeys {
-                key(
-                    FirebaseConstants.APP_LANGUAGE,
-                    LanguageHelper.preferredLanguage.toLanguageTag()
-                )
-                key(
-                    FirebaseConstants.VERSION_SOURCE,
-                    BuildConfig.HA1_VERSION_SOURCE
-                )
-            }
-        }
         // 用于处理 Firebase Remote Config 初始化
         Firebase.remoteConfig.apply {
             setConfigSettingsAsync(remoteConfigSettings {

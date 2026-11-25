@@ -27,9 +27,8 @@ object Config {
          * @return 版本号和版本名
          *
          *         Example:
-         *         ci: 0.1.2-ci+21032500
-         *         release: 0.1.2-release+21032500
-         *         debug (fixed): debug+1
+         *         ci / release: 1.0.0, with a time-based versionCode
+         *         debug: 1.0.0-debug, with versionCode fixed at 1
          */
         fun Project.createVersion(
             major: Int, minor: Int, patch: Int
@@ -40,7 +39,7 @@ object Config {
             when (source) {
                 DEBUG -> {
                     versionCode = 1
-                    versionName = "$DEBUG+$versionCode"
+                    versionName = "$major.$minor.$patch-$DEBUG"
                 }
 
                 else -> {
@@ -51,7 +50,7 @@ object Config {
                     versionCode = now.format(
                         DateTimeFormatter.ofPattern("yyMMddHH")
                     ).toInt() * 10 + now.minute / 6
-                    versionName = "${major}.${minor}.${patch}-$source+$versionCode"
+                    versionName = "$major.$minor.$patch"
                 }
             }
             println("Version Code: $versionCode")

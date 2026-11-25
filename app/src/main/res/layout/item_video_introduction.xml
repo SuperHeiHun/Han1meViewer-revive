@@ -186,6 +186,38 @@
 
         </com.yenaly.han1meviewer.ui.view.HorizontalNestedScrollView>
 
+        <com.yenaly.han1meviewer.ui.view.HorizontalNestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_local_favorite"
+                    style="@style/Widget.Material3.Button.TextButton.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/ic_baseline_favorite_border_24"
+                    android:enabled="false"
+                    android:text="@string/add_to_local_favorites" />
+
+                <Button
+                    android:id="@+id/btn_local_watch_later"
+                    style="@style/Widget.Material3.Button.TextButton.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/ic_outline_watch_later_24"
+                    android:enabled="false"
+                    android:text="@string/add_to_local_watch_later" />
+
+            </LinearLayout>
+
+        </com.yenaly.han1meviewer.ui.view.HorizontalNestedScrollView>
+
         <com.yenaly.han1meviewer.ui.view.CollapsibleTags
             android:id="@+id/tags"
             android:layout_width="match_parent"

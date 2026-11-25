@@ -15,8 +15,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.preference.Preference
 import androidx.preference.SeekBarPreference
 import androidx.preference.SwitchPreferenceCompat
-import com.google.firebase.Firebase
-import com.google.firebase.analytics.analytics
 import com.yenaly.han1meviewer.BuildConfig
 import com.yenaly.han1meviewer.HA1_GITHUB_FORUM_URL
 import com.yenaly.han1meviewer.HA1_GITHUB_ISSUE_URL
@@ -28,13 +26,11 @@ import com.yenaly.han1meviewer.ui.activity.AboutActivity
 import com.yenaly.han1meviewer.ui.activity.SettingsActivity
 import com.yenaly.han1meviewer.ui.activity.SettingsRouter
 import com.yenaly.han1meviewer.ui.fragment.IToolbarFragment
-import com.yenaly.han1meviewer.ui.view.pref.HPrivacyPreference
 import com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel
 import com.yenaly.han1meviewer.util.setSummaryConverter
 import com.yenaly.han1meviewer.util.showAlertDialog
 import com.yenaly.han1meviewer.util.showUpdateDialog
-import com.yenaly.han1meviewer.util.showWithBlurEffect
 import com.yenaly.yenaly_libs.ActivityManager
 import com.yenaly.yenaly_libs.base.settings.YenalySettingsFragment
 import com.yenaly.yenaly_libs.utils.browse
@@ -77,7 +73,6 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         const val UPDATE_POPUP_INTERVAL_DAYS = "update_popup_interval_days"
         const val USE_CI_UPDATE_CHANNEL = "use_ci_update_channel"
 
-        const val USE_ANALYTICS = "use_analytics"
     }
 
     private val videoLanguage
@@ -106,8 +101,6 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
             by safePreference<Preference>(NETWORK_SETTINGS)
     private val applyDeepLinks
             by safePreference<Preference>(APPLY_DEEP_LINKS)
-    private val useAnalytics
-            by safePreference<HPrivacyPreference>(USE_ANALYTICS)
 
     private var checkUpdateTimes = 0
 
@@ -243,18 +236,6 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         updatePopupIntervalDays.apply {
             setSummaryConverter(defValue = 0, converter = ::toIntervalDaysPrettyString)
         }
-        useAnalytics.apply {
-            setOnPreferenceChangeListener { _, newValue ->
-                if (BuildConfig.FIREBASE_ENABLED) {
-                    Firebase.analytics.setAnalyticsCollectionEnabled(newValue as Boolean)
-                }
-                return@setOnPreferenceChangeListener true
-            }
-            setOnPreferenceLongClickListener {
-                privacyDialog.showWithBlurEffect()
-                return@setOnPreferenceLongClickListener true
-            }
-        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -271,10 +252,9 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
                             checkUpdateTimes++
                             update.setSummary(R.string.check_update_failed)
                             update.setOnPreferenceClickListener {
+                                AppViewModel.getLatestVersion()
                                 if (checkUpdateTimes > 2) {
                                     showUpdateFailedDialog(it.context)
-                                } else {
-                                    AppViewModel.getLatestVersion()
                                 }
                                 return@setOnPreferenceClickListener true
                             }
@@ -286,9 +266,13 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
                         }
 
                         is WebsiteState.Success -> {
+                            checkUpdateTimes = 0
                             if (state.info == null) {
                                 update.setSummary(R.string.already_latest_update)
-                                update.onPreferenceClickListener = null
+                                update.setOnPreferenceClickListener {
+                                    AppViewModel.getLatestVersion()
+                                    true
+                                }
                             } else {
                                 update.summary =
                                     getString(R.string.check_update_success, state.info.version)

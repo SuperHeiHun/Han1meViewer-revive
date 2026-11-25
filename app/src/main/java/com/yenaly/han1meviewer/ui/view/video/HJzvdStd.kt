@@ -15,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnLongClickListener
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.PopupWindow
@@ -261,6 +262,14 @@ class HJzvdStd @JvmOverloads constructor(
     @Volatile
     private var isSpeedGestureDetected = false
 
+    private val fullscreenGesture = CenterFullscreenGesture(
+        touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+        minimumDistance = maxOf(
+            48f * resources.displayMetrics.density,
+            ViewConfiguration.get(context).scaledTouchSlop * 2f,
+        ),
+    )
+
     /**
      * 長按快進檢測
      */
@@ -327,21 +336,41 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
-        when (v.id) {
-            R.id.surface_container -> {
-                speedGestureDetector.onTouchEvent(event)
-                when (event.action) {
-                    MotionEvent.ACTION_UP -> {
-                        if (isSpeedGestureDetected) {
-                            setSpeedInternal(videoSpeed)
-                            isSpeedGestureDetected = false
-                        }
-                    }
+        if (v.id != R.id.surface_container) return super.onTouch(v, event)
+
+        if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+            fullscreenGesture.onDown(event.x, event.y, v.width, canSwipeToFullscreen())
+        }
+        speedGestureDetector.onTouchEvent(event)
+        if (event.pointerCount > 1 || isSpeedGestureDetected ||
+            event.actionMasked == MotionEvent.ACTION_CANCEL
+        ) {
+            fullscreenGesture.cancel()
+        }
+        val wasFullscreenSwipe = fullscreenGesture.isTracking
+        val enterFullscreen = event.actionMasked == MotionEvent.ACTION_UP &&
+                fullscreenGesture.onUp(event.x, event.y)
+
+        when (event.actionMasked) {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_DOWN -> {
+                if (isSpeedGestureDetected) {
+                    setSpeedInternal(videoSpeed)
+                    isSpeedGestureDetected = false
                 }
             }
         }
-        return super.onTouch(v, event)
+
+        val handled = super.onTouch(v, event)
+        if (enterFullscreen && canSwipeToFullscreen()) {
+            // Reuse the button's transition so playback, orientation and back navigation stay intact.
+            fullscreenButton.performClick()
+        }
+        return handled || wasFullscreenSwipe || enterFullscreen
     }
+
+    private fun canSwipeToFullscreen(): Boolean = screen == SCREEN_NORMAL &&
+            (state == STATE_PLAYING || state == STATE_PAUSE || state == STATE_PREPARING ||
+                    state == STATE_PREPARING_PLAYING || state == STATE_PREPARING_CHANGE_URL)
 
     fun autoFullscreen(orientation: OrientationManager.ScreenOrientation) {
         autoFullscreen(if (orientation === OrientationManager.ScreenOrientation.LANDSCAPE) 1.0f else -1.0f)
@@ -486,6 +515,7 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun touchActionMove(x: Float, y: Float) {
+        if (fullscreenGesture.onMove(x, y)) return
         Log.i(TAG, "onTouch surfaceContainer actionMove [" + this.hashCode() + "] ")
         val deltaX = x - mDownX
         var deltaY = y - mDownY

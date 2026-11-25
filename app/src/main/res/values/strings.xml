@@ -361,13 +361,6 @@
     <string name="sure_to_redownload">確定要重新下載嗎？</string>
     <string name="subscription">訂閱</string>
     <string name="login_expired_auto_logout">登入已過期，已自動登出</string>
-    <string name="crashlytics_summary">開啟後，將會自動上報崩潰日誌，無須手動提交</string>
-    <string name="analytics_summary">長按了解開啟對開發者的重要性</string>
-    <string name="crashlytics_title">崩潰日誌自動上報</string>
-    <string name="analytics_title">使用情況統計</string>
-    <string name="privacy">隱私</string>
-    <string name="about_analytics_summary">您同意讓開發者收集您的裝置資訊與使用方式嗎？這對開發有很大幫助。&lt;br&gt;&lt;br&gt;資料統計服務由 Google Analytics for Firebase 提供，其隱私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 檢視。&lt;br&gt;&lt;br&gt;若您同意參與資料統計，您的裝置資訊與應用使用情況將會被記錄，其包括但不限於：Android API 版本、裝置型號、語言所在地、本應用版本號、會話時長、應用功能使用次數。開發者承諾以下資訊並不會被記錄：電話號碼、電子郵件地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意參與資料統計之前，您的資訊不會被記錄。&lt;br&gt;&lt;br&gt;被記錄的資料會由 Google Analytics for Firebase 進行分析，分析報表僅由此應用程式開發者存取。</string>
-    <string name="about_analytics">關於使用情況統計</string>
     <string name="refresh_page_or_login_expired">刷新一下頁面試試\n也可能登入已過期</string>
     <string name="website_blocked_msg_2">網站被加固，修改為另外一個域名可能有奇效！</string>
     <string name="website_blocked_msg_3">可以提醒一下開發者，但不要催，網站被加固跟他沒有任何關係哦～</string>
@@ -387,4 +380,16 @@
     <string name="cloudflare_verification_hint">請在下方完成站點驗證，驗證成功後會自動返回。</string>
     <string name="cloudflare_verification_success">驗證成功，正在重新載入…</string>
 
+    <string name="local_lists">本機清單</string>
+    <string name="local_favorites">本機收藏</string>
+    <string name="local_watch_later">本機待播放</string>
+    <string name="add_to_local_favorites">加入本機收藏</string>
+    <string name="remove_local_favorite">取消本機收藏</string>
+    <string name="add_to_local_watch_later">加入本機待播放</string>
+    <string name="remove_local_watch_later">移出本機待播放</string>
+    <string name="local_list_remove">從本機清單移除</string>
+    <string name="local_list_clear_confirm">確定要清空「%s」嗎？不會影響線上清單。</string>
+    <string name="local_list_help">在影片簡介頁加入本機收藏或待播放，無須登入，也不會同步至網站。點選清單項目播放，長按移除。待播放依加入順序排列，不會在開啟影片時自動移除。清單儲存在本機；播放未下載的影片仍需要網路。</string>
+    <string name="local_list_save_failed">本機清單儲存失敗，請重試</string>
+    <string name="local_list_load_failed">本機清單讀取失敗，請重新開啟頁面</string>
 </resources>

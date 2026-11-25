@@ -16,7 +16,7 @@ plugins {
 }
 
 // 只有配置了格式有效的 Firebase API Key 才启用 Firebase 相关插件。
-// 示例配置使用占位 Key，CI 构建会跳过 Analytics/Crashlytics/Remote Config。
+// 示例配置使用占位 Key，CI 构建会跳过 Remote Config。
 val firebaseEnabled = runCatching {
     val config = File(projectDir, "google-services.json")
     config.isFile && Regex("\"current_key\"\\s*:\\s*\"AIza[0-9A-Za-z_-]{35}\"")
@@ -25,8 +25,6 @@ val firebaseEnabled = runCatching {
 
 if (firebaseEnabled) {
     apply(plugin = "com.google.gms.google-services")
-    apply(plugin = "com.google.firebase.crashlytics")
-    apply(plugin = "com.google.firebase.firebase-perf")
 }
 
 android {
@@ -56,7 +54,7 @@ android {
         applicationId = "com.yenaly.han1meviewer"
         minSdk = property("min.sdk")?.toString()?.toIntOrNull()
         targetSdk = property("target.sdk")?.toString()?.toIntOrNull()
-        val (code, name) = createVersion(major = 0, minor = 16, patch = 0)
+        val (code, name) = createVersion(major = 1, minor = 0, patch = 0)
         versionCode = code
         versionName = name
 
@@ -178,9 +176,6 @@ dependencies {
     // firebase
 
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.perf)
     implementation(libs.firebase.config)
 
     ksp(libs.room.compiler)

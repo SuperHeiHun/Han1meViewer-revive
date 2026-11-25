@@ -17,6 +17,8 @@
 
 上游项目已停止维护。本分支针对目标站点的新版页面重构了网页解析、搜索参数和部分接口，使应用可以继续浏览新版页面。
 
+当前版本：**1.0.0**。新增功能与修复说明见[更新日志](CHANGELOG.md)。
+
 > 本项目仅供学习 Android 开发与网页解析技术使用，不提供任何影片内容、下载源或使用教程。  
 > 内容仅面向成年人，请遵守你所在地区的法律法规。
 
@@ -63,10 +65,20 @@ CI 构建也会在 Actions 中保留一份构建产物作为备份：
 - 首页栏目、每日/每月排行、中文字幕筛选
 - 关键词搜索、类型搜索、标签/日期/片长筛选
 - 视频播放、清晰度选择、播放列表、相关推荐
+- 播放器中间区域上划进入全屏，保留横划进度、左右亮度/音量和长按倍速手势
 - 评论查看与回复
 - 收藏、稍后再看、自定义播放列表、订阅
+- 本地收藏与待播放：无需登录、持久保存，独立于网站账号；待播放按加入顺序排列
 - 观看历史、下载管理、本地关键帧
 - 简繁体与英文界面
+
+### 本地列表
+
+- 视频简介页点击“加入本地收藏”或“加入本地待播放”，再次点击可取消。
+- 侧边栏“本地列表”可查看两个列表，点击视频播放、长按移除，也可从工具栏清空当前列表。
+- 本地收藏和待播放互相独立，同一视频可同时加入；重新打开应用后仍保留，不会同步或修改在线列表。
+- 待播放不会在打开视频时自动移除；列表仅保存视频信息，不会自动下载视频。
+- 已移除使用情况统计、页面与搜索埋点、性能监控及自动崩溃上报。Firebase 仅保留更新渠道使用的 Remote Config。
 
 ## 构建
 
@@ -96,7 +108,8 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 
 构建产物：
 
-- Debug：`app/build/outputs/apk/debug/Han1meViewer-vdebug+1.apk`
+- Debug：`app/build/outputs/apk/debug/Han1meViewer-revive-v1.0.0-debug.apk`
+- Release 1.0.0：`app/build/outputs/apk/release/Han1meViewer-revive-v1.0.0.apk`
 - Release：`app/build/outputs/apk/release/Han1meViewer-revive-v*.apk`
 
 ### 签名说明
@@ -113,10 +126,12 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 
 - 推送代码或手动触发时构建 `assembleRelease`。
 - 在 `SuperHeiHun/Han1meViewer-revive` 仓库中，`feat/new_download` 分支构建成功后会自动发布 GitHub Release：先创建 draft，上传 APK，再正式发布。
-- Release tag 形如 `v0.16.0+261122058`，应用内更新检查会读取 `+` 后的版本号。
+- 从 1.0.0 起，正式版使用 `1.0.0` 形式的版本名和 `v1.0.0` 形式的 Release tag；Android `versionCode` 仍按构建时间递增。
+- Release 说明从 `CHANGELOG.md` 中对应版本的条目生成，重复构建不会覆盖已发布版本；发布新版本前需更新版本号和日志。
+- 应用内更新检测兼容新版本标签与旧版 `v0.16.0+261122058` 格式，不会对同一正式版本反复提示更新。
 - Fork 仓库只上传 Actions Artifact，不会自动发布 Release。
 - 默认使用 `app/google-services.json.example` 作为 Firebase 配置占位，因此全新 Fork 也能直接出包。
-- 使用占位配置时，构建会自动关闭 Firebase Analytics、Crashlytics 和 Remote Config，避免无效 API Key 导致启动崩溃；应用内更新会直接检查 GitHub Releases。
+- 使用占位配置时，构建会自动关闭 Remote Config，避免无效 API Key 导致启动崩溃；应用内更新会直接检查 GitHub Releases。
 - 如需真实 Firebase 配置，在仓库 Secrets 中添加 `HA1_GOOGLE_SERVICES_JSON_BASE64`（`google-services.json` 的 Base64 内容）。
 
 ## 已知限制

@@ -3,7 +3,6 @@ package com.yenaly.han1meviewer.ui.fragment.search
 import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Checkable
@@ -12,17 +11,11 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.firebase.Firebase
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
-import com.google.firebase.analytics.logEvent
 import com.lxj.xpopup.XPopup
 import com.lxj.xpopup.core.BasePopupView
 import com.lxj.xpopup.interfaces.SimpleCallback
 import com.lxj.xpopupext.listener.TimePickerListener
 import com.lxj.xpopupext.popup.TimePickerPopup
-import com.yenaly.han1meviewer.BuildConfig
-import com.yenaly.han1meviewer.FirebaseConstants
 import com.yenaly.han1meviewer.Preferences.isAlreadyLogin
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.SEARCH_YEAR_RANGE_END
@@ -58,13 +51,6 @@ class SearchOptionsPopupFragment :
 
     private val viewModel by activityViewModels<SearchViewModel>()
     val myListViewModel by activityViewModels<MyListViewModel>()
-
-    /**
-     * 是否用户真正使用了高级搜索里面的功能
-     *
-     * 用于 Firebase 统计
-     */
-    private var isUserUsed = false
 
     private var genres: Array<String>? = null
     private var sortOptions: Array<String>? = null
@@ -110,12 +96,11 @@ class SearchOptionsPopupFragment :
                                     viewModel.month = null
                                 }
                             }
-                            isUserUsed = true
                             initOptionsChecked()
                         }
                     })
                 }
-            return XPopup.Builder(requireContext()).setOptionsCheckedCallback("release_dates")
+            return XPopup.Builder(requireContext()).setOptionsCheckedCallback()
                 .borderRadius(POP_UP_BORDER_RADIUS)
                 .isDarkTheme(true)
                 .asCustom(popup) as TimePickerPopup
@@ -151,16 +136,13 @@ class SearchOptionsPopupFragment :
                 if (genres == null) {
                     genres = viewModel.genres.mapToArray { it.value }
                 }
-                requireContext().showAlertDialog(DialogInterface.OnDismissListener {
-                    logAdvSearchEvent("genres")
-                }) {
+                requireContext().showAlertDialog {
                     val index = viewModel.genres.indexOfFirst {
                         it.searchKey == viewModel.genre
                     }
                     setTitle(R.string.type)
                     setSingleChoiceItems(genres, index) { _, which ->
                         viewModel.genre = viewModel.genres.getOrNull(which)?.searchKey
-                        isUserUsed = true
                         initOptionsChecked()
                     }
                     setPositiveButton(R.string.save, null)
@@ -242,15 +224,11 @@ class SearchOptionsPopupFragment :
                     setOnSaveListener {
                         viewModel.tagMap = collectCheckedTags()
                         initOptionsChecked()
-                        isUserUsed = true
                         it.dismiss()
                     }
                     setOnResetListener {
                         clearAllChecks()
                         initOptionsChecked()
-                    }
-                    setOnDismissListener {
-                        logAdvSearchEvent("tags")
                     }
                 }.show()
             }
@@ -268,16 +246,13 @@ class SearchOptionsPopupFragment :
                 if (sortOptions == null) {
                     sortOptions = viewModel.sortOptions.mapToArray { it.value }
                 }
-                requireContext().showAlertDialog(DialogInterface.OnDismissListener {
-                    logAdvSearchEvent("sort_options")
-                }) {
+                requireContext().showAlertDialog {
                     val index = viewModel.sortOptions.indexOfFirst {
                         it.searchKey == viewModel.sort
                     }
                     setTitle(R.string.sort_option)
                     setSingleChoiceItems(sortOptions, index) { _, which ->
                         viewModel.sort = viewModel.sortOptions.getOrNull(which)?.searchKey
-                        isUserUsed = true
                         initOptionsChecked()
                     }
                     setPositiveButton(R.string.save, null)
@@ -396,29 +371,11 @@ class SearchOptionsPopupFragment :
         }
     }
 
-    private fun XPopup.Builder.setOptionsCheckedCallback(type: String) = apply {
+    private fun XPopup.Builder.setOptionsCheckedCallback() = apply {
         setPopupCallback(object : SimpleCallback() {
             override fun beforeDismiss(popupView: BasePopupView?) {
                 initOptionsChecked()
             }
-
-            override fun onDismiss(popupView: BasePopupView?) {
-                logAdvSearchEvent(type)
-            }
         })
-    }
-
-    private fun logAdvSearchEvent(type: String, used: Boolean = isUserUsed) {
-        Log.d("HFirebase", "logAdvSearchEvent: $type, $used")
-        if (BuildConfig.FIREBASE_ENABLED) {
-            Firebase.analytics.logEvent(FirebaseConstants.ADV_SEARCH_OPT) {
-                // 判断当前点击类型
-                param(FirebaseAnalytics.Param.CONTENT_TYPE, type)
-                // 判断用户是否真正使用了高级搜索
-                param("used", used.toString())
-            }
-        }
-        // 重置状态
-        isUserUsed = false
     }
 }

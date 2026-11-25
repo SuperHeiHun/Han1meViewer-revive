@@ -357,13 +357,6 @@
     <string name="sure_to_redownload">确定要重新下载吗？</string>
     <string name="subscription">关注</string>
     <string name="login_expired_auto_logout">登录已过期，已经自动登出</string>
-    <string name="crashlytics_summary">开启后，将会自动上报崩溃日志，无须手动提交</string>
-    <string name="analytics_summary">长按了解开启对开发者的重要性</string>
-    <string name="crashlytics_title">崩溃日志自动上报</string>
-    <string name="analytics_title">使用情况统计</string>
-    <string name="privacy">隐私</string>
-    <string name="about_analytics_summary">您同意让开发者收集您的设备信息与使用情况吗？这将对开发有很大帮助。&lt;br&gt;&lt;br&gt;数据统计服务由 Google Analytics for Firebase 提供，其隐私政策可在 &lt;a href=&quot;https://www.google.com/policies/privacy/&quot;&gt;https://www.google.com/policies/privacy/&lt;/a&gt; 查看。&lt;br&gt;&lt;br&gt;若您同意参与数据统计，您的设备信息与应用使用情况将会被记录，其包括但不限于：Android API 版本、设备型号、语言所在地、本应用版本号、会话时长、应用功能使用次数。开发者承诺以下信息并不会被记录：电话号码、电子邮件地址、IMEI。&lt;br&gt;&lt;br&gt;在您同意参与数据统计之前，您的信息不会被记录。&lt;br&gt;&lt;br&gt;被记录的数据会由 Google Analytics for Firebase 进行分析，分析报表仅可被本应用开发者访问。</string>
-    <string name="about_analytics">关于使用情况统计</string>
     <string name="refresh_page_or_login_expired">刷新一下页面试试\n也可能登入已过期</string>
     <string name="website_blocked_msg_2">网站被加固，修改为另外一个域名可能有奇效！</string>
     <string name="website_blocked_msg_3">可以提醒一下开发者，但不要催，网站被加固跟他没有任何关系哦～</string>
@@ -383,4 +376,16 @@
     <string name="cloudflare_verification_hint">请在下方完成站点验证，验证成功后会自动返回。</string>
     <string name="cloudflare_verification_success">验证成功，正在重新加载…</string>
 
+    <string name="local_lists">本地列表</string>
+    <string name="local_favorites">本地收藏</string>
+    <string name="local_watch_later">本地待播放</string>
+    <string name="add_to_local_favorites">加入本地收藏</string>
+    <string name="remove_local_favorite">取消本地收藏</string>
+    <string name="add_to_local_watch_later">加入本地待播放</string>
+    <string name="remove_local_watch_later">移出本地待播放</string>
+    <string name="local_list_remove">从本地列表移除</string>
+    <string name="local_list_clear_confirm">确定要清空“%s”吗？不会影响在线列表。</string>
+    <string name="local_list_help">在视频简介页加入本地收藏或待播放，无需登录，也不会同步至网站。点击列表项目播放，长按移除。待播放按加入顺序排列，不会在打开视频时自动移除。列表保存在本机；播放未下载的视频仍需要网络。</string>
+    <string name="local_list_save_failed">本地列表保存失败，请重试</string>
+    <string name="local_list_load_failed">本地列表读取失败，请重新打开页面</string>
 </resources>

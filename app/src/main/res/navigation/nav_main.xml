@@ -20,4 +20,21 @@
         android:id="@id/nv_watch_later"
         android:name="com.yenaly.han1meviewer.ui.fragment.home.MyWatchLaterFragment" />
 
+    <fragment
+        android:id="@id/nv_local_favorites"
+        android:name="com.yenaly.han1meviewer.ui.fragment.home.LocalVideoListFragment">
+        <argument
+            android:name="listType"
+            android:defaultValue="favorites"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        android:id="@id/nv_local_watch_later"
+        android:name="com.yenaly.han1meviewer.ui.fragment.home.LocalVideoListFragment">
+        <argument
+            android:name="listType"
+            android:defaultValue="watch_later"
+            app:argType="string" />
+    </fragment>
+
 </navigation>

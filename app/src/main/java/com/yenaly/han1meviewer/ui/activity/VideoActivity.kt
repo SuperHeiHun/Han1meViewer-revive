@@ -14,7 +14,6 @@ import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -22,14 +21,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import cn.jzvd.JZMediaInterface
 import cn.jzvd.Jzvd
 import coil.load
-import com.google.firebase.Firebase
-import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.analytics.analytics
-import com.google.firebase.analytics.logEvent
-import com.yenaly.han1meviewer.BuildConfig
 import com.yenaly.han1meviewer.COMMENT_TYPE
 import com.yenaly.han1meviewer.FROM_DOWNLOAD
-import com.yenaly.han1meviewer.FirebaseConstants
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VIDEO_CODE
@@ -49,7 +42,6 @@ import com.yenaly.han1meviewer.ui.viewmodel.CommentViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.han1meviewer.util.getOrCreateBadgeOnTextViewAt
-import com.yenaly.han1meviewer.util.logScreenViewEvent
 import com.yenaly.han1meviewer.util.showAlertDialog
 import com.yenaly.yenaly_libs.base.YenalyActivity
 import com.yenaly.yenaly_libs.utils.OrientationManager
@@ -81,10 +73,6 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
 
     override fun getViewBinding(layoutInflater: LayoutInflater): ActivityVideoBinding =
         ActivityVideoBinding.inflate(layoutInflater)
-
-    override val onFragmentResumedListener: (Fragment) -> Unit = { fragment ->
-        logScreenViewEvent(fragment)
-    }
 
     override fun setUiStyle() {
         enableEdgeToEdge(
@@ -301,19 +289,6 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                                 prompt = null // 這裏不要給太多負擔，保存就行了沒必要寫comment
                             )
                         )
-                        // 使用到这里说明用户可能是关键H帧目标用户
-                        if (BuildConfig.FIREBASE_ENABLED) {
-                            Firebase.analytics.logEvent(FirebaseAnalytics.Event.SELECT_CONTENT) {
-                                param(
-                                    FirebaseAnalytics.Param.ITEM_ID,
-                                    FirebaseConstants.H_KEYFRAMES
-                                )
-                                param(
-                                    FirebaseAnalytics.Param.CONTENT_TYPE,
-                                    FirebaseConstants.H_KEYFRAMES
-                                )
-                            }
-                        }
                     }
                     setNegativeButton(R.string.cancel, null)
                 }

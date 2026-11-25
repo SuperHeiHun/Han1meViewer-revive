@@ -19,7 +19,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.drawerlayout.widget.DrawerLayout.DrawerListener
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -42,7 +41,6 @@ import com.yenaly.han1meviewer.logout
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.MainViewModel
 import com.yenaly.han1meviewer.util.CloudflareVerificationManager
-import com.yenaly.han1meviewer.util.logScreenViewEvent
 import com.yenaly.han1meviewer.util.showAlertDialog
 import com.yenaly.han1meviewer.util.showUpdateDialog
 import com.yenaly.han1meviewer.videoUrlRegex
@@ -87,10 +85,6 @@ class MainActivity : YenalyActivity<ActivityMainBinding>(), DrawerListener {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT)
         )
-    }
-
-    override val onFragmentResumedListener: (Fragment) -> Unit = { fragment ->
-        logScreenViewEvent(fragment)
     }
 
     /**

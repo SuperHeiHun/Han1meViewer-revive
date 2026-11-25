@@ -191,11 +191,6 @@ object Preferences {
     val effectiveUserAgent: String
         get() = cloudflareUserAgent.ifBlank { USER_AGENT }
 
-    // 隐私 相關
-
-    val isAnalyticsEnabled: Boolean
-        get() = preferenceSp.getBoolean(HomeSettingsFragment.USE_ANALYTICS, true)
-
     // 下载 相關
 
     val downloadCountLimit: Int

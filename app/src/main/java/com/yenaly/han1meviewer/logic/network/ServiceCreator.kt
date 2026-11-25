@@ -6,6 +6,7 @@ import com.yenaly.han1meviewer.HA1_GITHUB_API_URL
 import com.yenaly.han1meviewer.HJson
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.logic.network.interceptor.BrowserHeadersInterceptor
+import com.yenaly.han1meviewer.logic.network.interceptor.GitHubAuthInterceptor
 import com.yenaly.han1meviewer.logic.network.interceptor.SpeedLimitInterceptor
 import com.yenaly.han1meviewer.logic.network.interceptor.UserAgentInterceptor
 import com.yenaly.yenaly_libs.utils.applicationContext
@@ -90,13 +91,7 @@ object ServiceCreator {
 
     private fun buildGithubClient(): OkHttpClient {
         return OkHttpClient.Builder()
-            .dns(GitHubDns)
-            .addInterceptor { chain ->
-                val request = chain.request().newBuilder().addHeader(
-                    "Authorization", "Bearer ${BuildConfig.HA1_GITHUB_TOKEN}"
-                ).build()
-                return@addInterceptor chain.proceed(request)
-            }
+            .addInterceptor(GitHubAuthInterceptor(BuildConfig.HA1_GITHUB_TOKEN))
             .build()
     }
 }

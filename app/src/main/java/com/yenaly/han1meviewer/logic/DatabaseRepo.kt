@@ -3,10 +3,12 @@ package com.yenaly.han1meviewer.logic
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.logic.dao.DownloadDatabase
 import com.yenaly.han1meviewer.logic.dao.HistoryDatabase
+import com.yenaly.han1meviewer.logic.dao.LocalVideoDatabase
 import com.yenaly.han1meviewer.logic.dao.MiscellanyDatabase
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.entity.HKeyframeHeader
 import com.yenaly.han1meviewer.logic.entity.HKeyframeType
+import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
@@ -24,6 +26,20 @@ import kotlinx.serialization.json.decodeFromStream
  * @time 2022/06/22 022 23:00
  */
 object DatabaseRepo {
+
+    object LocalVideoList {
+        private val dao by lazy { LocalVideoDatabase.instance.localVideoDao }
+
+        fun observeList(listType: String) = dao.observeList(listType)
+
+        fun observeMembership(videoCode: String) = dao.observeMembership(videoCode)
+
+        suspend fun insert(video: LocalVideoEntity) = dao.insert(video)
+
+        suspend fun delete(listType: String, videoCode: String) = dao.delete(listType, videoCode)
+
+        suspend fun clear(listType: String) = dao.clear(listType)
+    }
 
     object HKeyframe {
         private val hKeyframeDao = MiscellanyDatabase.instance.hKeyframeDao
