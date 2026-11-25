@@ -140,6 +140,14 @@ dependencies {
     implementation(libs.serialization.json)
     implementation(libs.jsoup)
 
+    // update notes (native TextView Markdown rendering)
+
+    implementation(libs.markwon.core)
+    implementation(libs.markwon.strikethrough)
+    implementation(libs.markwon.tables)
+    implementation(libs.markwon.tasklist)
+    implementation(libs.markwon.linkify)
+
     // network
 
     implementation(libs.retrofit)

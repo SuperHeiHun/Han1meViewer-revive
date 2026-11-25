@@ -38,6 +38,7 @@ palette = "1.0.0"
 materialPreference = "2.0.0"
 stateLayout = "1.4.2"
 spannableX = "1.0.4"
+markwon = "4.6.2"
 datetime = "0.6.0-RC.2"
 serialization = "1.6.3"
 gson = "2.10.1"
@@ -109,6 +110,11 @@ compose-ui-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
+markwon-core = { group = "io.noties.markwon", name = "core", version.ref = "markwon" }
+markwon-strikethrough = { group = "io.noties.markwon", name = "ext-strikethrough", version.ref = "markwon" }
+markwon-tables = { group = "io.noties.markwon", name = "ext-tables", version.ref = "markwon" }
+markwon-tasklist = { group = "io.noties.markwon", name = "ext-tasklist", version.ref = "markwon" }
+markwon-linkify = { group = "io.noties.markwon", name = "linkify", version.ref = "markwon" }
 
 # Network
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }

@@ -3,6 +3,8 @@ package com.yenaly.han1meviewer.util
 import android.content.Context
 import android.content.Intent
 import android.graphics.Typeface
+import android.text.SpannableStringBuilder
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
 import com.itxca.spannablex.spannable
@@ -24,7 +26,7 @@ fun checkNeedUpdate(versionName: String): Boolean = isNewerVersion(
 )
 
 suspend fun Context.showUpdateDialog(latest: Latest) {
-    val spannable = spannable {
+    val header = spannable {
         getString(R.string.new_version_found).span {
             style(Typeface.BOLD)
             relativeSize(1.2f)
@@ -37,12 +39,21 @@ suspend fun Context.showUpdateDialog(latest: Latest) {
             relativeSize(1.2f)
         }
         newline()
-        latest.changelog.text()
     }
     val dialog = createAlertDialog {
         setTitle(R.string.new_version_found)
-        setMessage(spannable)
+        setMessage(header)
         setCancelable(false)
+    }
+    dialog.setOnShowListener {
+        dialog.findViewById<TextView>(android.R.id.message)?.let { messageView ->
+            // Use the themed dialog context, and keep the version/header out of the Markdown parser.
+            val markdown = dialog.context.createUpdateMarkdown()
+            val message = SpannableStringBuilder(header)
+                .append(markdown.toMarkdown(latest.changelog))
+            // Runs table/list measurement and link handling as well as applying the rendered spans.
+            markdown.setParsedMarkdown(messageView, message)
+        }
     }
     val res = dialog.await(
         positiveText = getString(R.string.update),
