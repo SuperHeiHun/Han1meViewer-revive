@@ -62,6 +62,8 @@
     <string name="playback_aspect_fill">拉伸填滿</string>
     <string name="playback_aspect_crop">等比裁切填滿</string>
     <string name="playback_auto_rotate">自動旋轉</string>
+    <string name="auto_fullscreen">自動全螢幕</string>
+    <string name="auto_fullscreen_summary">開始播放後自動進入全螢幕，不會自動開啟「自動旋轉」；手動退出後，同次播放不再重複進入。</string>
     <string name="playback_auto_rotate_hint">依實際影片寬高自動選擇橫直向，切換下一項時同樣生效。未知尺寸或正方形維持原方向。</string>
     <string name="playback_settings_global_hint">對所有影片生效並儲存。清單循環在末項回到首項；無系列或離線時視為單項清單循環。循環播放僅重複目前影片。</string>
     <string name="close_playback_playlist">關閉播放清單</string>

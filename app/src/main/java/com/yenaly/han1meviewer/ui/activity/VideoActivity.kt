@@ -2,6 +2,7 @@ package com.yenaly.han1meviewer.ui.activity
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
@@ -34,6 +35,7 @@ import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.player.completionTarget
+import com.yenaly.han1meviewer.logic.player.PlayerAutoFullscreen
 import com.yenaly.han1meviewer.logic.player.videoIsLandscape
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.ui.fragment.video.CommentFragment
@@ -76,6 +78,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     private var startSelectedVideo = false
     private var hasSwitchedVideo = false
     private var appliedVideoOrientation: Pair<Any, Boolean>? = null
+    private val automaticFullscreen = PlayerAutoFullscreen()
+    private var automaticFullscreenRequest: Runnable? = null
 
     private val tabNameArray = intArrayOf(R.string.introduction, R.string.comment)
 
@@ -113,7 +117,11 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             if (viewModel.videoCode != it) viewModel.videoCode = it
         }
         binding.videoPlayer.onPlaylistVideoSelected = { playVideo(it) }
-        binding.videoPlayer.onVideoDimensionsChanged = { applyVideoOrientation() }
+        binding.videoPlayer.onVideoDimensionsChanged = {
+            applyVideoOrientation()
+            requestAutomaticFullscreen()
+        }
+        binding.videoPlayer.onPlaybackStarted = { requestAutomaticFullscreen() }
         binding.videoPlayer.onVideoCompleted = { completedCode ->
             if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
                 completedCode == viewModel.videoCode &&
@@ -153,6 +161,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                         previousRotation = settings.autoRotate
                     }
                     if (settings.autoRotate) applyVideoOrientation()
+                    // Read the same global snapshot after returning from the application settings.
+                    requestAutomaticFullscreen()
                 }
             }
         }
@@ -179,6 +189,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                         }
 
                         is VideoLoadingState.Loading -> {
+                            cancelAutomaticFullscreen()
+                            automaticFullscreen.reset()
                             // The introduction fragment may not be attached to this pager yet.
                             binding.videoVp.isUserInputEnabled = true
                             binding.videoPlayer.prepareForVideoSwitch()
@@ -244,9 +256,11 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         }
         startSelectedVideoIfReady()
         applyVideoOrientation()
+        requestAutomaticFullscreen()
     }
 
     override fun onStop() {
+        cancelAutomaticFullscreen()
         super.onStop()
         binding.videoPlayer.dismissPlayerPanels()
         Jzvd.goOnPlayOnPause()
@@ -265,6 +279,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             return true
         }
         hasSwitchedVideo = true
+        cancelAutomaticFullscreen()
         startSelectedVideo = true
         supportFragmentManager.fragments.filterIsInstance<ChildCommentPopupFragment>()
             .forEach { it.dismissAllowingStateLoss() }
@@ -298,6 +313,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     }
 
     override fun onDestroy() {
+        cancelAutomaticFullscreen()
         super.onDestroy()
         Jzvd.releaseAllVideos()
     }
@@ -318,6 +334,44 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                 changeScreenNormal()
             }
         }
+    }
+
+    private fun cancelAutomaticFullscreen() {
+        automaticFullscreenRequest?.let { binding.videoPlayer.removeCallbacks(it) }
+        automaticFullscreenRequest = null
+    }
+
+    private fun requestAutomaticFullscreen() {
+        cancelAutomaticFullscreen()
+        if (!Preferences.autoFullscreen) {
+            automaticFullscreen.reset()
+            return
+        }
+        val player = binding.videoPlayer
+        val media = player.mediaInterface ?: return
+        val session = player.playbackSession
+        val code = player.videoCode
+        val request = Runnable {
+            automaticFullscreenRequest = null
+            if (isFinishing || isDestroyed || player.mediaInterface !== media || player.playbackSession !== session || player.videoCode != code ||
+                code != viewModel.videoCode) return@Runnable
+            val eligible = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                    viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success &&
+                    player.state == Jzvd.STATE_PLAYING &&
+                    (player.screen == Jzvd.SCREEN_NORMAL || player.screen == Jzvd.SCREEN_FULLSCREEN)
+            if (automaticFullscreen.shouldEnter(session, Preferences.autoFullscreen, eligible,
+                    player.screen == Jzvd.SCREEN_FULLSCREEN)) {
+                // Known dimensions already select the existing manual fullscreen direction.
+                // With no dimensions, retain this window's direction instead of a previous video's.
+                if (player.videoDimensions == null) {
+                    Jzvd.FULLSCREEN_ORIENTATION = if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
+                        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                }
+                player.gotoFullscreen()
+            }
+        }
+        automaticFullscreenRequest = request
+        player.post(request)
     }
 
     private fun applyVideoOrientation() {

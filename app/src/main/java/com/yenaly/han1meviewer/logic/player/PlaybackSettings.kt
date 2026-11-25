@@ -22,6 +22,7 @@ data class PlaybackSettings(
     val mode: PlaybackMode = PlaybackMode.PAUSE_AT_END,
     val aspectRatio: PlaybackAspectRatio = PlaybackAspectRatio.FIT,
     val autoRotate: Boolean = false,
+    val autoFullscreen: Boolean = false,
 )
 
 /** Global rule; a video without a series (including a download) is a one-item list. */

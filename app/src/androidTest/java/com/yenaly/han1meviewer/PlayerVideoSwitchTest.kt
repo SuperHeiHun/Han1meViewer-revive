@@ -192,6 +192,54 @@ class PlayerVideoSwitchTest {
         assertEquals(0, player.progressBar.progress)
     }
 
+    @Test fun playbackStartedCallbackRunsAfterThePlayingStateIsSet() = withPlayer { player, media ->
+        var calls = 0
+        player.onPlaybackStarted = {
+            calls++
+            assertEquals(Jzvd.STATE_PLAYING, player.state)
+            assertSame(media, player.mediaInterface)
+        }
+        player.onStatePlaying()
+        assertEquals(1, calls)
+        assertEquals(0, media.startCount)
+    }
+
+    @Test fun loadingDoesNotReportThePreviousVideoAsStarted() = withPlayer { player, _ ->
+        var calls = 0
+        player.onPlaybackStarted = { calls++ }
+        player.prepareForVideoSwitch()
+        player.onStatePlaying()
+        assertEquals(0, calls)
+    }
+
+    @Test fun loadingAndSetupGiveTheNextVideoANewFullscreenSession() = withPlayer { player, _ ->
+        val original = player.playbackSession
+        player.prepareForVideoSwitch()
+        assertNotSame(original, player.playbackSession)
+        val loading = player.playbackSession
+        player.setUp(JZDataSource("file:///not-opened-b.mp4", "B"), player.screen)
+        assertNotSame(loading, player.playbackSession)
+    }
+
+    @Test fun qualityChangesRenewTheSessionEvenWhenTheKernelIsReused() = withPlayer { player, media ->
+        val original = player.playbackSession
+        player.changeUrl(JZDataSource("file:///not-opened-quality.mp4", "A"), 42_000L)
+        assertNotSame(original, player.playbackSession)
+        assertSame(media, player.mediaInterface)
+        assertEquals(0, media.startCount)
+    }
+
+    @Test fun bufferingAndCompletedReplayKeepTheFullscreenSession() = withPlayer { player, _ ->
+        val original = player.playbackSession
+        player.onStatePlaying()
+        player.onStatePreparingPlaying()
+        player.onStatePlaying()
+        assertSame(original, player.playbackSession)
+        player.onCompletion()
+        player.startVideo()
+        assertSame(original, player.playbackSession)
+    }
+
     @Test fun retryOfSameVideoKeepsAlreadyObservedKeyframes() = withPlayer { player, _ ->
         val frames = HKeyframeEntity("a", "A", mutableListOf(HKeyframeEntity.Keyframe(1000, null)))
         player.hKeyframe = frames

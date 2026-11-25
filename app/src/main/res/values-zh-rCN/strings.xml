@@ -62,6 +62,8 @@
     <string name="playback_aspect_fill">拉伸铺满</string>
     <string name="playback_aspect_crop">等比裁剪铺满</string>
     <string name="playback_auto_rotate">自动旋转</string>
+    <string name="auto_fullscreen">自动全屏</string>
+    <string name="auto_fullscreen_summary">开始播放后自动进入全屏，不会自动开启“自动旋转”；手动退出后，同次播放不再重复进入。</string>
     <string name="playback_auto_rotate_hint">按实际视频宽高自动选择横竖屏，切换下一项时同样生效。未知尺寸或正方形保持方向不变。</string>
     <string name="playback_settings_global_hint">对所有视频生效并保存。列表循环在末项回到首项；无系列或离线时按单项列表循环。循环播放只重复当前视频。</string>
     <string name="close_playback_playlist">关闭播放列表</string>

@@ -20,7 +20,7 @@ class PlaybackSettingsPreferencesTest {
     private fun isolated(test: () -> Unit) {
         val sp = Preferences.preferenceSp
         val keys = listOf(Preferences.PLAYBACK_MODE, Preferences.PLAYBACK_ASPECT_RATIO,
-            Preferences.PLAYBACK_AUTO_ROTATE, Preferences.LEGACY_AUTO_PLAY_NEXT)
+            Preferences.PLAYBACK_AUTO_ROTATE, Preferences.AUTO_FULLSCREEN, Preferences.LEGACY_AUTO_PLAY_NEXT)
         val original = sp.all.filterKeys { it in keys }
         try {
             sp.edit().apply { keys.forEach { remove(it) } }.commit()
@@ -62,7 +62,7 @@ class PlaybackSettingsPreferencesTest {
         assertEquals(PlaybackMode.REPEAT_ONE, Preferences.playbackMode)
     }
 
-    @Test fun observerIncludesAllThreeSettingsAndDirectRestore() = isolated {
+    @Test fun observerIncludesAllPlaybackSettingsAndDirectRestore() = isolated {
         runBlocking {
             val values = Channel<PlaybackSettings>(Channel.UNLIMITED)
             val job = launch(start = CoroutineStart.UNDISPATCHED) {
@@ -76,6 +76,10 @@ class PlaybackSettingsPreferencesTest {
                 assertEquals(PlaybackAspectRatio.CROP, withTimeout(5_000) { values.receive() }.aspectRatio)
                 Preferences.playbackAutoRotate = true
                 assertTrue(withTimeout(5_000) { values.receive() }.autoRotate)
+                Preferences.autoFullscreen = true
+                assertTrue(withTimeout(5_000) { values.receive() }.autoFullscreen)
+                Preferences.preferenceSp.edit().putBoolean(Preferences.AUTO_FULLSCREEN, false).commit()
+                assertFalse(withTimeout(5_000) { values.receive() }.autoFullscreen)
                 Preferences.preferenceSp.edit().putBoolean(Preferences.PLAYBACK_AUTO_ROTATE, false).commit()
                 assertFalse(withTimeout(5_000) { values.receive() }.autoRotate)
             } finally {
@@ -90,6 +94,23 @@ class PlaybackSettingsPreferencesTest {
             assertEquals(PlaybackSettings(), Preferences.observePlaybackSettings().first())
             Preferences.playbackMode = PlaybackMode.REPEAT_ONE
             assertEquals(PlaybackMode.REPEAT_ONE, Preferences.observePlaybackSettings().first().mode)
+        }
+    }
+
+    @Test fun automaticFullscreenPersistsWithoutEnablingAutoRotate() = isolated {
+        assertFalse(Preferences.autoFullscreen)
+        Preferences.autoFullscreen = true
+        assertTrue(Preferences.preferenceSp.getBoolean(Preferences.AUTO_FULLSCREEN, false))
+        assertTrue(Preferences.playbackSettings.autoFullscreen)
+        assertFalse(Preferences.playbackAutoRotate)
+        Preferences.autoFullscreen = false
+        assertFalse(Preferences.playbackSettings.autoFullscreen)
+    }
+
+    @Test fun aNewSubscriptionReadsARestoredAutomaticFullscreenValue() = isolated {
+        Preferences.preferenceSp.edit().putBoolean(Preferences.AUTO_FULLSCREEN, true).commit()
+        runBlocking {
+            assertTrue(Preferences.observePlaybackSettings().first().autoFullscreen)
         }
     }
 }

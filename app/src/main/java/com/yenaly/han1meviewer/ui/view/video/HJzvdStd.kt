@@ -19,6 +19,8 @@ import android.widget.PopupWindow
 import android.widget.ProgressBar
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
@@ -183,11 +185,15 @@ class HJzvdStd @JvmOverloads constructor(
     private var replayRequest: Runnable? = null
     var videoDimensions: Pair<Int, Int>? = null
         private set
+    /** Changes even when a quality switch prepares a new source on the same kernel object. */
+    var playbackSession: Any = Any()
+        private set
     private var isVideoLoading = false
     private var wifiListenerContext: Context? = null
     var onPlaylistVideoSelected: ((String) -> Unit)? = null
     var onVideoCompleted: ((String) -> Unit)? = null
     var onVideoDimensionsChanged: (() -> Unit)? = null
+    var onPlaybackStarted: (() -> Unit)? = null
 
     /**
      * 初始化關鍵H幀的 Adapter，最好不用 lazy
@@ -340,6 +346,7 @@ class HJzvdStd @JvmOverloads constructor(
             gotoFullscreenTime = 0L
         }
         isVideoLoading = false
+        playbackSession = Any()
         videoDimensions = null
         startButton.isEnabled = true
         clarity.isEnabled = true
@@ -377,6 +384,7 @@ class HJzvdStd @JvmOverloads constructor(
 
     override fun changeUrl(jzDataSource: JZDataSource?, seekToInAdvance: Long) {
         playerGestureController?.cancel()
+        playbackSession = Any()
         videoDimensions = null
         cancelReplay()
         super.changeUrl(jzDataSource, seekToInAdvance)
@@ -392,6 +400,11 @@ class HJzvdStd @JvmOverloads constructor(
         playerGestureController?.onPlaybackPaused()
     }
 
+    override fun onStatePlaying() {
+        super.onStatePlaying()
+        if (!isVideoLoading) onPlaybackStarted?.invoke()
+    }
+
     override fun onStateError() {
         playerGestureController?.cancel()
         super.onStateError()
@@ -404,6 +417,7 @@ class HJzvdStd @JvmOverloads constructor(
 
     override fun reset() {
         playerGestureController?.cancel()
+        playbackSession = Any()
         cancelReplay()
         videoDimensions = null
         dismissPlaybackPlaylist()
@@ -461,6 +475,7 @@ class HJzvdStd @JvmOverloads constructor(
             replayCompletedVideo()
             return
         }
+        playbackSession = Any()
         super.startVideo()
     }
 
@@ -716,6 +731,7 @@ class HJzvdStd @JvmOverloads constructor(
     @SuppressLint("InflateParams")
     fun clickPlaybackSettings() {
         if (screen == SCREEN_TINY || !isAttachedToWindow) return
+        val panel = currentPanelLayout(alwaysFromBottom = true) ?: return
         playerGestureController?.cancel()
         cancelDismissControlViewTimer()
         onCLickUiToggleToClear()
@@ -723,13 +739,13 @@ class HJzvdStd @JvmOverloads constructor(
         controlsPopup?.dismiss()
         val sourceCode = videoCode
         val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playback_settings, null)
+        content.applyBottomPanelInsets()
         val popup = PopupWindow(
-            content, minOf(JZUtils.dip2px(context, 360f), resources.displayMetrics.widthPixels),
-            LayoutParams.MATCH_PARENT, true,
+            content, panel.width, panel.height, true,
         ).apply {
             setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
             isOutsideTouchable = true
-            animationStyle = cn.jzvd.R.style.pop_animation
+            animationStyle = R.style.PlayerBottomPanelAnimation
             setOnDismissListener {
                 if (controlsPopup === this) {
                     controlsPopup = null
@@ -751,7 +767,7 @@ class HJzvdStd @JvmOverloads constructor(
             onAutoRotate = { if (isCurrent()) Preferences.playbackAutoRotate = it },
         ).also { it.render(Preferences.playbackSettings) }
         content.findViewById<View>(R.id.close_playback_settings).setOnClickListener { popup.dismiss() }
-        popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
+        popup.showAtLocation(textureViewContainer, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, 0)
     }
 
     override fun gotoNormalScreen() {
@@ -941,6 +957,7 @@ class HJzvdStd @JvmOverloads constructor(
     fun clickPlaybackPlaylist() {
         val playlist = playbackPlaylist ?: return
         if (screen != SCREEN_FULLSCREEN || playlist.videos.isEmpty() || !isAttachedToWindow) return
+        val panel = currentPanelLayout() ?: return
         playerGestureController?.cancel()
         cancelDismissControlViewTimer()
         onCLickUiToggleToClear()
@@ -948,14 +965,14 @@ class HJzvdStd @JvmOverloads constructor(
         dismissPlaybackPlaylist()
         val sourceCode = videoCode
         val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playlist, null)
+        if (panel.fromBottom) content.applyBottomPanelInsets()
         content.findViewById<TextView>(R.id.playlist_title).text = playlist.title ?: context.getString(R.string.play_list)
         val popup = PopupWindow(
-            content, minOf(JZUtils.dip2px(context, 360f), (width * 0.5f).toInt()),
-            LayoutParams.MATCH_PARENT, true,
+            content, panel.width, panel.height, true,
         ).apply {
             setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
             isOutsideTouchable = true
-            animationStyle = cn.jzvd.R.style.pop_animation
+            animationStyle = if (panel.fromBottom) R.style.PlayerBottomPanelAnimation else cn.jzvd.R.style.pop_animation
             setOnDismissListener {
                 if (playlistPopup === this) playlistPopup = null
                 if (state == STATE_PLAYING) startDismissControlViewTimer()
@@ -990,7 +1007,19 @@ class HJzvdStd @JvmOverloads constructor(
             textColor = android.graphics.Color.WHITE,
         ).render(Preferences.playbackPlaylistSettings)
         showPlaylistOrder()
-        popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
+        popup.showAtLocation(textureViewContainer,
+            if (panel.fromBottom) Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL else Gravity.END, 0, 0)
+    }
+
+    private fun currentPanelLayout(alwaysFromBottom: Boolean = false): PlayerPanelLayout? =
+        playerPanelLayout(rootView.width, rootView.height, JZUtils.dip2px(context, 360f), alwaysFromBottom)
+
+    private fun View.applyBottomPanelInsets() {
+        val insets = ViewCompat.getRootWindowInsets(this@HJzvdStd)?.getInsets(
+            WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+        ) ?: return
+        updatePadding(left = paddingLeft + insets.left, right = paddingRight + insets.right,
+            bottom = paddingBottom + insets.bottom)
     }
 
     // Kernels validate speed and preserve pause state inside their owning-thread command.

@@ -114,6 +114,7 @@ object Preferences {
     const val PLAYBACK_MODE = "playback_mode"
     const val PLAYBACK_ASPECT_RATIO = "playback_aspect_ratio"
     const val PLAYBACK_AUTO_ROTATE = "playback_auto_rotate"
+    const val AUTO_FULLSCREEN = "auto_fullscreen"
     internal const val LEGACY_AUTO_PLAY_NEXT = "auto_play_next"
 
     var playbackMode: PlaybackMode
@@ -134,12 +135,16 @@ object Preferences {
         get() = preferenceSp.getBoolean(PLAYBACK_AUTO_ROTATE, false)
         set(value) { preferenceSp.edit().putBoolean(PLAYBACK_AUTO_ROTATE, value).apply() }
 
+    var autoFullscreen: Boolean
+        get() = preferenceSp.getBoolean(AUTO_FULLSCREEN, false)
+        set(value) { preferenceSp.edit().putBoolean(AUTO_FULLSCREEN, value).apply() }
+
     val playbackSettings: PlaybackSettings
-        get() = PlaybackSettings(playbackMode, playbackAspectRatio, playbackAutoRotate)
+        get() = PlaybackSettings(playbackMode, playbackAspectRatio, playbackAutoRotate, autoFullscreen)
 
     fun observePlaybackSettings() = callbackFlow {
         val sp = preferenceSp
-        val keys = setOf(PLAYBACK_MODE, PLAYBACK_ASPECT_RATIO, PLAYBACK_AUTO_ROTATE, LEGACY_AUTO_PLAY_NEXT)
+        val keys = setOf(PLAYBACK_MODE, PLAYBACK_ASPECT_RATIO, PLAYBACK_AUTO_ROTATE, AUTO_FULLSCREEN, LEGACY_AUTO_PLAY_NEXT)
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == null || key in keys) trySend(playbackSettings)
         }
