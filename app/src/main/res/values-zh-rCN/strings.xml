@@ -66,6 +66,10 @@
     <string name="video">影片</string>
     <string name="download">下载</string>
     <string name="watch_history">观看历史</string>
+    <string name="search_history">搜索历史</string>
+    <string name="clear_search_history">清空搜索历史</string>
+    <string name="sure_to_clear_search_history">确定清空全部搜索历史吗？不会删除观看历史。</string>
+    <string name="search_history_help">点击记录重新搜索，点击右侧叉号删除单条记录，工具栏可清空全部搜索历史。\n搜索时用空格分隔多个标签，可混合标题关键词，例如：1080p 60FPS 作品名。完整标签名支持简体、繁体和英文；未知标签可加 # 前缀，含空格的标签可写成 # 加双引号包围的名称。标题与标签同名时，用双引号包围标题文字即可按标题搜索。</string>
     <string name="login">登录</string>
     <string name="delete">删除</string>
     <string name="here_is_empty">这里是空空的…</string>
@@ -100,7 +104,7 @@
     <string name="current_version">当前版本：%s</string>
     <string name="already_latest_update">已经是最新版本！</string>
     <string name="app_slogan">非官方 Hanime1.me 客户端</string>
-    <string name="search_placeholder">今天想看点什么呢</string>
+    <string name="search_placeholder">标题或标签，空格分隔</string>
     <string name="downloading">正在下载</string>
     <string name="downloading_s">正在下载：%1$s</string>
     <string name="downloading_update_percent">正在下载更新 %d%%</string>

@@ -51,6 +51,7 @@ import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.yenaly_libs.base.YenalyActivity
 import com.yenaly.yenaly_libs.utils.dp
 import com.yenaly.yenaly_libs.utils.intentExtra
+import com.yenaly.yenaly_libs.utils.startActivity
 import com.yenaly.yenaly_libs.utils.unsafeLazy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -295,11 +296,12 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
             onBackClickListener = {
                 finish()
             }
+            onHistoryClickListener = {
+                hideHistory()
+                startActivity<SearchHistoryActivity>()
+            }
             onSearchClickListener = { _, text ->
                 viewModel.query = text
-                if (text.isNotBlank()) {
-                    viewModel.insertSearchHistory(SearchHistoryEntity(text))
-                }
                 // getNewHanimeSearchResult() 下面那個方法自動幫你執行這個方法了
                 binding.searchSrl.autoRefresh()
             }

@@ -140,6 +140,9 @@ object DatabaseRepo {
         suspend fun delete(history: SearchHistoryEntity) =
             searchHistoryDao.delete(history)
 
+        suspend fun deleteAll() =
+            searchHistoryDao.deleteAll()
+
         suspend fun insert(history: SearchHistoryEntity) =
             searchHistoryDao.insertOrUpdate(history)
 

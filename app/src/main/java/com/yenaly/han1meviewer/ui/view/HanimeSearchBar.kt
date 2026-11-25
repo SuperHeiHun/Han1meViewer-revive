@@ -47,6 +47,7 @@ class HanimeSearchBar @JvmOverloads constructor(
     private val back: MaterialButton = findViewById(R.id.btn_back)
     private val search: MaterialButton = findViewById(R.id.btn_search)
     private val tag: MaterialButton = findViewById(R.id.btn_tag)
+    private val history: MaterialButton = findViewById(R.id.btn_history)
     private val rvHistory: RecyclerView = findViewById(R.id.rv_history)
     private val etSearch: TextInputEditText = findViewById(R.id.et_search)
 
@@ -123,6 +124,12 @@ class HanimeSearchBar @JvmOverloads constructor(
             tag.setOnClickListener(value)
         }
 
+    var onHistoryClickListener: ((View) -> Unit)? = null
+        set(value) {
+            field = value
+            history.setOnClickListener(value)
+        }
+
     var searchText: String?
         get() = etSearch.text?.toString()
         set(value) {
@@ -164,6 +171,7 @@ class HanimeSearchBar @JvmOverloads constructor(
 //        TransitionManager.beginDelayedTransition(searchBar, slide)
 
         rvHistory.visibility = VISIBLE
+        history.visibility = VISIBLE
         back.animate()
             .setInterpolator(animInterpolator)
             .setDuration(ANIM_DURATION)
@@ -184,6 +192,7 @@ class HanimeSearchBar @JvmOverloads constructor(
 //        TransitionManager.beginDelayedTransition(searchBar, slide)
 
         rvHistory.visibility = GONE
+        history.visibility = GONE
         back.animate()
             .setInterpolator(animInterpolator)
             .setDuration(ANIM_DURATION)

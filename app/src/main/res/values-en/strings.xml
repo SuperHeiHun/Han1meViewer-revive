@@ -65,6 +65,10 @@
     <string name="video">Video</string>
     <string name="download">Download</string>
     <string name="watch_history">Watch History</string>
+    <string name="search_history">Search History</string>
+    <string name="clear_search_history">Clear Search History</string>
+    <string name="sure_to_clear_search_history">Clear all search history? Watch history will not be deleted.</string>
+    <string name="search_history_help">Tap a record to search again, use its cross button to delete it, or clear all search history from the toolbar.\nSeparate tags with spaces and optionally add title keywords, for example: 1080p 60FPS title. Complete tag names support Simplified Chinese, Traditional Chinese and English. Prefix an unknown tag with #; for a tag containing spaces, follow # with its name in double quotes. Put title text in double quotes to prevent it from being treated as a tag.</string>
     <string name="login">Login</string>
     <string name="delete">Delete</string>
     <string name="here_is_empty">It\'s Empty Here…</string>
@@ -99,7 +103,7 @@
     <string name="current_version">Current Version: %s</string>
     <string name="already_latest_update">Already the Latest Version!</string>
     <string name="app_slogan">Unofficial Hanime1.me Client</string>
-    <string name="search_placeholder">What to watch today?</string>
+    <string name="search_placeholder">Title or tags, separated by spaces</string>
     <string name="downloading">Downloading</string>
     <string name="downloading_s">Downloading: %1$s</string>
     <string name="downloading_update_percent">Downloading Update %d%%</string>

@@ -69,6 +69,17 @@
 
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_history"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/search_history"
+        android:textColor="@color/search_bar_icon_color"
+        android:visibility="gone"
+        app:icon="@drawable/ic_baseline_history_24"
+        app:iconTint="@color/search_bar_icon_color" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_history"
         android:layout_width="match_parent"

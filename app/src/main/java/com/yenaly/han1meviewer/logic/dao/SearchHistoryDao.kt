@@ -21,6 +21,9 @@ abstract class SearchHistoryDao {
     @Delete
     abstract suspend fun delete(history: SearchHistoryEntity)
 
+    @Query("DELETE FROM SearchHistoryEntity")
+    abstract suspend fun deleteAll()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insert(history: SearchHistoryEntity)
 

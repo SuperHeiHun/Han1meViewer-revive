@@ -9,18 +9,22 @@ import com.yenaly.han1meviewer.logic.NetworkRepo
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.SearchOption
+import com.yenaly.han1meviewer.logic.search.SearchInputParser
 import com.yenaly.han1meviewer.logic.state.PageLoadingState
 import com.yenaly.han1meviewer.util.loadAssetAs
 import com.yenaly.yenaly_libs.base.YenalyViewModel
 import com.yenaly.yenaly_libs.utils.unsafeLazy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * @project Hanime1
@@ -73,6 +77,19 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
         loadAssetAs<Map<String, List<SearchOption>>>("search_options/tags.json").orEmpty()
     }
 
+    private val searchInputParser by unsafeLazy {
+        SearchInputParser(buildMap {
+            tags.values.flatten().forEach { option ->
+                val key = option.searchKey ?: return@forEach
+                listOfNotNull(
+                    key, option.name, option.lang?.zhrCN, option.lang?.zhrTW, option.lang?.en,
+                ).filter(String::isNotBlank).forEach {
+                    put(it, key)
+                }
+            }
+        })
+    }
+
     val brands by unsafeLazy {
         loadAssetAs<List<SearchOption>>("search_options/brands.json").orEmpty()
     }
@@ -108,10 +125,23 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
     ) {
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
+            val input = searchInputParser.parse(query)
+            // Every entry point (including a tag/author intent and history replay) comes here.
+            if (page == 1 && !query.isNullOrBlank()) {
+                try {
+                    withContext(NonCancellable + Dispatchers.IO) {
+                        DatabaseRepo.SearchHistory.insert(SearchHistoryEntity(query.trim()))
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e("insert_search_hty", "Unable to save search history", e)
+                }
+            }
             NetworkRepo.getHanimeSearchResult(
-                page, query, genre,
+                page, input.query, genre,
                 sort, broad, date,
-                duration, tags
+                duration, tags + input.tags
             ).collect { state ->
                 val prev = _searchStateFlow.getAndUpdate { state }
                 if (prev is PageLoadingState.Loading) _searchFlow.value = emptyList()
@@ -123,13 +153,6 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
                     }
                 }
             }
-        }
-    }
-
-    fun insertSearchHistory(history: SearchHistoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            DatabaseRepo.SearchHistory.insert(history)
-            Log.d("insert_search_hty", "$history DONE!")
         }
     }
 

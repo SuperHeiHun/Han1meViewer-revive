@@ -50,6 +50,7 @@ import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
 import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
+import com.yenaly.han1meviewer.logic.search.quotedSearchText
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
@@ -643,7 +644,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 vgArtist.setOnClickListener {
                     startActivity<SearchActivity>(
                         ADVANCED_SEARCH_MAP to advancedSearchMapOf(
-                            HAdvancedSearch.QUERY to artist.name,
+                            HAdvancedSearch.QUERY to quotedSearchText(artist.name),
                             HAdvancedSearch.GENRE to artist.genre
                         )
                     )

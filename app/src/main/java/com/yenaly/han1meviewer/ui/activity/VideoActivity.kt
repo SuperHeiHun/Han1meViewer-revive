@@ -30,7 +30,6 @@ import com.yenaly.han1meviewer.VIDEO_COMMENT_PREFIX
 import com.yenaly.han1meviewer.databinding.ActivityVideoBinding
 import com.yenaly.han1meviewer.getHanimeVideoLink
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
-import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
 import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
@@ -54,7 +53,6 @@ import com.yenaly.yenaly_libs.utils.startActivity
 import com.yenaly.yenaly_libs.utils.view.attach
 import com.yenaly.yenaly_libs.utils.view.setUpFragmentStateAdapter
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 
 class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     OrientationManager.OrientationChangeListener {
@@ -155,17 +153,6 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                             }
                             binding.videoPlayer.posterImageView.load(state.info.coverUrl) {
                                 crossfade(true)
-                            }
-                            // 將觀看記錄保存數據庫
-                            if (!fromDownload) {
-                                val entity = WatchHistoryEntity(
-                                    state.info.coverUrl,
-                                    state.info.title,
-                                    state.info.uploadTimeMillis,
-                                    Clock.System.now().toEpochMilliseconds(),
-                                    viewModel.videoCode
-                                )
-                                viewModel.insertWatchHistoryWithCover(entity)
                             }
                         }
 

@@ -11,13 +11,14 @@ import com.yenaly.han1meviewer.logic.DatabaseRepo
 import com.yenaly.han1meviewer.logic.NetworkRepo
 import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
-import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
+import com.yenaly.han1meviewer.logic.history.WatchHistoryRecorder
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel.csrfToken
 import com.yenaly.yenaly_libs.base.YenalyViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,8 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
 
     var fromDownload = false
 
+    private val watchHistoryRecorder = WatchHistoryRecorder(DatabaseRepo.WatchHistory::insert)
+
     var hKeyframes: HKeyframeEntity? = null
 
     private val _hanimeVideoStateFlow =
@@ -75,12 +78,19 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
                 NetworkRepo.getHanimeVideo(videoCode)
             }
             flow.collect { state ->
-                _hanimeVideoStateFlow.value = state
                 if (state is VideoLoadingState.Success) {
+                    try {
+                        watchHistoryRecorder.record(videoCode, state.info, fromDownload)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e("insert_watch_hty", "Unable to save watch history", e)
+                    }
                     ContentBlocking.remember(videoCode, state.info)
                     _hanimeVideoFlow.update { state.info }
                     csrfToken = state.info.csrfToken
                 }
+                _hanimeVideoStateFlow.value = state
             }
         }
     }
@@ -140,19 +150,6 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
                     prev?.copy(myList = prev.myList?.copy(myListInfo = myList))
                 }
             }
-        }
-    }
-
-    fun insertWatchHistory(history: WatchHistoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            DatabaseRepo.WatchHistory.insert(history)
-            Log.d("insert_watch_hty", "$history DONE!")
-        }
-    }
-
-    fun insertWatchHistoryWithCover(history: WatchHistoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            DatabaseRepo.WatchHistory.insert(history)
         }
     }
 

@@ -259,6 +259,10 @@ class MainActivity : YenalyActivity<ActivityMainBinding>(), DrawerListener {
     // #issue-225: 侧滑选单双重点击异常，不能从 xml 里直接定义 activity 块，需要在代码里初始化
     private fun initNavActivity() {
         binding.nvMain.menu.apply {
+            findItem(R.id.nv_search_history).setOnMenuItemClickListener {
+                startActivity<SearchHistoryActivity>()
+                return@setOnMenuItemClickListener false
+            }
             findItem(R.id.nv_settings).setOnMenuItemClickListener {
                 SettingsRouter.with(navController).toSettingsActivity()
                 return@setOnMenuItemClickListener false
