@@ -24,3 +24,6 @@ local.properties
 
 # Local project memory (not part of source control)
 /AGENTS.md
+
+# Local push helper (not part of source control)
+/push.ps1
