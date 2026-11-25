@@ -89,7 +89,7 @@
     <string name="clear_search_history">清空搜索历史</string>
     <string name="sure_to_clear_search_history">确定清空全部搜索历史吗？不会删除观看历史。</string>
     <string name="search_history_help">首页右上角搜索按钮和侧边栏均可打开此页。输入文字会筛选已有历史；点击搜索按钮或键盘搜索键发起新搜索，也可点击历史记录重新搜索。右侧叉号删除单条记录，工具栏可确认清空全部搜索历史，不受当前筛选影响。\n输入标签前缀会显示本地补全建议，支持简体、繁体和英文；输入 # 可浏览建议。点击建议只替换光标所在的标签片段，保留其他标签和标题；双引号包围的标题不会补全。\n搜索时用空格分隔多个标签，可混合标题关键词，例如：1080p 60FPS 作品名。未知标签可加 # 前缀，含空格的标签可写成 # 加双引号包围的名称。标题与标签同名时，用双引号包围标题文字即可按标题搜索。结果页继续提供高级搜索，不再显示旧历史下拉。</string>
-    <string name="search_history_input_help">输入可筛选历史；点击搜索按钮或键盘搜索键发起搜索。</string>
+    <string name="search_history_input_help">输入可筛选历史；点击搜索按钮或键盘搜索键发起搜索。\n不输入内容，直接点击搜索可查看最新上传，并在结果页使用高级搜索筛选。</string>
     <string name="no_matching_search_history">没有匹配的历史，可直接搜索当前输入。</string>
     <string name="tag_suggestions">标签补全</string>
     <string name="login">登录</string>

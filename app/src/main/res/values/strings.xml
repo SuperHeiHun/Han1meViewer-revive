@@ -89,7 +89,7 @@
     <string name="clear_search_history">清空搜尋歷史</string>
     <string name="sure_to_clear_search_history">確定清空全部搜尋歷史嗎？不會刪除觀看歷史。</string>
     <string name="search_history_help">首頁右上角搜尋按鈕與側邊欄皆可開啟此頁。輸入文字會篩選既有歷史；點擊搜尋按鈕或鍵盤搜尋鍵發起新搜尋，也可點擊歷史紀錄重新搜尋。右側叉號刪除單筆紀錄，工具列可確認清空全部搜尋歷史，不受目前篩選影響。\n輸入標籤前綴會顯示本地補全建議，支援簡體、繁體與英文；輸入 # 可瀏覽建議。點擊建議只取代游標所在的標籤片段，保留其他標籤與標題；雙引號包圍的標題不會補全。\n搜尋時以空格分隔多個標籤，可混合標題關鍵字，例如：1080p 60FPS 作品名。未知標籤可加 # 前綴，含空格的標籤可寫成 # 加雙引號包圍的名稱。標題與標籤同名時，以雙引號包圍標題文字即可按標題搜尋。結果頁繼續提供進階搜尋，不再顯示舊歷史下拉。</string>
-    <string name="search_history_input_help">輸入可篩選歷史；點擊搜尋按鈕或鍵盤搜尋鍵發起搜尋。</string>
+    <string name="search_history_input_help">輸入可篩選歷史；點擊搜尋按鈕或鍵盤搜尋鍵發起搜尋。\n不輸入內容，直接點擊搜尋可查看最新上傳，並在結果頁使用高級搜尋篩選。</string>
     <string name="no_matching_search_history">沒有符合的歷史，可直接搜尋目前輸入。</string>
     <string name="tag_suggestions">標籤補全</string>
     <string name="login">登入</string>
