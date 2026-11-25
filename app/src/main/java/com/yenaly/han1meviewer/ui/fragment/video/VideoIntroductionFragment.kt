@@ -140,7 +140,6 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val playlistTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.series_video, notifyWhenSet = true)
     private val playlistControlsAdapter = PlaybackPlaylistControlsAdapter(
-        onAutoPlayNextChanged = { Preferences.autoPlayNext = it },
         onOrderChanged = { Preferences.playbackPlaylistReversed = it },
     )
     private val playlistAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_WRAP_CONTENT)

@@ -6,13 +6,6 @@
     android:paddingHorizontal="8dp"
     android:paddingVertical="4dp">
 
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/auto_play_next"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:text="@string/auto_play_next" />
-
     <TextView
         android:id="@+id/playback_playlist_order_label"
         android:layout_width="match_parent"

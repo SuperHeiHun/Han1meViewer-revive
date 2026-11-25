@@ -135,6 +135,51 @@ class PlayerVideoSwitchTest {
         assertEquals(listOf("a"), completed)
     }
 
+    @Test fun completionKeepsTheFinalOutputAndDoesNotReleaseOrRestartTheMedia() = withPlayer { player, media ->
+        val parent = player.parent
+        player.onCompletion()
+        assertEquals(Jzvd.STATE_AUTO_COMPLETE, player.state)
+        assertSame(parent, player.parent)
+        assertSame(media, player.mediaInterface)
+        assertEquals(0, media.releaseCount)
+        assertEquals(0, media.startCount)
+    }
+
+    @Test fun settingsEntryExistsInBothNormalAndFullscreenModes() = withPlayer { player, _ ->
+        val button = player.findViewById<View>(R.id.playback_settings_button)
+        assertEquals(View.VISIBLE, button.visibility)
+        player.fullscreenButton.performClick()
+        assertEquals(View.VISIBLE, button.visibility)
+        assertTrue(button.hasOnClickListeners())
+    }
+
+    @Test fun switchingCancelsAReplayScheduledForThePreviousVideo() = withPlayer { player, media ->
+        player.onCompletion()
+        player.replayCompletedVideo()
+        player.prepareForVideoSwitch()
+        player.videoCode = "b"
+        assertEquals(0, media.startCount)
+        assertNull(player.mediaInterface)
+    }
+
+    @Test fun videoDimensionsAreNotCarriedIntoTheNextSource() = withPlayer { player, _ ->
+        val originalOrientation = Jzvd.FULLSCREEN_ORIENTATION
+        var callbacks = 0
+        player.onVideoDimensionsChanged = { callbacks++ }
+        try {
+            player.onVideoSizeChanged(1920, 1080)
+            assertEquals(1920 to 1080, player.videoDimensions)
+            assertEquals(1, callbacks)
+            player.prepareForVideoSwitch()
+            assertNull(player.videoDimensions)
+            player.onVideoSizeChanged(1080, 1920)
+            assertNull(player.videoDimensions)
+            assertEquals(1, callbacks)
+        } finally {
+            Jzvd.FULLSCREEN_ORIENTATION = originalOrientation
+        }
+    }
+
     @Test fun loadingResetsManualSeekAndOldKeyframes() = withPlayer { player, _ ->
         player.hKeyframe = HKeyframeEntity("a", "A", mutableListOf(HKeyframeEntity.Keyframe(1000, null)))
         player.seekToInAdvance = 90_000

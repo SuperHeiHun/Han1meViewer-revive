@@ -27,7 +27,6 @@ class PlayerSettingsFragment : YenalySettingsFragment(R.xml.settings_player),
     companion object {
         const val SWITCH_PLAYER_KERNEL = "switch_player_kernel"
         const val SHOW_BOTTOM_PROGRESS = "show_bottom_progress"
-        const val AUTO_PLAY_NEXT = "auto_play_next"
         const val PLAYER_SPEED = "player_speed"
         const val SLIDE_SENSITIVITY = "slide_sensitivity"
         const val LONG_PRESS_SPEED_TIMES = "long_press_speed_times"

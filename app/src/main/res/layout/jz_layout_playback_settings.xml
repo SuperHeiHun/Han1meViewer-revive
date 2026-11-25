@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F21A1A1A"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/player_settings"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+        <TextView
+            android:id="@+id/close_playback_settings"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:gravity="center"
+            android:minWidth="48dp"
+            android:contentDescription="@string/close_playback_settings"
+            android:text="@string/back"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingVertical="8dp"
+                android:text="@string/playback_settings_global_hint"
+                android:textColor="#CCCCCC" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@+id/playback_mode_choice"
+                android:text="@string/playback_mode"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+            <androidx.appcompat.widget.AppCompatSpinner
+                android:id="@id/playback_mode_choice"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:spinnerMode="dropdown" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:labelFor="@+id/playback_aspect_choice"
+                android:text="@string/playback_aspect_ratio"
+                android:textColor="@android:color/white"
+                android:textStyle="bold" />
+            <androidx.appcompat.widget.AppCompatSpinner
+                android:id="@id/playback_aspect_choice"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:spinnerMode="dropdown" />
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/playback_auto_rotate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:minHeight="48dp"
+                android:text="@string/playback_auto_rotate"
+                android:textColor="@android:color/white" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/playback_auto_rotate_hint"
+                android:textColor="#CCCCCC" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

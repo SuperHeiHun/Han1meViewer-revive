@@ -41,7 +41,7 @@ object BackupRepository {
             val stored = Preferences.preferenceSp.all
             val rules = ContentBlocking.rules.value
             BackupSettings(BackupSettingRules.defaults.mapValues { (key, default) ->
-                when (val value = stored[key]) {
+                when (val value = if (key == Preferences.PLAYBACK_MODE) Preferences.playbackMode.value else stored[key]) {
                     is Boolean -> JsonPrimitive(value)
                     is Int -> JsonPrimitive(value)
                     is String -> JsonPrimitive(value)
@@ -77,7 +77,9 @@ object BackupRepository {
         val oldDomain = Preferences.baseUrl
         settings.values[HistoryPrivacy.KEY]?.let { HistoryPrivacy.setEnabled(it.boolean) }
         val editor = Preferences.preferenceSp.edit()
-        settings.values.filterKeys { it != HistoryPrivacy.KEY }.forEach { (key, value) ->
+        val portable = BackupSettingRules.migratePlaybackSettings(settings.values)
+        if (Preferences.PLAYBACK_MODE in portable) editor.remove(Preferences.LEGACY_AUTO_PLAY_NEXT)
+        portable.filterKeys { it != HistoryPrivacy.KEY }.forEach { (key, value) ->
             when {
                 value.isString -> editor.putString(key, value.content)
                 value.booleanOrNull != null -> editor.putBoolean(key, value.boolean)

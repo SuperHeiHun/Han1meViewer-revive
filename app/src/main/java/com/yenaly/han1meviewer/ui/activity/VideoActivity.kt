@@ -33,6 +33,8 @@ import com.yenaly.han1meviewer.getHanimeVideoLink
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
+import com.yenaly.han1meviewer.logic.player.completionTarget
+import com.yenaly.han1meviewer.logic.player.videoIsLandscape
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.ui.fragment.video.CommentFragment
 import com.yenaly.han1meviewer.ui.fragment.video.ChildCommentPopupFragment
@@ -73,6 +75,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     private var videoCodeByWebsite: String? = null
     private var startSelectedVideo = false
     private var hasSwitchedVideo = false
+    private var appliedVideoOrientation: Pair<Any, Boolean>? = null
 
     private val tabNameArray = intArrayOf(R.string.introduction, R.string.comment)
 
@@ -110,14 +113,18 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             if (viewModel.videoCode != it) viewModel.videoCode = it
         }
         binding.videoPlayer.onPlaylistVideoSelected = { playVideo(it) }
+        binding.videoPlayer.onVideoDimensionsChanged = { applyVideoOrientation() }
         binding.videoPlayer.onVideoCompleted = { completedCode ->
-            if (Preferences.autoPlayNext && !viewModel.fromDownload &&
-                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
                 completedCode == viewModel.videoCode &&
                 viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success) {
-                viewModel.playbackPlaylist.value.nextAfter(
-                    completedCode, reverse = Preferences.playbackPlaylistReversed,
-                )?.let { playVideo(it.videoCode) }
+                completionTarget(
+                    completedCode, viewModel.playbackPlaylist.value, Preferences.playbackMode,
+                    reverse = Preferences.playbackPlaylistReversed, fromDownload = viewModel.fromDownload,
+                )?.let { target ->
+                    if (target == completedCode) binding.videoPlayer.replayCompletedVideo()
+                    else playVideo(target)
+                }
             }
         }
 
@@ -136,6 +143,19 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun bindDataObservers() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                var previousRotation = Preferences.playbackAutoRotate
+                Preferences.observePlaybackSettings().collect { settings ->
+                    binding.videoPlayer.applyPlaybackSettings()
+                    if (previousRotation != settings.autoRotate) {
+                        appliedVideoOrientation = null
+                        previousRotation = settings.autoRotate
+                    }
+                    if (settings.autoRotate) applyVideoOrientation()
+                }
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.hanimeVideoStateFlow.collect { state ->
@@ -223,11 +243,12 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             retryVideo()
         }
         startSelectedVideoIfReady()
+        applyVideoOrientation()
     }
 
     override fun onStop() {
         super.onStop()
-        binding.videoPlayer.dismissPlaybackPlaylist()
+        binding.videoPlayer.dismissPlayerPanels()
         Jzvd.goOnPlayOnPause()
     }
 
@@ -282,6 +303,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     }
 
     override fun onOrientationChanged(orientation: OrientationManager.ScreenOrientation) {
+        // Content-driven rotation must not fight the physical-device orientation listener.
+        if (Preferences.playbackAutoRotate) return
         if (Jzvd.CURRENT_JZVD != null
             && (binding.videoPlayer.state == Jzvd.STATE_PLAYING || binding.videoPlayer.state == Jzvd.STATE_PAUSE)
             && binding.videoPlayer.screen != Jzvd.SCREEN_TINY
@@ -295,6 +318,21 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                 changeScreenNormal()
             }
         }
+    }
+
+    private fun applyVideoOrientation() {
+        if (!Preferences.playbackAutoRotate || isFinishing || isDestroyed ||
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        val player = binding.videoPlayer
+        val media = player.mediaInterface ?: return
+        val (width, height) = player.videoDimensions ?: return
+        val landscape = videoIsLandscape(width, height) ?: return
+        val identity = media to landscape
+        if (appliedVideoOrientation == identity) return
+        appliedVideoOrientation = identity
+        if (landscape && player.screen == Jzvd.SCREEN_NORMAL) player.gotoFullscreen()
+        requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
     /**

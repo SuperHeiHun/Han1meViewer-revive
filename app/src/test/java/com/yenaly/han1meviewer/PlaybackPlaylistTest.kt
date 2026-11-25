@@ -81,8 +81,8 @@ class PlaybackPlaylistTest {
         assertEquals(listOf("x", "y"), second.videos.map { it.videoCode })
     }
 
-    @Test fun autoplayBackupDefaultsToFalseAndAcceptsOnlyBooleans() {
-        assertEquals(JsonPrimitive(false), BackupSettingRules.defaults["auto_play_next"])
+    @Test fun retiredAutoplayIsOnlyAcceptedWhenReadingLegacyBackups() {
+        assertFalse(BackupSettingRules.defaults.containsKey("auto_play_next"))
         assertTrue(BackupSettingRules.isValid("auto_play_next", JsonPrimitive(true)))
         assertTrue(BackupSettingRules.isValid("auto_play_next", JsonPrimitive(false)))
         assertFalse(BackupSettingRules.isValid("auto_play_next", JsonPrimitive("true")))

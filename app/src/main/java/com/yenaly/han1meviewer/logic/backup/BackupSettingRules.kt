@@ -2,6 +2,8 @@ package com.yenaly.han1meviewer.logic.backup
 
 import com.yenaly.han1meviewer.HANIME_ALTER_BASE_URL
 import com.yenaly.han1meviewer.HANIME_MAIN_BASE_URL
+import com.yenaly.han1meviewer.logic.player.PlaybackMode
+import com.yenaly.han1meviewer.logic.player.PlaybackAspectRatio
 import com.yenaly.han1meviewer.ui.view.video.PlayerDoubleTapMode
 import com.yenaly.han1meviewer.ui.view.video.PlayerLongPressMode
 import kotlinx.serialization.json.JsonPrimitive
@@ -14,13 +16,14 @@ object BackupSettingRules {
         mapOf(
             "video_language" to "zh-CHT", "switch_player_kernel" to "ExoPlayer",
             "player_speed" to "1.0", "long_press_speed_times" to "2.5",
+            "playback_mode" to "pause_at_end", "playback_aspect_ratio" to "fit",
             "gesture_double_tap_mode" to "play_pause", "gesture_seek_step" to "10",
             "gesture_long_press_mode" to "legacy", "gesture_temporary_speed" to "2.0",
             "domain_name" to HANIME_MAIN_BASE_URL, "proxy_ip" to "",
         ).forEach { (key, value) -> put(key, JsonPrimitive(value)) }
         mapOf(
             "show_bottom_progress" to true, "use_built_in_hosts" to false,
-            "auto_play_next" to false, "playback_playlist_reversed" to false,
+            "playback_auto_rotate" to false, "playback_playlist_reversed" to false,
             "gesture_seek_enabled" to true, "gesture_brightness_enabled" to true, "gesture_volume_enabled" to true,
             "h_keyframes_enable" to true, "shared_h_keyframes_enable" to true,
             "shared_h_keyframes_use_first" to false, "show_comment_when_countdown" to false,
@@ -35,12 +38,16 @@ object BackupSettingRules {
     }
 
     fun isValid(key: String, value: JsonPrimitive): Boolean {
+        // Read old version-1 backups, but never export or keep the retired switch.
+        if (key == "auto_play_next") return !value.isString && value.booleanOrNull != null
         val default = defaults[key] ?: return false
         if (default.isString != value.isString) return false
         if (default.booleanOrNull != null) return value.booleanOrNull != null && !value.isString
         return when (key) {
             "video_language" -> value.content in setOf("zh-CHT", "zh-CHS")
             "switch_player_kernel" -> value.content in setOf("ExoPlayer", "MediaPlayer")
+            "playback_mode" -> PlaybackMode.entries.any { it.value == value.content }
+            "playback_aspect_ratio" -> PlaybackAspectRatio.entries.any { it.value == value.content }
             "player_speed" -> value.content.toFloatOrNull()?.let { it.isFinite() && it in 0.5f..3f } == true
             "long_press_speed_times" -> value.content.toFloatOrNull()?.let { it.isFinite() && it in 1f..4f } == true
             "gesture_double_tap_mode" -> PlayerDoubleTapMode.entries.any { it.value == value.content }
@@ -59,4 +66,11 @@ object BackupSettingRules {
             else -> false
         }
     }
+
+    fun migratePlaybackSettings(values: Map<String, JsonPrimitive>): Map<String, JsonPrimitive> =
+        (values - "auto_play_next").toMutableMap().apply {
+            if ("playback_mode" !in this) values["auto_play_next"]?.booleanOrNull?.let {
+                put("playback_mode", JsonPrimitive(PlaybackMode.fromLegacy(it).value))
+            }
+        }
 }

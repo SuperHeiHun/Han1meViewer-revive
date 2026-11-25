@@ -1,6 +1,5 @@
 package com.yenaly.han1meviewer.ui.view.video
 
-import android.content.pm.ActivityInfo
 import android.graphics.SurfaceTexture
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -336,9 +335,6 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             val height = size.height
             postToUi(current) {
                 jzvd.onVideoSizeChanged(width, height)
-                if (width > 0 && height > 0) Jzvd.FULLSCREEN_ORIENTATION = if (width > height) {
-                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                } else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             }
         }
         if (events.contains(Player.EVENT_PLAYER_ERROR) && current.playerError != null) {
@@ -511,9 +507,6 @@ class SystemMediaKernel(jzvd: Jzvd) : JZMediaSystem(jzvd), HMediaKernel {
 
     override fun onVideoSizeChanged(player: MediaPlayer?, width: Int, height: Int) = postToUi(player) {
         jzvd.onVideoSizeChanged(width, height)
-        if (width > 0 && height > 0) Jzvd.FULLSCREEN_ORIENTATION = if (width > height) {
-            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 
     override fun start() = postPlayerCommand { it.start() }

@@ -7,7 +7,6 @@ import android.widget.FrameLayout
 import android.widget.RadioGroup
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatRadioButton
-import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.yenaly.han1meviewer.logic.player.PlaybackPlaylistSettings
@@ -29,11 +28,10 @@ class PlaybackPlaylistControlsTest {
         }
     }
 
-    @Test fun autoplayAndOrderAreSeparateControlsWithAnExplicitOrderLabel() = withControls { view ->
-        val autoplay = view.findViewById<SwitchCompat>(R.id.auto_play_next)
+    @Test fun orderHasAnExplicitLabelAndNoRetiredAutoplaySwitch() = withControls { view ->
         val order = view.findViewById<RadioGroup>(R.id.playback_playlist_order)
         val label = view.findViewById<TextView>(R.id.playback_playlist_order_label)
-        assertNotSame(autoplay, order)
+        assertEquals(2, (view as android.view.ViewGroup).childCount)
         assertEquals(R.id.playback_playlist_order, label.labelFor)
         assertEquals(view.context.getString(R.string.playback_playlist_order_label), label.text.toString())
         assertEquals(2, order.childCount)
@@ -41,29 +39,25 @@ class PlaybackPlaylistControlsTest {
 
     @Test fun renderingSyncedSettingsNeverFiresUserCallbacks() = withControls { view ->
         var changes = 0
-        val controls = PlaybackPlaylistControls(view, { changes++ }, { changes++ })
+        val controls = PlaybackPlaylistControls(view, { changes++ })
         controls.render(PlaybackPlaylistSettings())
-        controls.render(PlaybackPlaylistSettings(autoPlayNext = true, reversed = true))
-        controls.render(PlaybackPlaylistSettings(autoPlayNext = false, reversed = false))
+        controls.render(PlaybackPlaylistSettings(reversed = true))
+        controls.render(PlaybackPlaylistSettings(reversed = false))
         assertEquals(0, changes)
-        assertFalse(view.findViewById<SwitchCompat>(R.id.auto_play_next).isChecked)
         assertEquals(R.id.playback_playlist_forward, view.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId)
     }
 
-    @Test fun selectingReverseDoesNotToggleAutoplay() = withControls { view ->
-        var autoplayChanges = 0
+    @Test fun selectingReverseReportsAnExplicitTrueValue() = withControls { view ->
         val orderChanges = mutableListOf<Boolean>()
-        PlaybackPlaylistControls(view, { autoplayChanges++ }, { orderChanges += it })
-            .render(PlaybackPlaylistSettings(autoPlayNext = true))
+        PlaybackPlaylistControls(view, { orderChanges += it })
+            .render(PlaybackPlaylistSettings())
         view.findViewById<AppCompatRadioButton>(R.id.playback_playlist_reverse).performClick()
         assertEquals(listOf(true), orderChanges)
-        assertEquals(0, autoplayChanges)
-        assertTrue(view.findViewById<SwitchCompat>(R.id.auto_play_next).isChecked)
     }
 
     @Test fun selectingForwardIsNotAnotherReverseToggle() = withControls { view ->
         val orders = mutableListOf<Boolean>()
-        PlaybackPlaylistControls(view, {}, { orders += it })
+        PlaybackPlaylistControls(view, { orders += it })
             .render(PlaybackPlaylistSettings(reversed = true))
         val forward = view.findViewById<AppCompatRadioButton>(R.id.playback_playlist_forward)
         forward.performClick()
@@ -72,25 +66,22 @@ class PlaybackPlaylistControlsTest {
         assertEquals(R.id.playback_playlist_forward, view.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId)
     }
 
-    @Test fun togglingAutoplayDoesNotChangeOrder() = withControls { view ->
-        val autoplay = mutableListOf<Boolean>()
+    @Test fun selectingTheAlreadySelectedReverseDoesNotToggleIt() = withControls { view ->
         var orderChanges = 0
-        PlaybackPlaylistControls(view, { autoplay += it }, { orderChanges++ })
+        PlaybackPlaylistControls(view, { orderChanges++ })
             .render(PlaybackPlaylistSettings(reversed = true))
-        view.findViewById<SwitchCompat>(R.id.auto_play_next).performClick()
-        assertEquals(listOf(true), autoplay)
+        view.findViewById<AppCompatRadioButton>(R.id.playback_playlist_reverse).performClick()
         assertEquals(0, orderChanges)
         assertEquals(R.id.playback_playlist_reverse, view.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId)
     }
 
     @Test fun portraitRowAndDarkPopupRenderTheSameSettings() = withControls { view ->
-        val settings = PlaybackPlaylistSettings(autoPlayNext = true, reversed = true)
-        PlaybackPlaylistControls(view, {}, {}, textColor = Color.WHITE).render(settings)
-        val adapter = PlaybackPlaylistControlsAdapter({}, {})
+        val settings = PlaybackPlaylistSettings(reversed = true)
+        PlaybackPlaylistControls(view, {}, textColor = Color.WHITE).render(settings)
+        val adapter = PlaybackPlaylistControlsAdapter({})
         adapter.submitSettings(settings)
         val holder = adapter.createViewHolder(FrameLayout(view.context), 0)
         adapter.bindViewHolder(holder, 0)
-        assertTrue(holder.itemView.findViewById<SwitchCompat>(R.id.auto_play_next).isChecked)
         assertEquals(
             view.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId,
             holder.itemView.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId,
@@ -98,7 +89,6 @@ class PlaybackPlaylistControlsTest {
         assertEquals(Color.WHITE, view.findViewById<TextView>(R.id.playback_playlist_order_label).currentTextColor)
         adapter.submitSettings(PlaybackPlaylistSettings())
         adapter.bindViewHolder(holder, 0)
-        assertFalse(holder.itemView.findViewById<SwitchCompat>(R.id.auto_play_next).isChecked)
         assertEquals(R.id.playback_playlist_forward, holder.itemView.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId)
     }
 }

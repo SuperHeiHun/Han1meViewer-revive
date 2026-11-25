@@ -5,6 +5,9 @@ import androidx.preference.PreferenceManager
 import com.yenaly.han1meviewer.logic.network.HProxySelector
 import com.yenaly.han1meviewer.logic.network.interceptor.SpeedLimitInterceptor
 import com.yenaly.han1meviewer.logic.player.PlaybackPlaylistSettings
+import com.yenaly.han1meviewer.logic.player.PlaybackSettings
+import com.yenaly.han1meviewer.logic.player.PlaybackMode
+import com.yenaly.han1meviewer.logic.player.PlaybackAspectRatio
 import com.yenaly.han1meviewer.ui.fragment.settings.DownloadSettingsFragment
 import com.yenaly.han1meviewer.ui.fragment.settings.HKeyframeSettingsFragment
 import com.yenaly.han1meviewer.ui.fragment.settings.HomeSettingsFragment
@@ -108,11 +111,42 @@ object Preferences {
             true
         )
 
-    var autoPlayNext: Boolean
-        get() = preferenceSp.getBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, false)
-        set(value) {
-            preferenceSp.edit().putBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, value).apply()
+    const val PLAYBACK_MODE = "playback_mode"
+    const val PLAYBACK_ASPECT_RATIO = "playback_aspect_ratio"
+    const val PLAYBACK_AUTO_ROTATE = "playback_auto_rotate"
+    internal const val LEGACY_AUTO_PLAY_NEXT = "auto_play_next"
+
+    var playbackMode: PlaybackMode
+        get() {
+            val sp = preferenceSp
+            return if (sp.contains(PLAYBACK_MODE)) PlaybackMode.fromValue(sp.getString(PLAYBACK_MODE, null))
+            else PlaybackMode.fromLegacy(sp.getBoolean(LEGACY_AUTO_PLAY_NEXT, false))
         }
+        set(value) {
+            preferenceSp.edit().putString(PLAYBACK_MODE, value.value).remove(LEGACY_AUTO_PLAY_NEXT).apply()
+        }
+
+    var playbackAspectRatio: PlaybackAspectRatio
+        get() = PlaybackAspectRatio.fromValue(preferenceSp.getString(PLAYBACK_ASPECT_RATIO, null))
+        set(value) { preferenceSp.edit().putString(PLAYBACK_ASPECT_RATIO, value.value).apply() }
+
+    var playbackAutoRotate: Boolean
+        get() = preferenceSp.getBoolean(PLAYBACK_AUTO_ROTATE, false)
+        set(value) { preferenceSp.edit().putBoolean(PLAYBACK_AUTO_ROTATE, value).apply() }
+
+    val playbackSettings: PlaybackSettings
+        get() = PlaybackSettings(playbackMode, playbackAspectRatio, playbackAutoRotate)
+
+    fun observePlaybackSettings() = callbackFlow {
+        val sp = preferenceSp
+        val keys = setOf(PLAYBACK_MODE, PLAYBACK_ASPECT_RATIO, PLAYBACK_AUTO_ROTATE, LEGACY_AUTO_PLAY_NEXT)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key in keys) trySend(playbackSettings)
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        trySend(playbackSettings)
+        awaitClose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.distinctUntilChanged()
 
     private const val PLAYBACK_PLAYLIST_REVERSED = "playback_playlist_reversed"
 
@@ -123,12 +157,12 @@ object Preferences {
         }
 
     val playbackPlaylistSettings: PlaybackPlaylistSettings
-        get() = PlaybackPlaylistSettings(autoPlayNext, playbackPlaylistReversed)
+        get() = PlaybackPlaylistSettings(playbackPlaylistReversed)
 
     fun observePlaybackPlaylistSettings() = callbackFlow {
         val sp = preferenceSp
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == null || key == PlayerSettingsFragment.AUTO_PLAY_NEXT || key == PLAYBACK_PLAYLIST_REVERSED) {
+            if (key == null || key == PLAYBACK_PLAYLIST_REVERSED) {
                 trySend(playbackPlaylistSettings)
             }
         }
