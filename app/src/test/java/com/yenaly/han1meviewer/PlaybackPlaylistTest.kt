@@ -88,4 +88,62 @@ class PlaybackPlaylistTest {
         assertFalse(BackupSettingRules.isValid("auto_play_next", JsonPrimitive("true")))
         assertFalse(BackupSettingRules.isValid("auto_play_next", JsonPrimitive(1)))
     }
+
+    @Test fun reverseOrderFlipsWebsiteOrderWithoutSortingOrMutatingTheQueue() {
+        val playlist = PlaybackPlaylist().updated(series("30", "4", "21"), "4")
+        val original = playlist.videos.map { it.videoCode }
+        assertEquals(listOf("21", "4", "30"), playlist.orderedVideos(reverse = true).map { it.videoCode })
+        assertEquals(listOf("21", "4", "30"), playlist.orderedVideos(reverse = true).map { it.videoCode })
+        assertEquals(original, playlist.orderedVideos(reverse = false).map { it.videoCode })
+        assertEquals(original, playlist.videos.map { it.videoCode })
+    }
+
+    @Test fun reverseAutoplayFollowsTheSameSequenceAsTheDisplayedList() {
+        val playlist = PlaybackPlaylist().updated(series("30", "4", "21"), "21")
+        playlist.orderedVideos(reverse = true).zipWithNext().forEach { (current, next) ->
+            assertEquals(next.videoCode, playlist.nextAfter(current.videoCode, reverse = true)?.videoCode)
+        }
+        assertEquals("21", playlist.nextAfter("4")?.videoCode)
+        assertEquals("30", playlist.nextAfter("4", reverse = true)?.videoCode)
+    }
+
+    @Test fun reverseAutoplayStopsAtItsLastItemWithoutWrapping() {
+        val playlist = PlaybackPlaylist().updated(series("a", "b", "c"), "a")
+        assertNull(playlist.nextAfter("a", reverse = true))
+        assertEquals("b", playlist.nextAfter("c", reverse = true)?.videoCode)
+    }
+
+    @Test fun reverseAutoplayDoesNotGuessForMissingEmptyOrSingleItemQueues() {
+        assertNull(PlaybackPlaylist().nextAfter("a", reverse = true))
+        assertNull(PlaybackPlaylist().updated(series("a"), "a").nextAfter("a", reverse = true))
+        val playlist = PlaybackPlaylist().updated(series("a", "b"), "x")
+        assertNull(playlist.nextAfter("x", reverse = true))
+        assertTrue(playlist.orderedVideos(reverse = true).none { it.isPlaying })
+    }
+
+    @Test fun reversingKeepsThePlayingMarkerOnTheSameVideo() {
+        val playlist = PlaybackPlaylist().updated(series("a", "b", "c"), "a")
+        val reversed = playlist.orderedVideos(reverse = true)
+        assertEquals("a", reversed.single { it.isPlaying }.videoCode)
+        assertTrue(reversed.last().isPlaying)
+        assertTrue(playlist.videos.first().isPlaying)
+    }
+
+    @Test fun retainedSeriesStillSupportsReverseOrderAfterSwitchingVideos() {
+        val first = PlaybackPlaylist().updated(series("a", "b", "c"), "c")
+        val second = first.updated(null, "b")
+        assertEquals(listOf("c", "b", "a"), second.orderedVideos(reverse = true).map { it.videoCode })
+        assertEquals("a", second.nextAfter("b", reverse = true)?.videoCode)
+        assertEquals("b", second.orderedVideos(reverse = true).single { it.isPlaying }.videoCode)
+        assertEquals(listOf("a", "b", "c"), second.videos.map { it.videoCode })
+    }
+
+    @Test fun playlistOrderBackupDefaultsToForwardAndAcceptsOnlyBooleans() {
+        val key = "playback_playlist_reversed"
+        assertEquals(JsonPrimitive(false), BackupSettingRules.defaults[key])
+        assertTrue(BackupSettingRules.isValid(key, JsonPrimitive(true)))
+        assertTrue(BackupSettingRules.isValid(key, JsonPrimitive(false)))
+        assertFalse(BackupSettingRules.isValid(key, JsonPrimitive("true")))
+        assertFalse(BackupSettingRules.isValid(key, JsonPrimitive(1)))
+    }
 }

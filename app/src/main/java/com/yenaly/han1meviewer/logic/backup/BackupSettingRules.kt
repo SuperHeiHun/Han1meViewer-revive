@@ -20,7 +20,7 @@ object BackupSettingRules {
         ).forEach { (key, value) -> put(key, JsonPrimitive(value)) }
         mapOf(
             "show_bottom_progress" to true, "use_built_in_hosts" to false,
-            "auto_play_next" to false,
+            "auto_play_next" to false, "playback_playlist_reversed" to false,
             "gesture_seek_enabled" to true, "gesture_brightness_enabled" to true, "gesture_volume_enabled" to true,
             "h_keyframes_enable" to true, "shared_h_keyframes_enable" to true,
             "shared_h_keyframes_use_first" to false, "show_comment_when_countdown" to false,

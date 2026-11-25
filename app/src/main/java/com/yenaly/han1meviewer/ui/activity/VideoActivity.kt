@@ -115,7 +115,9 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                 lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
                 completedCode == viewModel.videoCode &&
                 viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success) {
-                viewModel.playbackPlaylist.value.nextAfter(completedCode)?.let { playVideo(it.videoCode) }
+                viewModel.playbackPlaylist.value.nextAfter(
+                    completedCode, reverse = Preferences.playbackPlaylistReversed,
+                )?.let { playVideo(it.videoCode) }
             }
         }
 

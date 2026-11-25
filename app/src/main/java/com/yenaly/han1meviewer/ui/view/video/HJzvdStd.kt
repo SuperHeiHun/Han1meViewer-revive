@@ -844,17 +844,31 @@ class HJzvdStd @JvmOverloads constructor(
         }
         playlistPopup = popup
         content.findViewById<View>(R.id.close_playlist).setOnClickListener { popup.dismiss() }
-        content.findViewById<RecyclerView>(R.id.rv_playback_playlist).apply {
-            layoutManager = LinearLayoutManager(context)
-            adapter = PlaybackPlaylistAdapter(playlist.videos, sourceCode) { selectedCode ->
+        val list = content.findViewById<RecyclerView>(R.id.rv_playback_playlist)
+        list.layoutManager = LinearLayoutManager(context)
+        val orderButton = content.findViewById<TextView>(R.id.playback_playlist_order)
+        fun showPlaylistOrder() {
+            val reverse = Preferences.playbackPlaylistReversed
+            val videos = playlist.orderedVideos(reverse)
+            orderButton.setText(if (reverse) R.string.playback_playlist_reverse else R.string.playback_playlist_forward)
+            orderButton.contentDescription = context.getString(
+                R.string.playback_playlist_toggle_order, orderButton.text,
+            )
+            list.adapter = PlaybackPlaylistAdapter(videos, sourceCode) { selectedCode ->
                 popup.dismiss()
                 if (videoCode == sourceCode && selectedCode != sourceCode) {
                     onPlaylistVideoSelected?.invoke(selectedCode)
                 }
             }
-            val selected = playlist.videos.indexOfFirst { it.videoCode == sourceCode }
-            if (selected >= 0) scrollToPosition(selected)
+            val selected = videos.indexOfFirst { it.videoCode == sourceCode }
+            if (selected >= 0) list.scrollToPosition(selected)
         }
+        orderButton.setOnClickListener {
+            if (playlistPopup !== popup || videoCode != sourceCode) return@setOnClickListener
+            Preferences.playbackPlaylistReversed = !Preferences.playbackPlaylistReversed
+            showPlaylistOrder()
+        }
+        showPlaylistOrder()
         popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
     }
 

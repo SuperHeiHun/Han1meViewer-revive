@@ -110,6 +110,14 @@ object Preferences {
             preferenceSp.edit().putBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, value).apply()
         }
 
+    private const val PLAYBACK_PLAYLIST_REVERSED = "playback_playlist_reversed"
+
+    var playbackPlaylistReversed: Boolean
+        get() = preferenceSp.getBoolean(PLAYBACK_PLAYLIST_REVERSED, false)
+        set(value) {
+            preferenceSp.edit().putBoolean(PLAYBACK_PLAYLIST_REVERSED, value).apply()
+        }
+
     val playerSpeed: Float
         get() = preferenceSp.getString(
             PlayerSettingsFragment.PLAYER_SPEED,

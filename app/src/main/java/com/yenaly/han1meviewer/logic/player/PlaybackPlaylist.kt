@@ -3,14 +3,18 @@ package com.yenaly.han1meviewer.logic.player
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 
-/** The website's series order, never recommendations or a saved user list. */
+/** Canonical website series order, never recommendations or a saved user list. */
 data class PlaybackPlaylist(
     val title: String? = null,
     val videos: List<HanimeInfo> = emptyList(),
 ) {
-    fun nextAfter(videoCode: String): HanimeInfo? {
-        val index = videos.indexOfFirst { it.videoCode == videoCode }
-        return if (index >= 0) videos.getOrNull(index + 1) else null
+    fun orderedVideos(reverse: Boolean = false): List<HanimeInfo> =
+        if (reverse) videos.asReversed() else videos
+
+    fun nextAfter(videoCode: String, reverse: Boolean = false): HanimeInfo? {
+        val ordered = orderedVideos(reverse)
+        val index = ordered.indexOfFirst { it.videoCode == videoCode }
+        return if (index >= 0) ordered.getOrNull(index + 1) else null
     }
 
     fun forVideo(videoCode: String) = copy(

@@ -54,6 +54,9 @@
     <string name="auto_play_next_summary">播完後按目前系列清單順序播放下一項；最後一項停止，不播放推薦影片。預設關閉。</string>
     <string name="close_playback_playlist">關閉播放清單</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
+    <string name="playback_playlist_forward">正序</string>
+    <string name="playback_playlist_reverse">倒序</string>
+    <string name="playback_playlist_toggle_order">目前為%1$s，點按切換播放順序</string>
     <string name="related_video">相關影片</string>
     <string name="now_playing">現正播放</string>
     <string name="view_more_replies">查看更多回覆</string>

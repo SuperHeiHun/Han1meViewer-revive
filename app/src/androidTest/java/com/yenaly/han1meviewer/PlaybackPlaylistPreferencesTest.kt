@@ -8,9 +8,8 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PlaybackPlaylistPreferencesTest {
-    private fun withAutoplayPreference(test: () -> Unit) {
+    private fun withPreference(key: String = PlayerSettingsFragment.AUTO_PLAY_NEXT, test: () -> Unit) {
         val sp = Preferences.preferenceSp
-        val key = PlayerSettingsFragment.AUTO_PLAY_NEXT
         val present = sp.contains(key)
         val previous = if (present) sp.getBoolean(key, false) else false
         try {
@@ -21,14 +20,27 @@ class PlaybackPlaylistPreferencesTest {
         }
     }
 
-    @Test fun existingUsersDoNotStartAutoplayAfterUpgrade() = withAutoplayPreference {
+    @Test fun existingUsersDoNotStartAutoplayAfterUpgrade() = withPreference {
         assertFalse(Preferences.autoPlayNext)
     }
 
-    @Test fun popupAndSettingsUseTheSamePersistentBoolean() = withAutoplayPreference {
+    @Test fun popupAndSettingsUseTheSamePersistentBoolean() = withPreference {
         Preferences.autoPlayNext = true
         assertTrue(Preferences.preferenceSp.getBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, false))
         Preferences.preferenceSp.edit().putBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, false).commit()
         assertFalse(Preferences.autoPlayNext)
+    }
+
+    @Test fun playlistOrderDefaultsToTheOriginalWebsiteOrder() = withPreference("playback_playlist_reversed") {
+        assertFalse(Preferences.playbackPlaylistReversed)
+    }
+
+    @Test fun playlistOrderPersistsAndCanReturnToForward() = withPreference("playback_playlist_reversed") {
+        Preferences.playbackPlaylistReversed = true
+        assertTrue(Preferences.preferenceSp.getBoolean("playback_playlist_reversed", false))
+        assertTrue(Preferences.playbackPlaylistReversed)
+        Preferences.playbackPlaylistReversed = false
+        assertFalse(Preferences.preferenceSp.getBoolean("playback_playlist_reversed", true))
+        assertFalse(Preferences.playbackPlaylistReversed)
     }
 }
