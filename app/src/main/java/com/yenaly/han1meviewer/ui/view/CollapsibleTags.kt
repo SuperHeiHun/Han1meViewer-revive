@@ -20,6 +20,10 @@ import com.yenaly.han1meviewer.ADVANCED_SEARCH_MAP
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
 import com.yenaly.han1meviewer.util.addUpdateListener
+import com.yenaly.han1meviewer.logic.blocking.BlockKind
+import com.yenaly.han1meviewer.util.blockActionLabel
+import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showBlockRuleDialog
 import com.yenaly.yenaly_libs.utils.activity
 import com.yenaly.yenaly_libs.utils.copyToClipboard
 import com.yenaly.yenaly_libs.utils.showShortToast
@@ -131,8 +135,20 @@ class CollapsibleTags @JvmOverloads constructor(
                         context?.activity?.startActivity<SearchActivity>(ADVANCED_SEARCH_MAP to tag)
                     }
                     setOnLongClickListener {
-                        tag.copyToClipboard()
-                        showShortToast(context.getString(R.string.s_copy_to_clipboard, tag))
+                        context.showAlertDialog {
+                            setTitle(tag)
+                            setItems(arrayOf(
+                                context.getString(R.string.copy_to_clipboard),
+                                context.blockActionLabel(BlockKind.TAG, tag),
+                            )) { _, index ->
+                                if (index == 0) {
+                                    tag.copyToClipboard()
+                                    showShortToast(context.getString(R.string.s_copy_to_clipboard, tag))
+                                } else lifecycle?.coroutineScope?.let { scope ->
+                                    context.showBlockRuleDialog(BlockKind.TAG, tag, scope)
+                                }
+                            }
+                        }
                         return@setOnLongClickListener true
                     }
                 }

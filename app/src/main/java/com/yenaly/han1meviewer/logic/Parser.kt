@@ -6,6 +6,7 @@ import com.yenaly.han1meviewer.EMPTY_STRING
 import com.yenaly.han1meviewer.HanimeResolution
 import com.yenaly.han1meviewer.LOCAL_DATE_FORMAT
 import com.yenaly.han1meviewer.Preferences.isAlreadyLogin
+import com.yenaly.han1meviewer.logic.blocking.VideoBlockMetadata
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimePreview
@@ -317,6 +318,22 @@ object Parser {
         )
     }
 
+    /** Only accept a recognizable video page, never a challenge/login/error page as empty metadata. */
+    fun videoBlockMetadata(body: String): VideoBlockMetadata? {
+        val page = Jsoup.parse(body).body()
+        if (page.getElementById("shareBtn-title")?.text().isNullOrBlank()) return null
+        return VideoBlockMetadata(
+            tags = page.videoTagNames().toSet(),
+            author = page.getElementById("video-artist-name")?.text()?.trim()?.takeIf { it.isNotBlank() },
+        )
+    }
+
+    private fun Element.videoTagNames(): List<String> =
+        select(".single-video-tag a[href]").mapNotNull { tag ->
+            tag.text().trim().replace(Regex.tagCountSuffix, "")
+                .trimStart('#', ' ').trim().takeIf { it.isNotEmpty() }
+        }.distinct()
+
     fun hanimeVideoVer2(body: String): VideoLoadingState<HanimeVideo> {
         val parseBody = Jsoup.parse(body).body()
         val csrfToken = parseBody.selectFirst("input[name=_token]")?.attr("value") // csrf token
@@ -363,18 +380,7 @@ object Parser {
         val chineseTitle = videoCaptionText?.previousElementSibling()?.ownText()?.trim()
         val introduction = videoCaptionText?.ownText()?.trim()
 
-        val tags = parseBody.getElementsByClass("single-video-tag")
-        val tagList = mutableListOf<String>()
-        tags.forEach { tag ->
-            val child = tag.childOrNull(0)
-            if (child != null && child.hasAttr("href")) {
-                val text = child.text().trim()
-                    .replace(Regex.tagCountSuffix, "")
-                    .trimStart('#', ' ')
-                    .trim()
-                if (text.isNotEmpty()) tagList.add(text)
-            }
-        }
+        val tagList = parseBody.videoTagNames()
 
         // 使用者播放清單
         val myListInfo = mutableListOf<HanimeVideo.MyList.MyListInfo>()

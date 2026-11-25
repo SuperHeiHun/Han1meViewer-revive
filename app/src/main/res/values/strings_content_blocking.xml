@@ -1,0 +1,27 @@
+<resources>
+    <string name="content_blocking">屏蔽標籤與作者</string>
+    <string name="content_blocking_summary">管理本機屏蔽規則，隱藏不想看到的影片</string>
+    <string name="content_blocking_info_summary">點擊查看屏蔽範圍、比對規則與網路使用說明</string>
+    <string name="content_blocking_details">規則僅保存在本機，無需登入。按網站標籤或作者全名精確比對（忽略大小寫、全半形及首尾空白），不比對標題子字串；簡繁名稱請以網站顯示為準。套用於首頁（含橫幅）、搜尋與相關推薦；不刪除收藏、待播放、下載，也不攔截主動開啟的影片。缺少資料時會額外讀取影片頁（最多同時 3 筆），結果暫存 30 分鐘；讀取失敗的卡片暫不顯示，可下拉重新整理重試。</string>
+    <string name="blocked_tags">已屏蔽標籤</string>
+    <string name="blocked_authors">已屏蔽作者</string>
+    <string name="add_blocked_tag">新增屏蔽標籤</string>
+    <string name="add_blocked_author">新增屏蔽作者</string>
+    <string name="tap_to_unblock">點擊解除屏蔽</string>
+    <string name="block_tag_hint">輸入網站顯示的完整標籤名稱</string>
+    <string name="block_author_hint">輸入網站顯示的完整作者名稱</string>
+    <string name="block_name_required">名稱不能為空</string>
+    <string name="block_rule_exists">此規則已存在</string>
+    <string name="block_tag_named">屏蔽標籤：%1$s</string>
+    <string name="unblock_tag_named">解除標籤屏蔽：%1$s</string>
+    <string name="block_author_named">屏蔽作者：%1$s</string>
+    <string name="unblock_author_named">解除作者屏蔽：%1$s</string>
+    <string name="block_rule_confirm">符合此規則的影片將從首頁、搜尋與相關推薦中隱藏。既有清單及目前播放不受影響，可在設定中解除。</string>
+    <string name="unblock_rule_confirm">解除此規則？符合其他屏蔽規則的影片仍會隱藏。</string>
+    <string name="block_rule_added">已新增屏蔽規則</string>
+    <string name="block_rule_removed">已解除屏蔽</string>
+    <string name="block_rule_save_failed">儲存屏蔽規則失敗，請重試</string>
+    <string name="block_no_metadata">此影片沒有可供屏蔽的標籤或作者資料</string>
+    <string name="block_filter_empty">正在檢查屏蔽規則，或目前沒有可顯示的影片。可繼續載入下一頁，或下拉重新整理重試。</string>
+    <string name="block_load_more">載入下一頁</string>
+</resources>

@@ -18,6 +18,12 @@
         <!-- #issue-104: 关键H帧移出设置 -->
 
         <Preference
+            app:icon="@drawable/baseline_block_24"
+            app:key="content_blocking"
+            app:summary="@string/content_blocking_summary"
+            app:title="@string/content_blocking" />
+
+        <Preference
             app:icon="@drawable/baseline_h_24"
             app:key="h_keyframe_settings"
             app:title="@string/h_keyframe_settings" />

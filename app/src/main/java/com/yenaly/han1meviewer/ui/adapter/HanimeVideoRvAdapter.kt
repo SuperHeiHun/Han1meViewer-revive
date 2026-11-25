@@ -10,6 +10,8 @@ import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import coil.load
 import com.chad.library.adapter4.BaseDifferAdapter
 import com.chad.library.adapter4.viewholder.QuickViewHolder
@@ -21,6 +23,10 @@ import com.yenaly.han1meviewer.VIDEO_LAYOUT_WRAP_CONTENT
 import com.yenaly.han1meviewer.VideoCoverSize
 import com.yenaly.han1meviewer.getHanimeShareText
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
+import com.yenaly.han1meviewer.logic.blocking.BlockKind
+import com.yenaly.han1meviewer.util.blockActionLabel
+import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showBlockRuleDialog
 import com.yenaly.han1meviewer.ui.activity.MainActivity
 import com.yenaly.han1meviewer.ui.activity.PreviewActivity
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
@@ -191,8 +197,24 @@ class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidth
                     setOnLongClickListener {
                         val position = viewHolder.bindingAdapterPosition
                         val item = getItem(position) ?: return@setOnLongClickListener true
-                        copyTextToClipboard(getHanimeShareText(item.title, item.videoCode))
-                        showShortToast(R.string.copy_to_clipboard)
+                        val author = item.uploader?.takeIf { it.isNotBlank() }
+                        val owner = context.activity as? LifecycleOwner
+                        fun copyShareText() {
+                            copyTextToClipboard(getHanimeShareText(item.title, item.videoCode))
+                            showShortToast(R.string.copy_to_clipboard)
+                        }
+                        if (author == null || owner == null) {
+                            copyShareText()
+                        } else context.showAlertDialog {
+                            setTitle(item.title)
+                            setItems(arrayOf(
+                                context.getString(R.string.copy_to_clipboard),
+                                context.blockActionLabel(BlockKind.AUTHOR, author),
+                            )) { _, index ->
+                                if (index == 0) copyShareText()
+                                else context.showBlockRuleDialog(BlockKind.AUTHOR, author, owner.lifecycleScope)
+                            }
+                        }
                         return@setOnLongClickListener true
                     }
                 }

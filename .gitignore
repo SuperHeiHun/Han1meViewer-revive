@@ -21,3 +21,6 @@ local.properties
 /app/src/debug/google-services.json
 /app/keystore/ha1_keystore_password.txt
 /app/ha1_github_token.txt
+
+# Local project memory (not part of source control)
+/AGENTS.md

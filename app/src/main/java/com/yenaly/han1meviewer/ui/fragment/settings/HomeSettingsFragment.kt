@@ -153,6 +153,10 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
             SettingsRouter.with(this).navigateWithinSettings(R.id.downloadSettingsFragment)
             return@setOnPreferenceClickListener true
         }
+        findPreference<Preference>("content_blocking")?.setOnPreferenceClickListener {
+            SettingsRouter.with(this).navigateWithinSettings(R.id.contentBlockingSettingsFragment)
+            true
+        }
         about.apply {
             title = buildString {
                 append(getString(R.string.about))

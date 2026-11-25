@@ -36,6 +36,8 @@ import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VIDEO_CODE
 import com.yenaly.han1meviewer.advancedSearchMapOf
 import com.yenaly.han1meviewer.databinding.FragmentHomePageBinding
+import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
+import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HomePage
 import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.ui.StateLayoutMixin
@@ -53,6 +55,7 @@ import com.yenaly.han1meviewer.util.colorTransition
 import com.yenaly.yenaly_libs.base.YenalyFragment
 import com.yenaly.yenaly_libs.utils.startActivity
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 /**
  * @project Hanime1
@@ -159,6 +162,7 @@ class HomePageFragment : YenalyFragment<FragmentHomePageBinding>(),
      * 用於判斷是否需要 setExpanded，防止重複喚出 AppBar
      */
     private var isAfterRefreshing = false
+    private var blockFilterJob: Job? = null
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -210,6 +214,7 @@ class HomePageFragment : YenalyFragment<FragmentHomePageBinding>(),
                     }
                     when (state) {
                         is WebsiteState.Loading -> {
+                            blockFilterJob?.cancel()
                             binding.homePageSrl.autoRefresh()
                             binding.rv.isGone = latestHanimeAdapter.items.isEmpty()
                         }
@@ -217,14 +222,9 @@ class HomePageFragment : YenalyFragment<FragmentHomePageBinding>(),
                         is WebsiteState.Success -> {
                             isAfterRefreshing = true
                             binding.homePageSrl.finishRefresh()
+                            if (!ContentBlocking.rules.value.isEmpty) binding.banner.isVisible = false
                             initBanner(state.info)
-                            latestHanimeAdapter.submitList(state.info.latestHanime)
-                            latestUploadAdapter.submitList(state.info.latestUpload)
-                            hotHanimeMonthlyAdapter.submitList(state.info.hotHanimeMonthly)
-                            hanimeCurrentAdapter.submitList(state.info.hanimeCurrent)
-                            hanimeTheyWatchedAdapter.submitList(state.info.hanimeTheyWatched)
-                            latestReleaseAdapter.submitList(state.info.latestRelease)
-                            chineseSubtitleAdapter.submitList(state.info.chineseSubtitle)
+                            observeBlockedContent(state.info)
                             binding.state.showContent()
                         }
 
@@ -238,7 +238,42 @@ class HomePageFragment : YenalyFragment<FragmentHomePageBinding>(),
         }
     }
 
+    private fun observeBlockedContent(info: HomePage) {
+        blockFilterJob?.cancel()
+        val sections = listOf(
+            latestHanimeAdapter to info.latestHanime,
+            latestUploadAdapter to info.latestUpload,
+            hotHanimeMonthlyAdapter to info.hotHanimeMonthly,
+            hanimeCurrentAdapter to info.hanimeCurrent,
+            hanimeTheyWatchedAdapter to info.hanimeTheyWatched,
+            latestReleaseAdapter to info.latestRelease,
+            chineseSubtitleAdapter to info.chineseSubtitle,
+        )
+        val banner = info.banner
+        val bannerItem = banner?.videoCode?.let { code ->
+            HanimeInfo(banner.title, banner.picUrl, code, itemType = HanimeInfo.SIMPLIFIED)
+        }
+        val all = sections.flatMap { it.second } + listOfNotNull(bannerItem)
+        blockFilterJob = viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                ContentBlocking.observe(all).collect { visible ->
+                    val codes = visible.mapTo(hashSetOf()) { it.videoCode }
+                    sections.forEach { (adapter, source) ->
+                        adapter.submitList(source.filter { it.videoCode in codes })
+                    }
+                    // Non-video advertisements cannot be verified against content rules.
+                    binding.banner.isVisible = banner != null && when {
+                        ContentBlocking.rules.value.isEmpty -> true
+                        bannerItem == null -> false
+                        else -> bannerItem.videoCode in codes
+                    }
+                }
+            }
+        }
+    }
+
     override fun onDestroyView() {
+        blockFilterJob?.cancel()
         binding.rv.adapter = null
         super.onDestroyView()
     }

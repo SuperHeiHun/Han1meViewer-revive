@@ -47,6 +47,7 @@ import com.yenaly.han1meviewer.getHanimeShareText
 import com.yenaly.han1meviewer.getHanimeVideoDownloadLink
 import com.yenaly.han1meviewer.getHanimeVideoLink
 import com.yenaly.han1meviewer.logic.entity.LocalVideoEntity
+import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
@@ -62,6 +63,7 @@ import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.requestPostNotificationPermission
 import com.yenaly.han1meviewer.util.setDrawableTop
 import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showVideoBlockMenu
 import com.yenaly.han1meviewer.worker.HanimeDownloadManagerV2
 import com.yenaly.han1meviewer.worker.HanimeDownloadWorker
 import com.yenaly.yenaly_libs.base.YenalyFragment
@@ -77,6 +79,7 @@ import com.yenaly.yenaly_libs.utils.view.findParent
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.format
@@ -132,6 +135,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val relatedTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.related_video)
     private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT)
+    private var blockFilterJob: Job? = null
 
     private var multi = ConcatAdapter()
 
@@ -209,6 +213,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                         is VideoLoadingState.Loading -> Unit
 
                         is VideoLoadingState.Success -> {
+                            blockFilterJob?.cancel()
                             val video = state.info
                             // 重新赋值，防止重复添加
                             multi = ConcatAdapter()
@@ -229,7 +234,13 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                             }
                             if (!viewModel.fromDownload) {
                                 multi.addAdapter(relatedTitleAdapter)
-                                relatedAdapter.submitList(video.relatedHanimes)
+                                blockFilterJob = viewLifecycleOwner.lifecycleScope.launch {
+                                    viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                                        ContentBlocking.observe(video.relatedHanimes).collect { visible ->
+                                            relatedAdapter.submitList(visible)
+                                        }
+                                    }
+                                }
                                 multi.addAdapter(relatedAdapter)
                                 layoutManager.spanCount = video.relatedHanimes.eachGridCounts
                             }
@@ -500,6 +511,9 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 initDownloadButton(item)
                 initFunctionBar(item)
                 initLocalListButtons()
+                btnBlockContent.setOnClickListener {
+                    requireContext().showVideoBlockMenu(item, viewLifecycleOwner.lifecycleScope)
+                }
             }
         }
 

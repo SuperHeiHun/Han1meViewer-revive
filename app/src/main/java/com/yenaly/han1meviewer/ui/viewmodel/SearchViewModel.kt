@@ -14,6 +14,7 @@ import com.yenaly.han1meviewer.util.loadAssetAs
 import com.yenaly.yenaly_libs.base.YenalyViewModel
 import com.yenaly.yenaly_libs.utils.unsafeLazy
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flowOn
@@ -92,15 +93,21 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
 
     private val _searchFlow = MutableStateFlow(emptyList<HanimeInfo>())
     val searchFlow = _searchFlow.asStateFlow()
+    private var searchJob: Job? = null
 
-    fun clearHanimeSearchResult() = _searchStateFlow.update { PageLoadingState.Loading }
+    fun clearHanimeSearchResult() {
+        searchJob?.cancel()
+        _searchFlow.value = emptyList()
+        _searchStateFlow.value = PageLoadingState.Loading
+    }
 
     fun getHanimeSearchResult(
         page: Int, query: String?, genre: String?,
         sort: String?, broad: Boolean, date: String?,
         duration: String?, tags: Set<String>,
     ) {
-        viewModelScope.launch {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
             NetworkRepo.getHanimeSearchResult(
                 page, query, genre,
                 sort, broad, date,

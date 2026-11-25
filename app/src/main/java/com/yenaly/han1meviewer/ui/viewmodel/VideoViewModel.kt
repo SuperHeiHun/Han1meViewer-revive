@@ -9,6 +9,7 @@ import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.DatabaseRepo
 import com.yenaly.han1meviewer.logic.NetworkRepo
+import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
@@ -76,6 +77,7 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
             flow.collect { state ->
                 _hanimeVideoStateFlow.value = state
                 if (state is VideoLoadingState.Success) {
+                    ContentBlocking.remember(videoCode, state.info)
                     _hanimeVideoFlow.update { state.info }
                     csrfToken = state.info.csrfToken
                 }

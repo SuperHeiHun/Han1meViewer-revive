@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
+import android.widget.Button
 import androidx.activity.SystemBarStyle
 import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
@@ -28,8 +29,10 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.yenaly.han1meviewer.ADVANCED_SEARCH_MAP
 import com.yenaly.han1meviewer.AdvancedSearchMap
 import com.yenaly.han1meviewer.HAdvancedSearch
+import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VideoCoverSize
 import com.yenaly.han1meviewer.databinding.ActivitySearchBinding
+import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.SearchOption
@@ -81,6 +84,8 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
      * 判断adapter是否已经加载，防止多次加载导致滑动浏览总是跳到顶部。
      */
     private var hasAdapterLoaded = false
+    private var searchRequestInFlight = false
+    private var blockLoadMoreButton: Button? = null
 
     private val searchAdapter by unsafeLazy { HanimeVideoRvAdapter() }
     private val historyAdapter by unsafeLazy { HanimeSearchHistoryRvAdapter() }
@@ -125,6 +130,13 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
                 }
             })
         }
+        val filteredEmptyView = layoutInflater.inflate(
+            R.layout.layout_block_filter_empty, binding.searchRv, false
+        )
+        blockLoadMoreButton = filteredEmptyView.findViewById<Button>(R.id.block_load_more).apply {
+            setOnClickListener { getHanimeSearchResult() }
+        }
+        searchAdapter.stateView = filteredEmptyView
         binding.searchSrl.apply {
             setOnLoadMoreListener {
                 getHanimeSearchResult()
@@ -166,6 +178,8 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
                         }
 
                         is PageLoadingState.Success -> {
+                            searchRequestInFlight = false
+                            blockLoadMoreButton?.isEnabled = true
                             viewModel.page++
                             binding.searchSrl.finishRefresh()
                             binding.searchSrl.finishLoadMore(true)
@@ -178,6 +192,8 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
                         }
 
                         is PageLoadingState.NoMoreData -> {
+                            searchRequestInFlight = false
+                            blockLoadMoreButton?.isEnabled = false
                             binding.searchSrl.finishLoadMoreWithNoMoreData()
                             if (viewModel.searchFlow.value.isEmpty()) {
                                 binding.state.showEmpty()
@@ -186,6 +202,8 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
                         }
 
                         is PageLoadingState.Error -> {
+                            searchRequestInFlight = false
+                            blockLoadMoreButton?.isEnabled = true
                             binding.searchSrl.finishRefresh()
                             binding.searchSrl.finishLoadMore(false)
                             // set error view
@@ -197,9 +215,13 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
         }
 
         lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.CREATED) {
-                viewModel.searchFlow.collectLatest {
-                    searchAdapter.submitList(it)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.searchFlow.collectLatest { source ->
+                    ContentBlocking.observe(source).collect { visible ->
+                        searchAdapter.isStateViewEnable = source.isNotEmpty() &&
+                                !ContentBlocking.rules.value.isEmpty
+                        searchAdapter.submitList(visible)
+                    }
                 }
             }
         }
@@ -221,6 +243,9 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
     }
 
     private fun getHanimeSearchResult() {
+        if (searchRequestInFlight || viewModel.searchStateFlow.value is PageLoadingState.NoMoreData) return
+        searchRequestInFlight = true
+        blockLoadMoreButton?.isEnabled = false
         Log.d("SearchActivity", buildString {
             appendLine("page: ${viewModel.page}, query: ${viewModel.query}, genre: ${viewModel.genre}, ")
             appendLine("sort: ${viewModel.sort}, broad: ${viewModel.broad}, date: ${viewModel.date}, ")
@@ -238,6 +263,7 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
      * 獲取最新結果，清除之前保存的所有數據
      */
     private fun getNewHanimeSearchResult() {
+        searchRequestInFlight = false
         viewModel.page = 1
         hasAdapterLoaded = false
         viewModel.clearHanimeSearchResult()

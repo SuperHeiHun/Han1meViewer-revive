@@ -32,4 +32,8 @@
         android:id="@+id/downloadSettingsFragment"
         android:name="com.yenaly.han1meviewer.ui.fragment.settings.DownloadSettingsFragment" />
 
+    <fragment
+        android:id="@+id/contentBlockingSettingsFragment"
+        android:name="com.yenaly.han1meviewer.ui.fragment.settings.ContentBlockingSettingsFragment" />
+
 </navigation>

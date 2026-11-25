@@ -1,0 +1,27 @@
+<resources>
+    <string name="content_blocking">Block tags and authors</string>
+    <string name="content_blocking_summary">Manage local rules to hide unwanted videos</string>
+    <string name="content_blocking_info_summary">Tap for scope, matching rules and network usage details</string>
+    <string name="content_blocking_details">Rules are stored only on this device; no login is required. Matches full website tag or author names, ignoring case, character width and surrounding whitespace, not title substrings. Use the exact Chinese spelling shown on the website. Applies to Home (including banners), Search and Related videos. Does not delete favorites, watch-later items or downloads, or prevent opening a video directly. Missing metadata requires extra video-page requests (up to 3 at once), cached for 30 minutes. Cards that cannot be verified stay hidden; pull to refresh to retry.</string>
+    <string name="blocked_tags">Blocked tags</string>
+    <string name="blocked_authors">Blocked authors</string>
+    <string name="add_blocked_tag">Add blocked tag</string>
+    <string name="add_blocked_author">Add blocked author</string>
+    <string name="tap_to_unblock">Tap to unblock</string>
+    <string name="block_tag_hint">Full tag name as shown on the website</string>
+    <string name="block_author_hint">Full author name as shown on the website</string>
+    <string name="block_name_required">Name cannot be empty</string>
+    <string name="block_rule_exists">This rule already exists</string>
+    <string name="block_tag_named">Block tag: %1$s</string>
+    <string name="unblock_tag_named">Unblock tag: %1$s</string>
+    <string name="block_author_named">Block author: %1$s</string>
+    <string name="unblock_author_named">Unblock author: %1$s</string>
+    <string name="block_rule_confirm">Matching videos will be hidden from Home, Search and Related videos. Saved lists and current playback are unchanged. You can undo this in Settings.</string>
+    <string name="unblock_rule_confirm">Remove this rule? Videos matching other block rules will remain hidden.</string>
+    <string name="block_rule_added">Block rule added</string>
+    <string name="block_rule_removed">Unblocked</string>
+    <string name="block_rule_save_failed">Could not save the rule. Please try again.</string>
+    <string name="block_no_metadata">No tag or author information is available for this video</string>
+    <string name="block_filter_empty">Checking block rules, or no videos are currently available to show. Load the next page or pull to refresh to retry.</string>
+    <string name="block_load_more">Load next page</string>
+</resources>
