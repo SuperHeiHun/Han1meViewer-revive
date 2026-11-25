@@ -59,6 +59,7 @@ class CommentFragment : YenalyFragment<FragmentCommentBinding>(), StateLayoutMix
      * 是否已经预加载了预览评论
      */
     private var isPreviewCommentPrefetched = false
+    private var replyTargetCode: String? = null
 
     override fun getViewBinding(
         inflater: LayoutInflater,
@@ -104,6 +105,7 @@ class CommentFragment : YenalyFragment<FragmentCommentBinding>(), StateLayoutMix
         }
         binding.btnComment.isVisible = isAlreadyLogin
         replyPopup.setOnSendListener {
+            if (replyTargetCode != viewModel.code) return@setOnSendListener
             viewModel.currentUserId?.let { id ->
                 viewModel.postComment(
                     id,
@@ -112,6 +114,7 @@ class CommentFragment : YenalyFragment<FragmentCommentBinding>(), StateLayoutMix
             } ?: showShortToast(R.string.there_is_a_small_issue)
         }
         binding.btnComment.setOnClickListener {
+            replyTargetCode = viewModel.code
             XPopup.Builder(context).autoOpenSoftInput(true)
                 .setPopupCallback(object : SimpleCallback() {
                     override fun beforeShow(popupView: BasePopupView?) {
@@ -126,6 +129,20 @@ class CommentFragment : YenalyFragment<FragmentCommentBinding>(), StateLayoutMix
     }
 
     override fun bindDataObservers() {
+        (activity as? VideoActivity)?.let { player ->
+            viewLifecycleOwner.lifecycleScope.launch {
+                var previousCode = viewModel.code
+                player.viewModel.videoCodeFlow.collect { code ->
+                    if (code != previousCode) {
+                        previousCode = code
+                        replyTargetCode = null
+                        replyPopup.dismiss()
+                        commentAdapter.replyPopup?.dismiss()
+                        binding.rvComment.scrollToPosition(0)
+                    }
+                }
+            }
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
                 viewModel.videoCommentStateFlow.collect { state ->

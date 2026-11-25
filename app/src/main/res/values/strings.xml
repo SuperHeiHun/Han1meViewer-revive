@@ -50,6 +50,10 @@
     <string name="collapse">收起</string>
     <string name="expand">展開</string>
     <string name="series_video">系列影片</string>
+    <string name="auto_play_next">自動連播</string>
+    <string name="auto_play_next_summary">播完後按目前系列清單順序播放下一項；最後一項停止，不播放推薦影片。預設關閉。</string>
+    <string name="close_playback_playlist">關閉播放清單</string>
+    <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="related_video">相關影片</string>
     <string name="now_playing">現正播放</string>
     <string name="view_more_replies">查看更多回覆</string>

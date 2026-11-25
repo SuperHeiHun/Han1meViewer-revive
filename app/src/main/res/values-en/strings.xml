@@ -49,6 +49,10 @@
     <string name="collapse">Collapse</string>
     <string name="expand">Expand</string>
     <string name="series_video">Series Videos</string>
+    <string name="auto_play_next">Autoplay Next</string>
+    <string name="auto_play_next_summary">Play the next item in the current series when playback ends. Stop at the last item; never play recommendations. Off by default.</string>
+    <string name="close_playback_playlist">Close Playlist</string>
+    <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="related_video">Related Videos</string>
     <string name="now_playing">Now Playing</string>
     <string name="view_more_replies">View More Replies</string>

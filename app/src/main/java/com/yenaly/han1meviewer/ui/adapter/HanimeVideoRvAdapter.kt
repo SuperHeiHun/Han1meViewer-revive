@@ -221,6 +221,8 @@ class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidth
     }
 
     private fun Context.startVideoActivity(videoCode: String) {
+        val playerActivity = activity as? VideoActivity
+        if (playerActivity?.playVideo(videoCode) == true) return
         if (this is SearchActivity) {
             val intent = Intent(this, VideoActivity::class.java).apply {
                 putExtra(VIDEO_CODE, videoCode)

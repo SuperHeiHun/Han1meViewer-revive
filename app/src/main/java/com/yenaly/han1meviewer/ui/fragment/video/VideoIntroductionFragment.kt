@@ -81,9 +81,12 @@ import com.yenaly.yenaly_libs.utils.view.clickWithCondition
 import com.yenaly.yenaly_libs.utils.view.findParent
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -182,19 +185,27 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun bindDataObservers() {
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
-                    localListViewModel.observeMembership(viewModel.videoCode),
+                    viewModel.videoCodeFlow.flatMapLatest { code ->
+                        localListTypes = null
+                        checkedQuality = null
+                        videoIntroAdapter.updateLocalListButtons()
+                        localListViewModel.observeMembership(code).map { code to it }
+                    },
                     localListViewModel.isSaving,
-                ) { types, saving -> types to saving }
+                ) { membership, saving -> membership to saving }
                     .catch {
                         localListTypes = null
                         videoIntroAdapter.updateLocalListButtons()
                         showShortToast(R.string.local_list_load_failed)
                     }
-                    .collect { (types, saving) ->
+                    .collect { (membership, saving) ->
+                        val (code, types) = membership
+                        if (code != viewModel.videoCode) return@collect
                         localListTypes = types
                         isLocalListSaving = saving
                         videoIntroAdapter.updateLocalListButtons()
@@ -216,7 +227,10 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                     when (state) {
                         is VideoLoadingState.Error -> Unit
 
-                        is VideoLoadingState.Loading -> Unit
+                        is VideoLoadingState.Loading -> {
+                            blockFilterJob?.cancel()
+                            binding.rvVideoIntro.findParent<ViewPager2>().isUserInputEnabled = true
+                        }
 
                         is VideoLoadingState.Success -> {
                             blockFilterJob?.cancel()
@@ -229,10 +243,11 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                                 videoIntroAdapter.submit(video) // 挂起是为了让它在首位
                             }
                             multi.addAdapter(videoIntroAdapter)
-                            if (video.playlist != null && !viewModel.fromDownload) {
-                                playlistTitleAdapter.subtitle = video.playlist.playlistName
+                            val playlist = viewModel.playbackPlaylist.value
+                            if (playlist.videos.isNotEmpty() && !viewModel.fromDownload) {
+                                playlistTitleAdapter.subtitle = playlist.title
                                 multi.addAdapter(playlistTitleAdapter)
-                                playlistAdapter.submitList(video.playlist.video)
+                                playlistAdapter.submitList(playlist.videos)
                                 multi.addAdapter(playlistWrapper)
                             } else {
                                 multi.removeAdapter(playlistTitleAdapter)
@@ -292,7 +307,8 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.loadDownloadedFlow.collect { entity ->
+            viewModel.loadDownloadedFlow.collect { (code, entity) ->
+                if (code != viewModel.videoCode || checkedQuality == null) return@collect
                 if (entity == null) { // 没下
                     viewModel.hanimeVideoFlow.value?.let {
                         val checkedQuality = requireNotNull(checkedQuality)
@@ -361,6 +377,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         info: HanimeVideo, oldQuality: String?, newQuality: String,
         action: () -> Unit
     ) {
+        val code = viewModel.videoCode
         val notifyMsg = spannable {
             getString(R.string.download_video_detail_below).text()
             newline(2)
@@ -393,26 +410,27 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
             setTitle(if (oldQuality != null) R.string.sure_to_redownload else R.string.sure_to_download)
             setMessage(notifyMsg)
             setPositiveButton(R.string.sure) { _, _ ->
-                action.invoke()
+                if (viewModel.videoCode == code) action.invoke()
             }
             setNegativeButton(R.string.no, null)
             setNeutralButton(R.string.go_to_official) { _, _ ->
-                browse(getHanimeVideoDownloadLink(viewModel.videoCode))
+                browse(getHanimeVideoDownloadLink(code))
             }
         }
     }
 
     private suspend fun enqueueDownloadWork(videoData: HanimeVideo, redownload: Boolean = false) {
-        requireContext().requestPostNotificationPermission()
+        val code = viewModel.videoCode
         val checkedQuality = requireNotNull(checkedQuality)
+        requireContext().requestPostNotificationPermission()
         val root = DownloadStorage.currentRoot
         try {
             withContext(Dispatchers.IO) {
-                val existing = DatabaseRepo.HanimeDownload.find(viewModel.videoCode, checkedQuality)
+                val existing = DatabaseRepo.HanimeDownload.find(code, checkedQuality)
                 val folder = if (existing != null) {
                     DownloadStorage.folderForVideo(existing.videoUri, existing.videoCode)
                 } else {
-                    DownloadStorage.videoFolder(root, viewModel.videoCode, create = true)
+                    DownloadStorage.videoFolder(root, code, create = true)
                 }
                 HCacheManager.saveHanimeVideoInfo(requireNotNull(folder), videoData)
             }
@@ -429,7 +447,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 downloadUrl = videoData.videoUrls[checkedQuality]?.link,
                 videoType = videoData.videoUrls[checkedQuality]?.suffix,
                 hanimeName = videoData.title,
-                videoCode = viewModel.videoCode,
+                videoCode = code,
                 coverUrl = videoData.coverUrl,
                 downloadRoot = root,
             ),
@@ -659,6 +677,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         }
 
         private fun ItemVideoIntroductionBinding.initArtist(artist: HanimeVideo.Artist?) {
+            val code = viewModel.videoCode
             if (artist == null) {
                 vgArtist.isGone = true
             } else {
@@ -693,6 +712,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                                     setTitle(R.string.unsubscribe_artist)
                                     setMessage(R.string.sure_to_unsubscribe)
                                     setPositiveButton(R.string.sure) { _, _ ->
+                                        if (viewModel.videoCode != code) return@setPositiveButton
                                         it.setTag(R.id.click_condition, false)
                                         viewModel.unsubscribeArtist(
                                             artist.post.userId,
@@ -730,6 +750,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         }
 
         private fun ItemVideoIntroductionBinding.initMyList(myList: HanimeVideo.MyList?) {
+            val code = viewModel.videoCode
             btnMyList.setOnClickListener {
                 if (isAlreadyLogin && myList != null && myList.myListInfo.isNotEmpty()) {
                     requireContext().showAlertDialog {
@@ -738,9 +759,10 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                             myList.titleArray,
                             myList.isSelectedArray,
                         ) { _, index, isChecked ->
+                            if (viewModel.videoCode != code) return@setMultiChoiceItems
                             viewModel.modifyMyList(
                                 myList.myListInfo[index].code,
-                                viewModel.videoCode, isChecked, index
+                                code, isChecked, index
                             )
                         }
                         setNeutralButton(R.string.back, null)
@@ -764,18 +786,21 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         }
 
         private fun ItemVideoIntroductionBinding.initDownloadButton(videoData: HanimeVideo) {
+            val code = viewModel.videoCode
+            btnDownload.isEnabled = videoData.videoUrls.isNotEmpty()
             if (videoData.videoUrls.isEmpty()) {
-                showShortToast(R.string.no_video_links_found)
+                btnDownload.setOnClickListener(null)
             } else btnDownload.clickTrigger(viewLifecycleOwner.lifecycle) {
                 XPopup.Builder(context)
                     .atView(it)
                     .asAttachList(videoData.videoUrls.keys.toTypedArray(), null) { _, key ->
+                        if (viewModel.videoCode != code) return@asAttachList
                         if (key == HanimeResolution.RES_UNKNOWN) {
                             showShortToast(R.string.cannot_download_here)
-                            browse(getHanimeVideoDownloadLink(viewModel.videoCode))
+                            browse(getHanimeVideoDownloadLink(code))
                         } else {
                             checkedQuality = key
-                            viewModel.findDownloadedHanime(viewModel.videoCode)
+                            viewModel.findDownloadedHanime(code)
                         }
                     }.show()
             }

@@ -15,12 +15,14 @@ import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
 import com.yenaly.han1meviewer.logic.history.WatchHistoryRecorder
 import com.yenaly.han1meviewer.logic.history.HistoryPrivacy
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
+import com.yenaly.han1meviewer.logic.player.PlaybackPlaylist
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.ui.viewmodel.AppViewModel.csrfToken
 import com.yenaly.yenaly_libs.base.YenalyViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -45,9 +47,14 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         const val MIN_H_KEYFRAME_SAVE_INTERVAL = 5_000 // ms
     }
 
-    var videoCode: String = EMPTY_STRING
+    private val _videoCodeFlow = MutableStateFlow(EMPTY_STRING)
+    val videoCodeFlow = _videoCodeFlow.asStateFlow()
+
+    var videoCode: String
+        get() = _videoCodeFlow.value
         set(value) {
-            field = value
+            if (_videoCodeFlow.value != value) hKeyframes = null
+            _videoCodeFlow.value = value
             // 在這裏初始化所有需要videoCode的方法
             getHanimeVideo(value)
         }
@@ -66,11 +73,27 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
     private val _hanimeVideoFlow = MutableStateFlow<HanimeVideo?>(null)
     val hanimeVideoFlow = _hanimeVideoFlow.asStateFlow()
 
+    private val _playbackPlaylist = MutableStateFlow(PlaybackPlaylist())
+    val playbackPlaylist = _playbackPlaylist.asStateFlow()
+    private var videoLoadJob: Job? = null
+    @Volatile private var videoRequestVersion = 0
+
     fun getHanimeVideo(videoCode: String) {
+        if (videoCode != this.videoCode) return
+        val version = ++videoRequestVersion
+        videoLoadJob?.cancel()
+        _hanimeVideoStateFlow.value = VideoLoadingState.Loading
+        _hanimeVideoFlow.value = null
+        _playbackPlaylist.value = if (!fromDownload &&
+            _playbackPlaylist.value.videos.any { it.videoCode == videoCode }) {
+            _playbackPlaylist.value.forVideo(videoCode)
+        } else PlaybackPlaylist()
+        val offline = fromDownload
+        val quality = downloadQuality
         val historyTicket = HistoryPrivacy.ticket()
-        viewModelScope.launch {
-            val flow = if (fromDownload) {
-                HCacheManager.loadHanimeVideoInfo(videoCode, downloadQuality).map { hv ->
+        videoLoadJob = viewModelScope.launch {
+            val flow = if (offline) {
+                HCacheManager.loadHanimeVideoInfo(videoCode, quality).map { hv ->
                     if (hv == null) {
                         VideoLoadingState.NoContent
                     } else {
@@ -81,17 +104,22 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
                 NetworkRepo.getHanimeVideo(videoCode)
             }
             flow.collect { state ->
+                if (version != videoRequestVersion) return@collect
                 if (state is VideoLoadingState.Success) {
                     try {
                         HistoryPrivacy.record(historyTicket) {
-                            watchHistoryRecorder.record(videoCode, state.info, fromDownload)
+                            watchHistoryRecorder.record(videoCode, state.info, offline)
                         }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         Log.e("insert_watch_hty", "Unable to save watch history", e)
                     }
+                    // A short non-cancellable history transaction may finish after a switch.
+                    if (version != videoRequestVersion) return@collect
                     ContentBlocking.remember(videoCode, state.info)
+                    _playbackPlaylist.value = if (offline) PlaybackPlaylist() else
+                        _playbackPlaylist.value.updated(state.info.playlist, videoCode)
                     _hanimeVideoFlow.update { state.info }
                     csrfToken = state.info.csrfToken
                 }
@@ -103,7 +131,7 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
     private val _addToFavVideoFlow = MutableSharedFlow<WebsiteState<Boolean>>()
     val addToFavVideoFlow = _addToFavVideoFlow.asSharedFlow()
 
-    private val _loadDownloadedFlow = MutableSharedFlow<HanimeDownloadEntity?>()
+    private val _loadDownloadedFlow = MutableSharedFlow<Pair<String, HanimeDownloadEntity?>>()
     val loadDownloadedFlow = _loadDownloadedFlow.asSharedFlow()
 
     fun addToFavVideo(
@@ -121,11 +149,14 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         likeStatus: Boolean,
         currentUserId: String?,
     ) {
+        val version = videoRequestVersion
         viewModelScope.launch {
             NetworkRepo.addToMyFavVideo(
                 videoCode, likeStatus, currentUserId, csrfToken
             ).collect { state ->
+                if (version != videoRequestVersion) return@collect
                 _addToFavVideoFlow.emit(state)
+                if (version != videoRequestVersion) return@collect
                 if (likeStatus) {
                     // 代表移除喜爱
                     _hanimeVideoFlow.update { it?.decFavTime() }
@@ -146,11 +177,15 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         isChecked: Boolean,
         position: Int,
     ) {
+        val version = videoRequestVersion
         viewModelScope.launch {
             NetworkRepo.addToMyList(listCode, videoCode, isChecked, position, csrfToken).collect {
+                if (version != videoRequestVersion) return@collect
                 _modifyMyListFlow.emit(it)
+                if (version != videoRequestVersion) return@collect
                 _hanimeVideoFlow.update { prev ->
                     val myList = prev?.myList?.myListInfo.orEmpty().toMutableList()
+                    if (position !in myList.indices) return@update prev
                     myList[position] = myList[position].copy(isSelected = isChecked)
                     prev?.copy(myList = prev.myList?.copy(myListInfo = myList))
                 }
@@ -159,9 +194,10 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
     }
 
     fun findDownloadedHanime(videoCode: String) {
+        val version = videoRequestVersion
         viewModelScope.launch(Dispatchers.IO) {
             val info = DatabaseRepo.HanimeDownload.find(videoCode)
-            _loadDownloadedFlow.emit(info)
+            if (version == videoRequestVersion) _loadDownloadedFlow.emit(videoCode to info)
         }
     }
 
@@ -173,9 +209,12 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         userId: String,
         artistId: String,
     ) {
+        val version = videoRequestVersion
         viewModelScope.launch {
             NetworkRepo.subscribeArtist(csrfToken, userId, artistId, true).collect { state ->
+                if (version != videoRequestVersion) return@collect
                 _subscribeArtistFlow.emit(state)
+                if (version != videoRequestVersion) return@collect
                 if (state is WebsiteState.Success) {
                     _hanimeVideoFlow.update {
                         it?.copy(artist = it.artist?.copy(post = it.artist.post?.copy(isSubscribed = true)))
@@ -189,9 +228,12 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
         userId: String,
         artistId: String,
     ) {
+        val version = videoRequestVersion
         viewModelScope.launch {
             NetworkRepo.subscribeArtist(csrfToken, userId, artistId, false).collect { state ->
+                if (version != videoRequestVersion) return@collect
                 _subscribeArtistFlow.emit(state)
+                if (version != videoRequestVersion) return@collect
                 if (state is WebsiteState.Success) {
                     _hanimeVideoFlow.update {
                         it?.copy(artist = it.artist?.copy(post = it.artist.post?.copy(isSubscribed = false)))

@@ -20,6 +20,7 @@ import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
+import androidx.appcompat.widget.SwitchCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import cn.jzvd.JZDataSource
@@ -29,15 +30,16 @@ import com.itxca.spannablex.spannable
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
+import com.yenaly.han1meviewer.logic.player.PlaybackPlaylist
 import com.yenaly.han1meviewer.ui.adapter.HKeyframeRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.VideoSpeedAdapter
+import com.yenaly.han1meviewer.ui.adapter.PlaybackPlaylistAdapter
 import com.yenaly.han1meviewer.util.setStateViewLayout
 import com.yenaly.han1meviewer.util.showAlertDialog
 import com.yenaly.yenaly_libs.utils.OrientationManager
 import com.yenaly.yenaly_libs.utils.activity
 import com.yenaly.yenaly_libs.utils.navBarHeight
 import com.yenaly.yenaly_libs.utils.statusBarHeight
-import com.yenaly.yenaly_libs.utils.unsafeLazy
 import com.yenaly.yenaly_libs.utils.view.removeItself
 import java.util.Timer
 
@@ -142,6 +144,7 @@ class HJzvdStd @JvmOverloads constructor(
         }
 
     private lateinit var tvSpeed: TextView
+    private lateinit var tvPlaybackPlaylist: TextView
     private lateinit var tvKeyframe: TextView
     private lateinit var tvTimer: TextView
     private lateinit var btnGoHome: ImageView
@@ -152,13 +155,30 @@ class HJzvdStd @JvmOverloads constructor(
     var hKeyframe: HKeyframeEntity? = null
         set(value) {
             field = value
-            hKeyframeAdapter.submitList(value?.keyframes)
-            hKeyframeAdapter.isLocal = value?.let { it.author == null } ?: true
+            val adapter = if (value == null) keyframeAdapter else hKeyframeAdapter
+            adapter?.submitList(value?.keyframes)
+            adapter?.isLocal = value?.let { it.author == null } ?: true
         }
 
     var videoCode: String? = null
+        set(value) {
+            if (field != value) {
+                keyframeAdapter = null
+                hKeyframe = null
+            }
+            field = value
+        }
 
-    private val hKeyframeAdapter: HKeyframeRvAdapter by unsafeLazy { initHKeyframeAdapter() }
+    private var keyframeAdapter: HKeyframeRvAdapter? = null
+    private val hKeyframeAdapter: HKeyframeRvAdapter
+        get() = keyframeAdapter ?: initHKeyframeAdapter().also { keyframeAdapter = it }
+
+    private var playbackPlaylist: PlaybackPlaylist? = null
+    private var playlistPopup: PopupWindow? = null
+    private var controlsPopup: PopupWindow? = null
+    private var isVideoLoading = false
+    var onPlaylistVideoSelected: ((String) -> Unit)? = null
+    var onVideoCompleted: ((String) -> Unit)? = null
 
     /**
      * 初始化關鍵H幀的 Adapter，最好不用 lazy
@@ -272,6 +292,7 @@ class HJzvdStd @JvmOverloads constructor(
         super.init(context)
         SAVE_PROGRESS = false
         tvSpeed = findViewById(R.id.tv_speed)
+        tvPlaybackPlaylist = findViewById(R.id.tv_playback_playlist)
         tvKeyframe = findViewById(R.id.tv_keyframe)
         tvTimer = findViewById(R.id.tv_timer)
         btnGoHome = findViewById(R.id.go_home)
@@ -280,6 +301,7 @@ class HJzvdStd @JvmOverloads constructor(
         gestureFeedback = findViewById(R.id.gesture_feedback)
         textureViewContainer.isHapticFeedbackEnabled = true
         tvSpeed.setOnClickListener(this)
+        tvPlaybackPlaylist.setOnClickListener(this)
         tvKeyframe.setOnClickListener(this)
         tvKeyframe.setOnLongClickListener(this)
         btnGoHome.setOnClickListener(this)
@@ -295,6 +317,17 @@ class HJzvdStd @JvmOverloads constructor(
 
     override fun setUp(jzDataSource: JZDataSource?, screen: Int, clazz: Class<*>) {
         playerGestureController?.cancel()
+        if (isVideoLoading) {
+            // JzvdStd silently ignores setUp within 200 ms of a fullscreen transition.
+            // A selected video's data source must never be discarded by that debounce.
+            gobakFullscreenTime = 0L
+            gotoFullscreenTime = 0L
+        }
+        isVideoLoading = false
+        startButton.isEnabled = true
+        clarity.isEnabled = true
+        startButton.setOnClickListener(this)
+        mRetryBtn.setOnClickListener(this)
         super.setUp(jzDataSource, screen, clazz)
         Log.d("CustomJzvdStd-Settings", buildString {
             append("showBottomProgress: ")
@@ -306,7 +339,7 @@ class HJzvdStd @JvmOverloads constructor(
             append("userDefSlideSensitivity: ")
             appendLine(Preferences.slideSensitivity)
         })
-        titleTextView.isInvisible = true
+        titleTextView.isInvisible = screen != SCREEN_FULLSCREEN
         if (bottomProgressBar != null && !showBottomProgress) {
             bottomProgressBar.removeItself()
             bottomProgressBar = ProgressBar(context)
@@ -350,7 +383,42 @@ class HJzvdStd @JvmOverloads constructor(
 
     override fun reset() {
         playerGestureController?.cancel()
+        dismissPlaybackPlaylist()
+        controlsPopup?.dismiss()
         super.reset()
+    }
+
+    /** Release only this media session, without reparenting the fullscreen view. */
+    fun prepareForVideoSwitch() {
+        if (!isVideoLoading) reset()
+        isVideoLoading = true
+        dismissPlaybackPlaylist()
+        controlsPopup?.dismiss()
+        clarityPopWindow?.dismiss()
+        mediaInterface = null
+        seekToInAdvance = 0L
+        seekToManulPosition = -1
+        resetProgressAndTime()
+        posterImageView.setImageDrawable(null)
+        titleTextView.text = null
+        tvTimer.isInvisible = true
+        startButton.isEnabled = false
+        startButton.isGone = true
+        startButton.setOnClickListener(this)
+        clarity.isEnabled = false
+        mRetryLayout.isGone = true
+        loadingProgressBar.isVisible = true
+    }
+
+    fun showVideoLoadFailure(onRetry: () -> Unit) {
+        if (!isVideoLoading) prepareForVideoSwitch()
+        loadingProgressBar.isGone = true
+        mRetryLayout.isVisible = true
+        mRetryBtn.setOnClickListener { onRetry() }
+    }
+
+    override fun startVideo() {
+        if (!isVideoLoading) super.startVideo()
     }
 
     override fun onWindowFocusChanged(hasWindowFocus: Boolean) {
@@ -361,12 +429,18 @@ class HJzvdStd @JvmOverloads constructor(
     override fun onDetachedFromWindow() {
         playerGestureController?.cancel()
         cancelDismissControlViewTimer()
+        dismissPlaybackPlaylist()
+        controlsPopup?.dismiss()
         super.onDetachedFromWindow()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        if (w != oldw || h != oldh) playerGestureController?.cancel()
+        if (w != oldw || h != oldh) {
+            playerGestureController?.cancel()
+            dismissPlaybackPlaylist()
+            controlsPopup?.dismiss()
+        }
     }
 
     private fun canSwipeToFullscreen(): Boolean = screen == SCREEN_NORMAL &&
@@ -378,6 +452,7 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun onClickUiToggle() {
+        if (isVideoLoading) return
         if (!bottomContainer.isVisible) {
             setSystemTimeAndBattery()
             clarity.text = jzDataSource.currentKey.toString()
@@ -454,6 +529,9 @@ class HJzvdStd @JvmOverloads constructor(
         super.setScreenNormal()
         backButton.isVisible = true
         tvSpeed.isVisible = false
+        tvPlaybackPlaylist.isVisible = false
+        dismissPlaybackPlaylist()
+        controlsPopup?.dismiss()
         tvKeyframe.isVisible = false
         titleTextView.isInvisible = true
         tvTimer.isInvisible = true
@@ -469,6 +547,7 @@ class HJzvdStd @JvmOverloads constructor(
         playerGestureController?.cancel()
         super.setScreenFullscreen()
         tvSpeed.isVisible = true
+        tvPlaybackPlaylist.isVisible = playbackPlaylist?.videos?.isNotEmpty() == true
         if (isHKeyframeEnabled) tvKeyframe.isVisible = true
         titleTextView.isVisible = true
         // btnGoHome.isVisible = false
@@ -502,6 +581,7 @@ class HJzvdStd @JvmOverloads constructor(
         playerGestureController?.cancel()
         super.onClick(v)
         when (v.id) {
+            R.id.tv_playback_playlist -> clickPlaybackPlaylist()
             R.id.tv_speed -> clickSpeed()
             R.id.tv_keyframe -> onKeyframeClickListener?.invoke(v)
             R.id.go_home -> onGoHomeClickListener?.invoke(v)
@@ -520,12 +600,15 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun onCompletion() {
+        if (isVideoLoading || state == STATE_AUTO_COMPLETE) return
+        val completedCode = videoCode
         if (screen == SCREEN_FULLSCREEN) {
             onStateAutoComplete()
         } else {
             super.onCompletion()
         }
         posterImageView.isGone = true
+        completedCode?.let { onVideoCompleted?.invoke(it) }
     }
 
     override fun gotoNormalScreen() {
@@ -663,6 +746,8 @@ class HJzvdStd @JvmOverloads constructor(
             contentView = inflater
             animationStyle = cn.jzvd.R.style.pop_animation
         }
+        controlsPopup?.dismiss()
+        controlsPopup = popup
         rv.layoutManager = LinearLayoutManager(context)
         rv.adapter = VideoSpeedAdapter(currentSpeedIndex).apply {
             setOnItemClickListener { _, _, position ->
@@ -685,6 +770,8 @@ class HJzvdStd @JvmOverloads constructor(
             contentView = inflater
             animationStyle = cn.jzvd.R.style.pop_animation
         }
+        controlsPopup?.dismiss()
+        controlsPopup = popup
         rv.layoutManager = LinearLayoutManager(v.context)
         val adapter = hKeyframeAdapter
         rv.adapter = adapter
@@ -693,6 +780,61 @@ class HJzvdStd @JvmOverloads constructor(
             this@HJzvdStd.context.getString(R.string.here_is_empty) + "\n"
                     + this@HJzvdStd.context.getString(R.string.long_press_to_add_h_keyframe)
         )
+        popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
+    }
+
+    fun updatePlaybackPlaylist(playlist: PlaybackPlaylist) {
+        if (playbackPlaylist != playlist) dismissPlaybackPlaylist()
+        playbackPlaylist = playlist
+        tvPlaybackPlaylist.isVisible = screen == SCREEN_FULLSCREEN && playlist.videos.isNotEmpty()
+    }
+
+    fun dismissPlaybackPlaylist() {
+        playlistPopup?.dismiss()
+        playlistPopup = null
+    }
+
+    @SuppressLint("InflateParams")
+    fun clickPlaybackPlaylist() {
+        val playlist = playbackPlaylist ?: return
+        if (screen != SCREEN_FULLSCREEN || playlist.videos.isEmpty() || !isAttachedToWindow) return
+        playerGestureController?.cancel()
+        cancelDismissControlViewTimer()
+        onCLickUiToggleToClear()
+        controlsPopup?.dismiss()
+        dismissPlaybackPlaylist()
+        val sourceCode = videoCode
+        val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playlist, null)
+        content.findViewById<TextView>(R.id.playlist_title).text = playlist.title ?: context.getString(R.string.play_list)
+        content.findViewById<SwitchCompat>(R.id.auto_play_next).apply {
+            isChecked = Preferences.autoPlayNext
+            setOnCheckedChangeListener { _, enabled -> Preferences.autoPlayNext = enabled }
+        }
+        val popup = PopupWindow(
+            content, minOf(JZUtils.dip2px(context, 360f), (width * 0.5f).toInt()),
+            LayoutParams.MATCH_PARENT, true,
+        ).apply {
+            setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+            isOutsideTouchable = true
+            animationStyle = cn.jzvd.R.style.pop_animation
+            setOnDismissListener {
+                if (playlistPopup === this) playlistPopup = null
+                if (state == STATE_PLAYING) startDismissControlViewTimer()
+            }
+        }
+        playlistPopup = popup
+        content.findViewById<View>(R.id.close_playlist).setOnClickListener { popup.dismiss() }
+        content.findViewById<RecyclerView>(R.id.rv_playback_playlist).apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = PlaybackPlaylistAdapter(playlist.videos, sourceCode) { selectedCode ->
+                popup.dismiss()
+                if (videoCode == sourceCode && selectedCode != sourceCode) {
+                    onPlaylistVideoSelected?.invoke(selectedCode)
+                }
+            }
+            val selected = playlist.videos.indexOfFirst { it.videoCode == sourceCode }
+            if (selected >= 0) scrollToPosition(selected)
+        }
         popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
     }
 

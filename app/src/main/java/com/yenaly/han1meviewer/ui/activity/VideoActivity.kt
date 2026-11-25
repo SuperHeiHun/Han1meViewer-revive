@@ -35,6 +35,7 @@ import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.ui.fragment.video.CommentFragment
+import com.yenaly.han1meviewer.ui.fragment.video.ChildCommentPopupFragment
 import com.yenaly.han1meviewer.ui.fragment.video.VideoIntroductionFragment
 import com.yenaly.han1meviewer.ui.view.video.HMediaKernel
 import com.yenaly.han1meviewer.ui.view.video.HanimeDataSource
@@ -54,6 +55,9 @@ import com.yenaly.yenaly_libs.utils.startActivity
 import com.yenaly.yenaly_libs.utils.view.attach
 import com.yenaly.yenaly_libs.utils.view.setUpFragmentStateAdapter
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 
 class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     OrientationManager.OrientationChangeListener {
@@ -67,6 +71,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     private val videoCode by intentExtra<String>(VIDEO_CODE)
     private var videoTitle: String? = null
     private var videoCodeByWebsite: String? = null
+    private var startSelectedVideo = false
+    private var hasSwitchedVideo = false
 
     private val tabNameArray = intArrayOf(R.string.introduction, R.string.comment)
 
@@ -98,10 +104,19 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         // 必须 fromDownload 在前，videoCode 在后
         viewModel.fromDownload = fromDownload
         viewModel.downloadQuality = intent.getStringExtra(DOWNLOAD_QUALITY)
-        requireNotNull(videoCodeByWebsite ?: videoCode).let {
-            viewModel.videoCode = it
+        requireNotNull(savedInstanceState?.getString(VIDEO_CODE) ?: videoCodeByWebsite ?: videoCode).let {
             commentViewModel.code = it
             binding.videoPlayer.videoCode = it
+            if (viewModel.videoCode != it) viewModel.videoCode = it
+        }
+        binding.videoPlayer.onPlaylistVideoSelected = { playVideo(it) }
+        binding.videoPlayer.onVideoCompleted = { completedCode ->
+            if (Preferences.autoPlayNext && !viewModel.fromDownload &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                completedCode == viewModel.videoCode &&
+                viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success) {
+                viewModel.playbackPlaylist.value.nextAfter(completedCode)?.let { playVideo(it.videoCode) }
+            }
         }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.videoPlayer) { v, insets ->
@@ -117,6 +132,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         initHKeyframe()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun bindDataObservers() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.CREATED) {
@@ -126,41 +142,48 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                             // Cloudflare 驗證期間保留頁面，驗證成功後由 onResume 重新載入
                             if (state.throwable is CloudFlareBlockedException) {
                                 showShortToast(state.throwable.localizedMessage)
+                                binding.videoPlayer.showVideoLoadFailure(::retryVideo)
                                 return@collect
                             }
                             showShortToast(state.throwable.localizedMessage)
-                            if (state.throwable is ParseException) {
-                                browse(getHanimeVideoLink(viewModel.videoCode))
+                            if (hasSwitchedVideo) {
+                                binding.videoPlayer.showVideoLoadFailure(::retryVideo)
+                            } else {
+                                if (state.throwable is ParseException) {
+                                    browse(getHanimeVideoLink(viewModel.videoCode))
+                                }
+                                finish()
                             }
-                            finish()
                         }
 
                         is VideoLoadingState.Loading -> {
-
+                            binding.videoPlayer.prepareForVideoSwitch()
                         }
 
                         is VideoLoadingState.Success -> {
                             videoTitle = state.info.title
 
                             if (state.info.videoUrls.isEmpty()) {
-                                binding.videoPlayer.startButton.setOnClickListener {
+                                binding.videoPlayer.showVideoLoadFailure {
                                     showShortToast(R.string.fail_to_get_video_link)
                                     browse(getHanimeVideoLink(viewModel.videoCode))
                                 }
                             } else {
                                 binding.videoPlayer.setUp(
                                     HanimeDataSource(state.info.title, state.info.videoUrls),
-                                    Jzvd.SCREEN_NORMAL, kernel
+                                    binding.videoPlayer.screen, kernel
                                 )
                             }
                             binding.videoPlayer.posterImageView.load(state.info.coverUrl) {
                                 crossfade(true)
                             }
+                            startSelectedVideoIfReady()
                         }
 
                         is VideoLoadingState.NoContent -> {
                             showShortToast(R.string.video_might_not_exist)
-                            finish()
+                            if (hasSwitchedVideo) binding.videoPlayer.showVideoLoadFailure(::retryVideo)
+                            else finish()
                         }
                     }
                 }
@@ -168,9 +191,18 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         }
 
         lifecycleScope.launch {
-            viewModel.observeKeyframe(viewModel.videoCode)?.flowWithLifecycle(lifecycle)?.collect {
+            viewModel.videoCodeFlow.flatMapLatest { code ->
+                viewModel.observeKeyframe(code) ?: flowOf(null)
+            }.flowWithLifecycle(lifecycle).collect {
+                if (it != null && it.videoCode != viewModel.videoCode) return@collect
                 binding.videoPlayer.hKeyframe = it
                 viewModel.hKeyframes = it
+            }
+        }
+
+        lifecycleScope.launch {
+            viewModel.playbackPlaylist.collect { playlist ->
+                binding.videoPlayer.updatePlaybackPlaylist(playlist)
             }
         }
 
@@ -184,13 +216,60 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     override fun onResume() {
         super.onResume()
         if (!fromDownload && CloudflareVerificationManager.consumePendingRetry()) {
-            viewModel.getHanimeVideo(viewModel.videoCode)
+            retryVideo()
         }
+        startSelectedVideoIfReady()
     }
 
     override fun onStop() {
         super.onStop()
+        binding.videoPlayer.dismissPlaybackPlaylist()
         Jzvd.goOnPlayOnPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putString(VIDEO_CODE, viewModel.videoCode)
+        super.onSaveInstanceState(outState)
+    }
+
+    /** Reuse this activity and the very same fullscreen player view. */
+    fun playVideo(code: String): Boolean {
+        if (viewModel.fromDownload || code.isBlank() || isFinishing || isDestroyed) return false
+        if (code == viewModel.videoCode) {
+            showShortToast(R.string.watching_this_video_now)
+            return true
+        }
+        hasSwitchedVideo = true
+        startSelectedVideo = true
+        supportFragmentManager.fragments.filterIsInstance<ChildCommentPopupFragment>()
+            .forEach { it.dismissAllowingStateLoss() }
+        videoTitle = null
+        binding.videoPlayer.prepareForVideoSwitch()
+        binding.videoPlayer.videoCode = code
+        viewModel.videoCode = code
+        commentViewModel.switchVideo(code)
+        showRedDotCount(0)
+        intent = Intent(intent).apply {
+            action = null
+            data = null
+            putExtra(VIDEO_CODE, code)
+        }
+        return true
+    }
+
+    private fun retryVideo() {
+        binding.videoPlayer.prepareForVideoSwitch()
+        viewModel.getHanimeVideo(viewModel.videoCode)
+    }
+
+    private fun startSelectedVideoIfReady() {
+        val video = (viewModel.hanimeVideoStateFlow.value as? VideoLoadingState.Success)?.info ?: return
+        if (!startSelectedVideo || video.videoUrls.isEmpty() ||
+            !binding.videoPlayer.startButton.isEnabled ||
+            !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
+        startSelectedVideo = false
+        // Keep the existing mobile-data confirmation instead of calling the kernel directly.
+        binding.videoPlayer.startButton.performClick()
     }
 
     override fun onDestroy() {
@@ -263,6 +342,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             val mi: JZMediaInterface? = binding.videoPlayer.mediaInterface
             if (mi != null && !mi.isPlaying) {
                 val currentPosition = binding.videoPlayer.currentPositionWhenPlaying
+                val code = viewModel.videoCode
+                val title = videoTitle ?: "Untitled"
                 it.context.showAlertDialog {
                     setTitle(R.string.add_to_h_keyframe)
                     setMessage(buildString {
@@ -270,9 +351,10 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                         append(getString(R.string.current_position_d_ms, currentPosition))
                     })
                     setPositiveButton(R.string.confirm) { _, _ ->
+                        if (viewModel.videoCode != code) return@setPositiveButton
                         viewModel.appendHKeyframe(
-                            viewModel.videoCode,
-                            videoTitle ?: "Untitled",
+                            code,
+                            title,
                             HKeyframeEntity.Keyframe(
                                 position = currentPosition,
                                 prompt = null // 這裏不要給太多負擔，保存就行了沒必要寫comment

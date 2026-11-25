@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 
 /**
  * @project Han1meViewer
@@ -35,6 +36,10 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
     private var hasMoreComments = false
     private var isLoadingMoreComments = false
     private var commentRequestVersion = 0
+    private var replyRequestVersion = 0
+    private var videoVersion = 0
+    private var commentJob: Job? = null
+    private var replyJob: Job? = null
 
     private val _videoCommentStateFlow =
         MutableStateFlow<WebsiteState<VideoComments>>(WebsiteState.Loading)
@@ -62,14 +67,34 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
         MutableSharedFlow<WebsiteState<VideoCommentArgs>>(replay = 0)
     val commentLikeFlow = _commentLikeFlow.asSharedFlow()
 
+    fun switchVideo(videoCode: String) {
+        if (code == videoCode) return
+        code = videoCode
+        videoVersion++
+        commentRequestVersion++
+        replyRequestVersion++
+        commentJob?.cancel()
+        replyJob?.cancel()
+        currentUserId = null
+        nextCommentOffset = null
+        hasMoreComments = false
+        isLoadingMoreComments = false
+        _videoCommentFlow.value = emptyList()
+        _videoReplyFlow.value = emptyList()
+        _videoCommentStateFlow.value = WebsiteState.Loading
+        _videoReplyStateFlow.value = WebsiteState.Loading
+        commentType?.let { getComment(it, videoCode) }
+    }
+
     fun getComment(type: String, code: String) {
+        commentJob?.cancel()
         commentType = type
         commentCode = code
         nextCommentOffset = null
         hasMoreComments = false
         isLoadingMoreComments = false
         val version = ++commentRequestVersion
-        viewModelScope.launch {
+        commentJob = viewModelScope.launch {
             _videoCommentStateFlow.value = WebsiteState.Loading
             NetworkRepo.getComments(type, code).collect { state ->
                 if (version != commentRequestVersion) return@collect
@@ -137,10 +162,13 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
     }
 
     fun getCommentReply(commentId: String) {
-        viewModelScope.launch {
+        replyJob?.cancel()
+        val version = ++replyRequestVersion
+        replyJob = viewModelScope.launch {
             // 每次获取评论回复时，都会重新加载
             _videoReplyStateFlow.value = WebsiteState.Loading
             NetworkRepo.getCommentReply(commentId).collect { state ->
+                if (version != replyRequestVersion) return@collect
                 _videoReplyStateFlow.value = state
                 _videoReplyFlow.update { prevList ->
                     when (state) {
@@ -159,9 +187,10 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
         type: String,
         text: String,
     ) {
+        val version = videoVersion
         viewModelScope.launch {
             NetworkRepo.postComment(csrfToken, currentUserId, targetUserId, type, text)
-                .collect(_postCommentFlow::emit)
+                .collect { if (version == videoVersion) _postCommentFlow.emit(it) }
         }
     }
 
@@ -169,9 +198,10 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
         replyCommentId: String,
         text: String,
     ) {
+        val version = videoVersion
         viewModelScope.launch {
             NetworkRepo.postCommentReply(csrfToken, replyCommentId, text)
-                .collect(_postReplyFlow::emit)
+                .collect { if (version == videoVersion) _postReplyFlow.emit(it) }
         }
     }
 
@@ -201,6 +231,7 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
         likeCommentStatus: Boolean = false,
         unlikeCommentStatus: Boolean = false,
     ) {
+        val version = videoVersion
         viewModelScope.launch {
             NetworkRepo.likeComment(
                 csrfToken,
@@ -214,11 +245,14 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
                 unlikeCommentStatus,
                 commentPosition, comment
             ).collect { argState ->
+                if (version != videoVersion) return@collect
                 _commentLikeFlow.emit(argState)
+                if (version != videoVersion) return@collect
                 if (argState is WebsiteState.Success) {
                     when (commentPlace) {
                         CommentPlace.COMMENT -> _videoCommentFlow.update { prevList ->
                             prevList.toMutableList().apply {
+                                if (commentPosition !in indices) return@apply
                                 this[commentPosition] =
                                     this[commentPosition].handleCommentLike(argState.info)
                             }
@@ -226,6 +260,7 @@ class CommentViewModel(application: Application) : YenalyViewModel(application) 
 
                         CommentPlace.CHILD_COMMENT -> _videoReplyFlow.update { prevList ->
                             prevList.toMutableList().apply {
+                                if (commentPosition !in indices) return@apply
                                 this[commentPosition] =
                                     this[commentPosition].handleCommentLike(argState.info)
                             }

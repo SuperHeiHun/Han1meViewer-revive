@@ -104,6 +104,12 @@ object Preferences {
             true
         )
 
+    var autoPlayNext: Boolean
+        get() = preferenceSp.getBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, false)
+        set(value) {
+            preferenceSp.edit().putBoolean(PlayerSettingsFragment.AUTO_PLAY_NEXT, value).apply()
+        }
+
     val playerSpeed: Float
         get() = preferenceSp.getString(
             PlayerSettingsFragment.PLAYER_SPEED,
