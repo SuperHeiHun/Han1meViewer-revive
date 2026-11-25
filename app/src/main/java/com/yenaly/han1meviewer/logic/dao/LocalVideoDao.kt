@@ -20,6 +20,12 @@ interface LocalVideoDao {
     @Query("SELECT listType FROM LocalVideoEntity WHERE videoCode = :videoCode")
     fun observeMembership(videoCode: String): Flow<List<String>>
 
+    @Query("SELECT * FROM LocalVideoEntity WHERE listType = :listType ORDER BY addedAt ASC, rowid ASC")
+    suspend fun snapshot(listType: String): List<LocalVideoEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun mergeBackup(videos: List<LocalVideoEntity>)
+
     // Repeated taps must not create duplicates or change the queue position.
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(video: LocalVideoEntity)

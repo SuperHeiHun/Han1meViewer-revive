@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <Preference app:key="backup_status" app:selectable="false" app:title="@string/backup_settings" />
+
+    <PreferenceCategory app:title="@string/backup_items">
+        <CheckBoxPreference app:key="backup_watch_history" app:title="@string/watch_history" app:defaultValue="true" />
+        <CheckBoxPreference app:key="backup_search_history" app:title="@string/search_history" app:defaultValue="true" />
+        <CheckBoxPreference app:key="backup_app_settings" app:title="@string/backup_app_settings" app:defaultValue="true" />
+        <CheckBoxPreference app:key="backup_favorites" app:title="@string/local_favorites" app:defaultValue="true" />
+        <CheckBoxPreference app:key="backup_watch_later" app:title="@string/local_watch_later" app:defaultValue="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/backup_local_file">
+        <Preference app:key="backup_local_export" app:title="@string/backup_export" />
+        <Preference app:key="backup_local_import" app:title="@string/backup_restore" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/backup_webdav">
+        <Preference app:key="backup_webdav_config" app:title="@string/backup_webdav_config" app:summary="@string/backup_webdav_help" />
+        <Preference app:key="backup_webdav_upload" app:title="@string/backup_webdav_upload" />
+        <Preference app:key="backup_webdav_download" app:title="@string/backup_webdav_download" />
+    </PreferenceCategory>
+</PreferenceScreen>

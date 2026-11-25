@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.yenaly.han1meviewer.logic.DatabaseRepo
 import com.yenaly.han1meviewer.logic.NetworkRepo
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
+import com.yenaly.han1meviewer.logic.history.HistoryPrivacy
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.SearchOption
 import com.yenaly.han1meviewer.logic.search.SearchInputParser
@@ -19,13 +20,11 @@ import com.yenaly.yenaly_libs.utils.unsafeLazy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * @project Hanime1
@@ -116,12 +115,13 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
         duration: String?, tags: Set<String>,
     ) {
         searchJob?.cancel()
+        val historyTicket = HistoryPrivacy.ticket()
         searchJob = viewModelScope.launch {
             val input = searchInputParser.parse(query)
             // Every entry point (including a tag/author intent and history replay) comes here.
             if (page == 1 && !query.isNullOrBlank()) {
                 try {
-                    withContext(NonCancellable + Dispatchers.IO) {
+                    HistoryPrivacy.record(historyTicket) {
                         DatabaseRepo.SearchHistory.insert(SearchHistoryEntity(query.trim()))
                     }
                 } catch (e: CancellationException) {

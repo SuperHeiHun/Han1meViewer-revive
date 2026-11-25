@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<ScrollView
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:paddingHorizontal="24dp" android:paddingVertical="8dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="@string/backup_webdav_help" android:textAppearance="?attr/textAppearanceBodySmall" />
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/backup_webdav_url">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_webdav_url" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textUri" android:singleLine="true" android:saveEnabled="false" android:importantForAutofill="no" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/backup_webdav_username">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_webdav_username" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textVisiblePassword" android:singleLine="true" android:saveEnabled="false" android:importantForAutofill="no" />
+        </com.google.android.material.textfield.TextInputLayout>
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/backup_webdav_password">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_webdav_password" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:inputType="textPassword" android:singleLine="true" android:saveEnabled="false" android:importantForAutofill="no" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
+</ScrollView>
+</layout>

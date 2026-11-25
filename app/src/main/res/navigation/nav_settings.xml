@@ -36,4 +36,8 @@
         android:id="@+id/contentBlockingSettingsFragment"
         android:name="com.yenaly.han1meviewer.ui.fragment.settings.ContentBlockingSettingsFragment" />
 
+    <fragment
+        android:id="@+id/backupSettingsFragment"
+        android:name="com.yenaly.han1meviewer.ui.fragment.settings.BackupSettingsFragment" />
+
 </navigation>

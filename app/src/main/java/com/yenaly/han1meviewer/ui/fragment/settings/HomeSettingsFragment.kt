@@ -22,6 +22,7 @@ import com.yenaly.han1meviewer.HA1_GITHUB_RELEASES_URL
 import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.state.WebsiteState
+import com.yenaly.han1meviewer.logic.history.HistoryPrivacy
 import com.yenaly.han1meviewer.ui.activity.AboutActivity
 import com.yenaly.han1meviewer.ui.activity.SettingsActivity
 import com.yenaly.han1meviewer.ui.activity.SettingsRouter
@@ -39,6 +40,7 @@ import com.yenaly.yenaly_libs.utils.formatFileSizeV2
 import com.yenaly.yenaly_libs.utils.showShortToast
 import com.yenaly.yenaly_libs.utils.startActivity
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -110,6 +112,7 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
     override fun onStart() {
         super.onStart()
         (activity as SettingsActivity).setupToolbar()
+        findPreference<SwitchPreferenceCompat>(HistoryPrivacy.KEY)?.isChecked = HistoryPrivacy.enabled
     }
 
     override fun onPreferencesCreated(savedInstanceState: Bundle?) {
@@ -159,6 +162,29 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         findPreference<Preference>("content_blocking")?.setOnPreferenceClickListener {
             SettingsRouter.with(this).navigateWithinSettings(R.id.contentBlockingSettingsFragment)
             true
+        }
+        findPreference<Preference>("backup_settings")?.setOnPreferenceClickListener {
+            SettingsRouter.with(this).navigateWithinSettings(R.id.backupSettingsFragment)
+            true
+        }
+        findPreference<SwitchPreferenceCompat>(HistoryPrivacy.KEY)?.apply {
+            isChecked = HistoryPrivacy.enabled
+            setOnPreferenceChangeListener { _, value ->
+                isEnabled = false
+                lifecycleScope.launch {
+                    try {
+                        HistoryPrivacy.setEnabled(value == true)
+                        isChecked = HistoryPrivacy.enabled
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        showShortToast(R.string.settings_save_failed)
+                    } finally {
+                        isEnabled = true
+                    }
+                }
+                false
+            }
         }
         about.apply {
             title = buildString {

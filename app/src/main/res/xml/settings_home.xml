@@ -85,6 +85,22 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/backup_privacy">
+
+        <Preference
+            app:icon="@drawable/ic_baseline_download_24"
+            app:key="backup_settings"
+            app:summary="@string/backup_settings_summary"
+            app:title="@string/backup_settings" />
+
+        <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
+            app:key="privacy_mode"
+            app:persistent="false"
+            app:summary="@string/privacy_mode_summary"
+            app:title="@string/privacy_mode" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/other">
 
         <Preference

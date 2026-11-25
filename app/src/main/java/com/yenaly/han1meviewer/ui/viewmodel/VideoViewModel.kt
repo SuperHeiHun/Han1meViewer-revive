@@ -13,6 +13,7 @@ import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.entity.HKeyframeEntity
 import com.yenaly.han1meviewer.logic.entity.download.HanimeDownloadEntity
 import com.yenaly.han1meviewer.logic.history.WatchHistoryRecorder
+import com.yenaly.han1meviewer.logic.history.HistoryPrivacy
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
@@ -65,6 +66,7 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
     val hanimeVideoFlow = _hanimeVideoFlow.asStateFlow()
 
     fun getHanimeVideo(videoCode: String) {
+        val historyTicket = HistoryPrivacy.ticket()
         viewModelScope.launch {
             val flow = if (fromDownload) {
                 HCacheManager.loadHanimeVideoInfo(videoCode).map { hv ->
@@ -80,7 +82,9 @@ class VideoViewModel(application: Application) : YenalyViewModel(application) {
             flow.collect { state ->
                 if (state is VideoLoadingState.Success) {
                     try {
-                        watchHistoryRecorder.record(videoCode, state.info, fromDownload)
+                        HistoryPrivacy.record(historyTicket) {
+                            watchHistoryRecorder.record(videoCode, state.info, fromDownload)
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {

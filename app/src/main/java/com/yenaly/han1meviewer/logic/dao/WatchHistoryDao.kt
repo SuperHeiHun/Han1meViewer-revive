@@ -15,6 +15,16 @@ abstract class WatchHistoryDao {
     @Query("SELECT * FROM WatchHistoryEntity ORDER BY id DESC")
     abstract fun loadAll(): Flow<MutableList<WatchHistoryEntity>>
 
+    @Query("SELECT * FROM WatchHistoryEntity ORDER BY id DESC")
+    abstract suspend fun snapshot(): List<WatchHistoryEntity>
+
+    @Transaction
+    open suspend fun mergeBackup(histories: List<WatchHistoryEntity>) {
+        histories.asReversed().forEach { history ->
+            if (findBy(history.videoCode) == null) insert(history.copy(id = 0))
+        }
+    }
+
     @Delete
     abstract suspend fun delete(history: WatchHistoryEntity)
 

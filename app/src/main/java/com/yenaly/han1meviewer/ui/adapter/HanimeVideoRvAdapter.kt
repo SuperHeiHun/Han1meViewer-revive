@@ -23,10 +23,7 @@ import com.yenaly.han1meviewer.VIDEO_LAYOUT_WRAP_CONTENT
 import com.yenaly.han1meviewer.VideoCoverSize
 import com.yenaly.han1meviewer.getHanimeShareText
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
-import com.yenaly.han1meviewer.logic.blocking.BlockKind
-import com.yenaly.han1meviewer.util.blockActionLabel
-import com.yenaly.han1meviewer.util.showAlertDialog
-import com.yenaly.han1meviewer.util.showBlockRuleDialog
+import com.yenaly.han1meviewer.util.showVideoCardMenu
 import com.yenaly.han1meviewer.ui.activity.MainActivity
 import com.yenaly.han1meviewer.ui.activity.PreviewActivity
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
@@ -197,24 +194,11 @@ class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidth
                     setOnLongClickListener {
                         val position = viewHolder.bindingAdapterPosition
                         val item = getItem(position) ?: return@setOnLongClickListener true
-                        val author = item.uploader?.takeIf { it.isNotBlank() }
                         val owner = context.activity as? LifecycleOwner
-                        fun copyShareText() {
+                        if (owner == null) {
                             copyTextToClipboard(getHanimeShareText(item.title, item.videoCode))
                             showShortToast(R.string.copy_to_clipboard)
-                        }
-                        if (author == null || owner == null) {
-                            copyShareText()
-                        } else context.showAlertDialog {
-                            setTitle(item.title)
-                            setItems(arrayOf(
-                                context.getString(R.string.copy_to_clipboard),
-                                context.blockActionLabel(BlockKind.AUTHOR, author),
-                            )) { _, index ->
-                                if (index == 0) copyShareText()
-                                else context.showBlockRuleDialog(BlockKind.AUTHOR, author, owner.lifecycleScope)
-                            }
-                        }
+                        } else context.showVideoCardMenu(item, owner.lifecycleScope)
                         return@setOnLongClickListener true
                     }
                 }

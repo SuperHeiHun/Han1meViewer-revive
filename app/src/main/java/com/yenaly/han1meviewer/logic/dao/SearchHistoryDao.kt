@@ -15,6 +15,16 @@ abstract class SearchHistoryDao {
     @Query("SELECT * FROM SearchHistoryEntity ORDER BY id DESC")
     abstract fun loadAll(): Flow<MutableList<SearchHistoryEntity>>
 
+    @Query("SELECT * FROM SearchHistoryEntity ORDER BY id DESC")
+    abstract suspend fun snapshot(): List<SearchHistoryEntity>
+
+    @Transaction
+    open suspend fun mergeBackup(histories: List<SearchHistoryEntity>) {
+        histories.asReversed().forEach { history ->
+            if (find(history.query) == null) insert(history.copy(id = 0))
+        }
+    }
+
     @Delete
     abstract suspend fun delete(history: SearchHistoryEntity)
 

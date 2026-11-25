@@ -22,6 +22,7 @@ import com.yenaly.han1meviewer.ui.fragment.IToolbarFragment
 import com.yenaly.han1meviewer.ui.fragment.LoginNeededFragmentMixin
 import com.yenaly.han1meviewer.ui.viewmodel.MyListViewModel
 import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showVideoCardMenu
 import com.yenaly.yenaly_libs.base.YenalyFragment
 import com.yenaly.yenaly_libs.utils.showShortToast
 import com.yenaly.yenaly_libs.utils.unsafeLazy
@@ -61,13 +62,13 @@ class MyFavVideoFragment : YenalyFragment<FragmentPageListBinding>(),
 
         adapter.setOnItemLongClickListener { _, _, position ->
             val item = adapter.getItem(position) ?: return@setOnItemLongClickListener true
-            requireContext().showAlertDialog {
-                setTitle(R.string.delete_fav)
-                setMessage(getString(R.string.sure_to_delete_s, item.title))
-                setPositiveButton(R.string.confirm) { _, _ ->
-                    viewModel.fav.deleteMyFavVideo(item.videoCode, position)
+            requireContext().showVideoCardMenu(item, viewLifecycleOwner.lifecycleScope, getString(R.string.delete_fav)) {
+                requireContext().showAlertDialog {
+                    setTitle(R.string.delete_fav)
+                    setMessage(getString(R.string.sure_to_delete_s, item.title))
+                    setPositiveButton(R.string.confirm) { _, _ -> viewModel.fav.deleteMyFavVideo(item.videoCode, position) }
+                    setNegativeButton(R.string.cancel, null)
                 }
-                setNegativeButton(R.string.cancel, null)
             }
             return@setOnItemLongClickListener true
         }

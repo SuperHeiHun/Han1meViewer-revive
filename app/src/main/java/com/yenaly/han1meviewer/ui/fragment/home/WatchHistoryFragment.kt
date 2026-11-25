@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.databinding.FragmentPageListBinding
+import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.ui.StateLayoutMixin
 import com.yenaly.han1meviewer.ui.activity.MainActivity
 import com.yenaly.han1meviewer.ui.adapter.WatchHistoryRvAdapter
@@ -16,6 +17,7 @@ import com.yenaly.han1meviewer.ui.fragment.IToolbarFragment
 import com.yenaly.han1meviewer.ui.viewmodel.MainViewModel
 import com.yenaly.han1meviewer.util.setStateViewLayout
 import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showVideoCardMenu
 import com.yenaly.yenaly_libs.base.YenalyFragment
 import com.yenaly.yenaly_libs.utils.unsafeLazy
 import kotlinx.coroutines.launch
@@ -50,13 +52,15 @@ class WatchHistoryFragment : YenalyFragment<FragmentPageListBinding>(),
         historyAdapter.setStateViewLayout(R.layout.layout_empty_view)
         historyAdapter.setOnItemLongClickListener { _, _, position ->
             val data = historyAdapter.getItem(position) ?: return@setOnItemLongClickListener true
-            requireContext().showAlertDialog {
-                setTitle(R.string.delete_history)
-                setMessage(getString(R.string.sure_to_delete_s, data.title))
-                setPositiveButton(R.string.confirm) { _, _ ->
-                    viewModel.deleteWatchHistory(data)
+            val item = HanimeInfo(title = data.title, coverUrl = data.coverUrl, videoCode = data.videoCode,
+                itemType = HanimeInfo.SIMPLIFIED)
+            requireContext().showVideoCardMenu(item, viewLifecycleOwner.lifecycleScope, getString(R.string.delete_history)) {
+                requireContext().showAlertDialog {
+                    setTitle(R.string.delete_history)
+                    setMessage(getString(R.string.sure_to_delete_s, data.title))
+                    setPositiveButton(R.string.confirm) { _, _ -> viewModel.deleteWatchHistory(data) }
+                    setNegativeButton(R.string.cancel, null)
                 }
-                setNegativeButton(R.string.cancel, null)
             }
             return@setOnItemLongClickListener true
         }

@@ -19,6 +19,7 @@ import com.yenaly.han1meviewer.ui.adapter.HanimeMyListVideoAdapter
 import com.yenaly.han1meviewer.ui.fragment.IToolbarFragment
 import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
 import com.yenaly.han1meviewer.util.showAlertDialog
+import com.yenaly.han1meviewer.util.showVideoCardMenu
 import com.yenaly.yenaly_libs.base.YenalyFragment
 import com.yenaly.yenaly_libs.utils.showShortToast
 import kotlinx.coroutines.flow.catch
@@ -56,13 +57,14 @@ class LocalVideoListFragment : YenalyFragment<FragmentPageListBinding>(),
         binding.srlPageList.setEnableLoadMore(false)
         adapter.setOnItemLongClickListener { _, _, position ->
             val item = adapter.getItem(position) ?: return@setOnItemLongClickListener true
-            requireContext().showAlertDialog {
-                setTitle(R.string.local_list_remove)
-                setMessage(getString(R.string.sure_to_delete_s, item.title))
-                setPositiveButton(R.string.confirm) { _, _ ->
-                    viewModel.remove(listType, item.videoCode)
+            requireContext().showVideoCardMenu(item, viewLifecycleOwner.lifecycleScope,
+                getString(R.string.local_list_remove), includeWatchLater = listType != LocalVideoEntity.WATCH_LATER) {
+                requireContext().showAlertDialog {
+                    setTitle(R.string.local_list_remove)
+                    setMessage(getString(R.string.sure_to_delete_s, item.title))
+                    setPositiveButton(R.string.confirm) { _, _ -> viewModel.remove(listType, item.videoCode) }
+                    setNegativeButton(R.string.cancel, null)
                 }
-                setNegativeButton(R.string.cancel, null)
             }
             true
         }

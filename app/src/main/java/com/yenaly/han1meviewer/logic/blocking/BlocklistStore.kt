@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 /** Dedicated preferences: clearing caches, signing out or editing online lists cannot erase rules. */
 class BlocklistStore(private val preferences: SharedPreferences) {
@@ -18,6 +19,24 @@ class BlocklistStore(private val preferences: SharedPreferences) {
         )
     )
     val rules = _rules.asStateFlow()
+
+    suspend fun mergeBackup(tags: Set<String>, authors: Set<String>) = withContext(Dispatchers.IO) {
+        mutex.withLock {
+            fun merge(existing: Set<String>, added: Set<String>, kind: BlockKind): Set<String> {
+                val names = linkedMapOf<String, String>()
+                (existing + added).forEach { name ->
+                    val clean = BlockRules.cleanName(name, kind)
+                    require(clean.isNotBlank())
+                    names.putIfAbsent(clean.lowercase(Locale.ROOT), clean)
+                }
+                return names.values.toSet()
+            }
+            val updated = BlockRules(merge(_rules.value.tags, tags, BlockKind.TAG),
+                merge(_rules.value.authors, authors, BlockKind.AUTHOR))
+            check(preferences.edit().putStringSet(TAGS, updated.tags).putStringSet(AUTHORS, updated.authors).commit())
+            _rules.value = updated
+        }
+    }
 
     suspend fun setBlocked(kind: BlockKind, name: String, blocked: Boolean) =
         withContext(Dispatchers.IO) {

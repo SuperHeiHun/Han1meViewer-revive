@@ -5,6 +5,7 @@ import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.blocking.BlockKind
 import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
 import com.yenaly.han1meviewer.logic.model.HanimeVideo
+import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.yenaly_libs.utils.showShortToast
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +37,27 @@ fun Context.showBlockRuleDialog(kind: BlockKind, name: String, scope: CoroutineS
             }
         }
         setNegativeButton(R.string.cancel, null)
+    }
+}
+
+fun Context.showVideoCardBlockMenu(item: HanimeInfo, scope: CoroutineScope) {
+    scope.launch {
+        showShortToast(R.string.loading)
+        val metadata = ContentBlocking.metadataFor(item.videoCode)
+        val author = metadata?.author ?: item.uploader?.takeIf { it.isNotBlank() }
+        val entries = buildList {
+            author?.let { add(BlockKind.AUTHOR to it) }
+            metadata?.tags?.forEach { add(BlockKind.TAG to it) }
+        }
+        if (metadata == null) showShortToast(R.string.block_no_metadata)
+        showAlertDialog {
+            setTitle(R.string.content_blocking)
+            setItems((entries.map { (kind, name) -> blockActionLabel(kind, name) } + getString(R.string.manage_block_rules)).toTypedArray()) { _, index ->
+                if (index == entries.size) openContentBlockingSettings()
+                else entries[index].let { (kind, name) -> showBlockRuleDialog(kind, name, scope) }
+            }
+            setNegativeButton(R.string.cancel, null)
+        }
     }
 }
 

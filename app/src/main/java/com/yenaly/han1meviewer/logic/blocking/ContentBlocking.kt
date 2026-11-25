@@ -79,4 +79,7 @@ object ContentBlocking {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observe(items: List<HanimeInfo>) = rules.flatMapLatest { filter.observe(items, it) }
+
+    /** Explicit card-menu lookup shares the bounded cache and never records viewing history. */
+    suspend fun metadataFor(code: String): VideoBlockMetadata? = cached(code) ?: resolve(code)
 }
