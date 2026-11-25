@@ -72,6 +72,7 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         const val LAST_UPDATE_POPUP_TIME = "last_update_popup_time"
         const val UPDATE_POPUP_INTERVAL_DAYS = "update_popup_interval_days"
         const val USE_CI_UPDATE_CHANNEL = "use_ci_update_channel"
+        const val DISABLE_AUTO_UPDATE = "disable_auto_update"
 
     }
 
@@ -87,6 +88,8 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
             by safePreference<Preference>(UPDATE)
     private val useCIUpdateChannel
             by safePreference<SwitchPreferenceCompat>(USE_CI_UPDATE_CHANNEL)
+    private val disableAutoUpdate
+            by safePreference<SwitchPreferenceCompat>(DISABLE_AUTO_UPDATE)
     private val updatePopupIntervalDays
             by safePreference<SeekBarPreference>(UPDATE_POPUP_INTERVAL_DAYS)
     private val about
@@ -233,9 +236,13 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
         }
         useCIUpdateChannel.apply {
             setOnPreferenceChangeListener { _, _ ->
-                AppViewModel.getLatestVersion()
+                AppViewModel.getLatestVersion(delayMillis = 200, automatic = true)
                 return@setOnPreferenceChangeListener true
             }
+        }
+        disableAutoUpdate.setOnPreferenceChangeListener { _, newValue ->
+            if (newValue == true) AppViewModel.cancelAutomaticUpdateCheck()
+            true
         }
         updatePopupIntervalDays.apply {
             setSummaryConverter(defValue = 0, converter = ::toIntervalDaysPrettyString)
@@ -252,6 +259,14 @@ class HomeSettingsFragment : YenalySettingsFragment(R.xml.settings_home),
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 AppViewModel.versionFlow.collect { state ->
                     when (state) {
+                        null -> {
+                            update.summary = null
+                            update.setOnPreferenceClickListener {
+                                AppViewModel.getLatestVersion()
+                                true
+                            }
+                        }
+
                         is WebsiteState.Error -> {
                             checkUpdateTimes++
                             update.setSummary(R.string.check_update_failed)

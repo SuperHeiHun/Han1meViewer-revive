@@ -74,9 +74,13 @@ object Preferences {
     val useCIUpdateChannel
         get() = preferenceSp.getBoolean(HomeSettingsFragment.USE_CI_UPDATE_CHANNEL, false)
 
+    val disableAutoUpdate: Boolean
+        get() = preferenceSp.getBoolean(HomeSettingsFragment.DISABLE_AUTO_UPDATE, false)
+
     // Check if show update dialog.
     val isUpdateDialogVisible: Boolean
         get() {
+            if (disableAutoUpdate) return false
             val now = Clock.System.now()
             val lastCheckTime = Instant.fromEpochSeconds(lastUpdatePopupTime)
             val interval = updatePopupIntervalDays

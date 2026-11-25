@@ -63,12 +63,20 @@
 
         <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
             app:defaultValue="false"
+            app:disableDependentsState="true"
+            app:key="disable_auto_update"
+            app:summary="@string/disable_auto_update_summary"
+            app:title="@string/disable_auto_update" />
+
+        <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
+            app:defaultValue="false"
             app:key="use_ci_update_channel"
             app:summary="@string/use_ci_update_channel_summary"
             app:title="@string/use_ci_update_channel" />
 
         <SeekBarPreference
             android:max="30"
+            app:dependency="disable_auto_update"
             app:key="update_popup_interval_days"
             app:min="0"
             app:title="@string/update_popup_interval_days"

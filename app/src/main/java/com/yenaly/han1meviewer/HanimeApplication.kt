@@ -50,7 +50,7 @@ class HanimeApplication : YenalyApplication() {
             initFirebase()
         } else {
             // 未配置 Firebase 时，跳过 Remote Config，直接检查 GitHub Releases。
-            AppViewModel.getLatestVersion(delayMillis = 200)
+            AppViewModel.getLatestVersion(delayMillis = 200, automatic = true)
         }
         initNotificationChannel()
     }
@@ -63,8 +63,10 @@ class HanimeApplication : YenalyApplication() {
                 fetchTimeoutInSeconds = 10
             })
             setDefaultsAsync(FirebaseConstants.remoteConfigDefaults)
-            fetchAndActivate().addOnCompleteListener {
-                AppViewModel.getLatestVersion(delayMillis = 200)
+            if (!Preferences.disableAutoUpdate) {
+                fetchAndActivate().addOnCompleteListener {
+                    AppViewModel.getLatestVersion(delayMillis = 200, automatic = true)
+                }
             }
         }
     }

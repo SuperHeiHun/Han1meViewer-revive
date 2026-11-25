@@ -89,6 +89,8 @@
         <item>Just kidding, you actually believed it?</item>
     </string-array>
     <string name="check_update">Check Update</string>
+    <string name="disable_auto_update">Disable automatic updates</string>
+    <string name="disable_auto_update_summary">Stop automatic update checks and prompts. Manual update checks remain available.</string>
     <string name="new_version_found">New Version Found</string>
     <string name="checking_update">Checking for Updates…</string>
     <string name="update_content">Update Content</string>

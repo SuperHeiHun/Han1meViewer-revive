@@ -90,6 +90,8 @@
         <item>逗你玩的，你还真信了？</item>
     </string-array>
     <string name="check_update">检查更新</string>
+    <string name="disable_auto_update">禁用自动更新</string>
+    <string name="disable_auto_update_summary">开启后不再自动检查或显示更新提示，仍可手动检查更新</string>
     <string name="new_version_found">已发现新版本</string>
     <string name="checking_update">检查更新中…</string>
     <string name="update_content">更新内容</string>
