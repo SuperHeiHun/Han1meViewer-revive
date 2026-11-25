@@ -91,19 +91,15 @@ jobs:
 
           NOTES=$(mktemp)
           trap 'rm -f "$NOTES"' EXIT
-          awk -v version="$VERSION_NAME" '
-            /^## \[/ {
-              if (found) exit
-              found = index($0, "## [" version "]") == 1
-            }
-            found { print }
-          ' CHANGELOG.md > "$NOTES"
-          if [ ! -s "$NOTES" ]; then
-            echo "No changelog entry found for $VERSION_NAME" >&2
+          CHANGELOG="changelogs/${VERSION_NAME}.md"
+          if [ ! -s "$CHANGELOG" ]; then
+            echo "Missing or empty changelog: $CHANGELOG" >&2
             exit 1
           fi
+          cp "$CHANGELOG" "$NOTES"
 
           cat >> "$NOTES" <<EOF
+
           ## 构建信息
           - Commit: \`${GITHUB_SHA}\`
           - Version: \`${VERSION_NAME}\`

@@ -179,7 +179,7 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 - 推送代码或手动触发时构建 `assembleRelease`。
 - 在 `SuperHeiHun/Han1meViewer-revive` 仓库中，`feat/new_download` 分支构建成功后会自动发布 GitHub Release：先创建 draft，上传 APK，再正式发布。
 - 从 1.0.0 起，正式版使用 `1.0.0` 形式的版本名和 `v1.0.0` 形式的 Release tag；Android `versionCode` 仍按构建时间递增。
-- Release 说明从 `CHANGELOG.md` 中对应版本的条目生成，重复构建不会覆盖已发布版本；发布新版本前需更新版本号和日志。
+- 每个版本的更新日志单独保存在 `changelogs/<版本号>.md`，`CHANGELOG.md` 仅保留索引；Release 说明直接读取对应版本文件，文件缺失或为空时停止发布。重复构建不会覆盖已发布版本；新版本需更新版本号、新增独立日志并同步索引。
 - 应用内更新检测兼容新版本标签与旧版 `v0.16.0+261122058` 格式，不会对同一正式版本反复提示更新。
 - Fork 仓库只上传 Actions Artifact，不会自动发布 Release。
 - 默认使用 `app/google-services.json.example` 作为 Firebase 配置占位，因此全新 Fork 也能直接出包。
