@@ -974,8 +974,10 @@ class HJzvdStd @JvmOverloads constructor(
                     onPlaylistVideoSelected?.invoke(selectedCode)
                 }
             }
-            val selected = videos.indexOfFirst { it.videoCode == sourceCode }
-            if (selected >= 0) list.scrollToPosition(selected)
+            list.positionPlaybackVideo(videos, sourceCode) {
+                playlistPopup === popup && videoCode == sourceCode &&
+                        Preferences.playbackPlaylistReversed == reverse
+            }
         }
         PlaybackPlaylistControls(
             content.findViewById(R.id.playback_playlist_controls),

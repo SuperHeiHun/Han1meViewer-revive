@@ -63,6 +63,7 @@ import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.PlaybackPlaylistControlsAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
 import com.yenaly.han1meviewer.ui.adapter.VideoColumnTitleAdapter
+import com.yenaly.han1meviewer.ui.view.video.positionPlaybackVideo
 import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.requestPostNotificationPermission
@@ -146,6 +147,8 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val playlistWrapper = playlistAdapter.wrappedWith {
         LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
     }
+    private var playlistPositionGeneration = 0L
+    private var committedPlaylistCode: String? = null
     private val relatedTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.related_video)
     private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT)
@@ -179,6 +182,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     }
 
     override fun initData(savedInstanceState: Bundle?) {
+        playlistWrapper.doOnWrap { positionPlaylist(this) }
         binding.rvVideoIntro.layoutManager = layoutManager
         binding.rvVideoIntro.adapter = multi
         binding.rvVideoIntro.addOnItemTouchListener(VideoIntroTouchListener())
@@ -246,6 +250,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
                         is VideoLoadingState.Loading -> {
                             blockFilterJob?.cancel()
+                            invalidatePlaylistPosition()
                         }
 
                         is VideoLoadingState.Success -> {
@@ -265,9 +270,10 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                                 multi.addAdapter(playlistTitleAdapter)
                                 playlistControlsAdapter.submitSettings(Preferences.playbackPlaylistSettings)
                                 multi.addAdapter(playlistControlsAdapter)
-                                playlistAdapter.submitList(playlist.orderedVideos(Preferences.playbackPlaylistReversed))
+                                submitPlaylist(Preferences.playbackPlaylistReversed)
                                 multi.addAdapter(playlistWrapper)
                             } else {
+                                invalidatePlaylistPosition()
                                 multi.removeAdapter(playlistTitleAdapter)
                                 multi.removeAdapter(playlistControlsAdapter)
                                 multi.removeAdapter(playlistWrapper)
@@ -394,7 +400,48 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
     private fun updatePlaylistOrder(reversed: Boolean) {
         if (viewModel.fromDownload || viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return
-        playlistAdapter.submitList(viewModel.playbackPlaylist.value.orderedVideos(reversed))
+        submitPlaylist(reversed)
+    }
+
+    private fun invalidatePlaylistPosition() {
+        playlistPositionGeneration++
+        committedPlaylistCode = null
+    }
+
+    private fun submitPlaylist(reversed: Boolean) {
+        invalidatePlaylistPosition()
+        val generation = playlistPositionGeneration
+        val code = viewModel.videoCode
+        val owner = viewLifecycleOwner
+        val videos = viewModel.playbackPlaylist.value.orderedVideos(reversed)
+        playlistAdapter.submitList(videos) {
+            if (generation != playlistPositionGeneration || viewLifecycleOwnerLiveData.value !== owner ||
+                owner.lifecycle.currentState == Lifecycle.State.DESTROYED || viewModel.videoCode != code ||
+                viewModel.fromDownload || Preferences.playbackPlaylistReversed != reversed ||
+                viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return@submitList
+            committedPlaylistCode = code
+            playlistWrapper.wrapper?.let(::positionPlaylist)
+        }
+    }
+
+    private fun positionPlaylist(list: RecyclerView) {
+        val code = committedPlaylistCode ?: return
+        val owner = viewLifecycleOwnerLiveData.value ?: return
+        val generation = playlistPositionGeneration
+        val reversed = Preferences.playbackPlaylistReversed
+        list.positionPlaybackVideo(playlistAdapter.items, code) {
+            generation == playlistPositionGeneration && committedPlaylistCode == code &&
+                    viewModel.videoCode == code && playlistWrapper.wrapper === list &&
+                    viewLifecycleOwnerLiveData.value === owner &&
+                    owner.lifecycle.currentState != Lifecycle.State.DESTROYED &&
+                    !viewModel.fromDownload && Preferences.playbackPlaylistReversed == reversed &&
+                    viewModel.hanimeVideoStateFlow.value is VideoLoadingState.Success
+        }
+    }
+
+    override fun onDestroyView() {
+        invalidatePlaylistPosition()
+        super.onDestroyView()
     }
 
     private fun notifyDownload(
