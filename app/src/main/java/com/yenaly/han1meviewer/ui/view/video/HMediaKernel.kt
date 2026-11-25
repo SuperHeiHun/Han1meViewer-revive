@@ -74,6 +74,8 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     private var durationCache = 0L
 
     private var outputSurface: Surface? = null
+    private val surfaceState = PlayerSurfaceState<SurfaceTexture>()
+    private var released = false
 
     @Volatile
     private var session: Any? = null
@@ -82,15 +84,21 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
 
     @OptIn(UnstableApi::class)
     override fun prepare() {
+        if (released || jzvd.mediaInterface !== this) return
         Log.e(TAG, "prepare")
         val context = jzvd.context
         val source = jzvd.jzDataSource
         val currUrl = source.currentUrl.toString()
         val initialPosition = jzvd.seekToInAdvance.coerceAtLeast(0L)
-        val surfaceTexture = jzvd.textureView?.surfaceTexture
+        // Use the actual availability callback, not another kernel's static SAVED_SURFACE.
+        // A player without a valid output can become READY and play audio behind a black view.
+        val surfaceTexture = surfaceState.surface ?: jzvd.textureView?.surfaceTexture?.let(surfaceState::available)
+        if (surfaceTexture == null) {
+            Log.d(TAG, "Waiting for the current video's output surface")
+            return
+        }
 
-        release()
-        SAVED_SURFACE = surfaceTexture
+        releasePlayer()
         val token = Any()
         session = token
         isPlayingCache = true
@@ -121,7 +129,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
                 .setLoadControl(loadControl)
                 .setBandwidthMeter(bandwidthMeter)
                 .build()
-            val videoSurface = surfaceTexture?.let(::Surface)
+            val videoSurface = Surface(surfaceTexture)
             val attached = synchronized(this) {
                 if (session === token) {
                     _exoPlayer = player
@@ -131,7 +139,7 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             }
             if (!attached) {
                 player.release()
-                videoSurface?.release()
+                videoSurface.release()
                 return@post
             }
             // Produces DataSource instances through which media data is loaded.
@@ -159,6 +167,8 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             } else {
                 player.repeatMode = Player.REPEAT_MODE_OFF
             }
+            // Bind output before preparing/starting, including a newly selected video.
+            player.setVideoSurface(videoSurface)
             if (initialPosition > 0L) player.setMediaSource(videoSource, initialPosition)
             else player.setMediaSource(videoSource)
             player.prepare()
@@ -166,7 +176,6 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             synchronized(this) {
                 if (session === token) callback = OnBufferingUpdate(player, worker)
             }
-            videoSurface?.let { player.setVideoSurface(it) }
             startSnapshot(player, token, worker)
         }
     }
@@ -225,6 +234,11 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun release() {
+        released = true
+        releasePlayer(surfaceState.clear())
+    }
+
+    private fun releasePlayer(detachedTexture: SurfaceTexture? = null) {
         val worker = mMediaHandler
         val thread = mMediaHandlerThread
         mMediaHandler = null
@@ -239,12 +253,21 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
         isPlayingCache = false
         currentPositionCache = 0L
         durationCache = 0L
-        if (worker != null || player != null) SAVED_SURFACE = null
         callback = null
         worker?.removeCallbacksAndMessages(null)
-        worker?.post {
-            player?.release() // Release on the owning thread, never on the UI thread.
+        if (worker != null) {
+            worker.post {
+                try {
+                    player?.release() // Release on the owning thread, never on the UI thread.
+                } finally {
+                    surface?.release()
+                    detachedTexture?.release()
+                    thread?.quit()
+                }
+            }
+        } else {
             surface?.release()
+            detachedTexture?.release()
             thread?.quit()
         }
     }
@@ -328,6 +351,9 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
         if (events.contains(Player.EVENT_POSITION_DISCONTINUITY)) {
             postToUi(current) { jzvd.onSeekComplete() }
         }
+        if (events.contains(Player.EVENT_RENDERED_FIRST_FRAME)) {
+            Log.d(TAG, "Rendered first frame for the current video")
+        }
     }
 
     override fun setSurface(surface: Surface?) {
@@ -335,17 +361,20 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-        if (SAVED_SURFACE == null) {
-            SAVED_SURFACE = surface
+        if (released || jzvd.mediaInterface !== this) return
+        val retained = surfaceState.available(surface)
+        if (retained !== surface) {
+            // Keep playback intact when JZVD reparents this view for fullscreen.
+            jzvd.textureView.setSurfaceTexture(retained)
+        }
+        if (session == null) {
             prepare()
-        } else {
-            jzvd.textureView.setSurfaceTexture(SAVED_SURFACE)
         }
     }
 
     override fun onSurfaceTextureSizeChanged(st: SurfaceTexture, width: Int, height: Int) = Unit
 
-    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean = false
+    override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean = surfaceState.destroyed(surface)
 
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
 
