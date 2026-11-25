@@ -17,7 +17,7 @@
 
 上游项目已停止维护。本分支针对目标站点的新版页面重构了网页解析、搜索参数和部分接口，使应用可以继续浏览新版页面。
 
-当前版本：**1.0.0**。新增功能与修复说明见[更新日志](CHANGELOG.md)。
+当前源码版本：**1.0.1**（尚未发布）。新增功能与修复说明见[更新日志](CHANGELOG.md)。
 
 > 本项目仅供学习 Android 开发与网页解析技术使用，不提供任何影片内容、下载源或使用教程。  
 > 内容仅面向成年人，请遵守你所在地区的法律法规。
@@ -160,8 +160,8 @@ Windows 下把 `./gradlew` 换成 `gradlew.bat`。
 
 构建产物：
 
-- Debug：`app/build/outputs/apk/debug/Han1meViewer-revive-v1.0.0-debug.apk`
-- Release 1.0.0：`app/build/outputs/apk/release/Han1meViewer-revive-v1.0.0.apk`
+- Debug：`app/build/outputs/apk/debug/Han1meViewer-revive-v1.0.1-debug.apk`
+- Release 1.0.1：`app/build/outputs/apk/release/Han1meViewer-revive-v1.0.1.apk`
 - Release：`app/build/outputs/apk/release/Han1meViewer-revive-v*.apk`
 
 ### 签名说明
