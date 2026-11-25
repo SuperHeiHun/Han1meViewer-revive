@@ -479,7 +479,12 @@ object Parser {
             }
         }
 
-        val artistAvatarUrl = parseBody.getElementById("video-user-avatar")?.absUrl("src")
+        val artistAvatarElement = parseBody.getElementById("video-user-avatar")
+        // 新版網站在預設頭像後疊放真實頭像；舊版則直接使用帶 id 的圖片。
+        val artistAvatarUrl = artistAvatarElement?.nextElementSibling()
+            ?.takeIf { it.tagName() == "img" }
+            ?.absUrl("src")?.takeIf { it.isNotBlank() }
+            ?: artistAvatarElement?.absUrl("src")
         val artistNameCSS = parseBody.getElementById("video-artist-name")
         val artistGenre = artistNameCSS?.nextElementSibling()?.text()?.trim()
         val artistName = artistNameCSS?.text()?.trim()
