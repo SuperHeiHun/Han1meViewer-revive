@@ -20,20 +20,92 @@
         app:title="@string/default_playback_speed"
         app:useSimpleSummaryProvider="true" />
 
-    <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+    <PreferenceCategory
         app:iconSpaceReserved="false"
-        app:key="long_press_speed_times"
-        app:title="@string/long_press_speed_multiplier"
-        app:useSimpleSummaryProvider="true" />
+        app:title="@string/gesture_settings">
 
-    <SeekBarPreference
-        android:max="9"
-        app:defaultValue="5"
-        app:iconSpaceReserved="false"
-        app:key="slide_sensitivity"
-        app:min="1"
-        app:title="@string/slide_sensitivity"
-        app:updatesContinuously="true" />
+        <Preference
+            app:iconSpaceReserved="false"
+            app:selectable="false"
+            app:summary="@string/gesture_help" />
 
+        <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+            app:iconSpaceReserved="false"
+            app:key="gesture_double_tap_mode"
+            app:title="@string/gesture_double_tap_mode"
+            app:useSimpleSummaryProvider="true" />
 
+        <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+            app:iconSpaceReserved="false"
+            app:key="gesture_seek_step"
+            app:title="@string/gesture_seek_step"
+            app:useSimpleSummaryProvider="true" />
+
+        <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+            app:iconSpaceReserved="false"
+            app:key="gesture_long_press_mode"
+            app:title="@string/gesture_long_press_mode"
+            app:useSimpleSummaryProvider="true" />
+
+        <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+            app:iconSpaceReserved="false"
+            app:key="long_press_speed_times"
+            app:title="@string/long_press_speed_multiplier"
+            app:useSimpleSummaryProvider="true" />
+
+        <com.yenaly.han1meviewer.ui.view.pref.MaterialDialogPreference
+            app:iconSpaceReserved="false"
+            app:key="gesture_temporary_speed"
+            app:title="@string/gesture_long_press_speed"
+            app:useSimpleSummaryProvider="true" />
+
+        <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="gesture_seek_enabled"
+            app:title="@string/gesture_seek_enabled" />
+
+        <SeekBarPreference
+            android:max="9"
+            app:defaultValue="5"
+            app:dependency="gesture_seek_enabled"
+            app:iconSpaceReserved="false"
+            app:key="slide_sensitivity"
+            app:min="1"
+            app:title="@string/slide_sensitivity"
+            app:updatesContinuously="true" />
+
+        <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="gesture_brightness_enabled"
+            app:title="@string/gesture_brightness_enabled" />
+
+        <SeekBarPreference
+            android:max="9"
+            app:defaultValue="5"
+            app:dependency="gesture_brightness_enabled"
+            app:iconSpaceReserved="false"
+            app:key="gesture_brightness_sensitivity"
+            app:min="1"
+            app:title="@string/gesture_brightness_sensitivity"
+            app:updatesContinuously="true" />
+
+        <com.yenaly.yenaly_libs.base.preference.MaterialSwitchPreference
+            app:defaultValue="true"
+            app:iconSpaceReserved="false"
+            app:key="gesture_volume_enabled"
+            app:title="@string/gesture_volume_enabled" />
+
+        <SeekBarPreference
+            android:max="9"
+            app:defaultValue="5"
+            app:dependency="gesture_volume_enabled"
+            app:iconSpaceReserved="false"
+            app:key="gesture_volume_sensitivity"
+            app:min="1"
+            app:title="@string/gesture_volume_sensitivity"
+            app:updatesContinuously="true" />
+
+    </PreferenceCategory>
 </PreferenceScreen>

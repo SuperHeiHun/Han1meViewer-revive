@@ -2,6 +2,8 @@ package com.yenaly.han1meviewer.logic.backup
 
 import com.yenaly.han1meviewer.HANIME_ALTER_BASE_URL
 import com.yenaly.han1meviewer.HANIME_MAIN_BASE_URL
+import com.yenaly.han1meviewer.ui.view.video.PlayerDoubleTapMode
+import com.yenaly.han1meviewer.ui.view.video.PlayerLongPressMode
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.intOrNull
@@ -12,16 +14,20 @@ object BackupSettingRules {
         mapOf(
             "video_language" to "zh-CHT", "switch_player_kernel" to "ExoPlayer",
             "player_speed" to "1.0", "long_press_speed_times" to "2.5",
+            "gesture_double_tap_mode" to "play_pause", "gesture_seek_step" to "10",
+            "gesture_long_press_mode" to "legacy", "gesture_temporary_speed" to "2.0",
             "domain_name" to HANIME_MAIN_BASE_URL, "proxy_ip" to "",
         ).forEach { (key, value) -> put(key, JsonPrimitive(value)) }
         mapOf(
             "show_bottom_progress" to true, "use_built_in_hosts" to false,
+            "gesture_seek_enabled" to true, "gesture_brightness_enabled" to true, "gesture_volume_enabled" to true,
             "h_keyframes_enable" to true, "shared_h_keyframes_enable" to true,
             "shared_h_keyframes_use_first" to false, "show_comment_when_countdown" to false,
             "use_ci_update_channel" to false, "disable_auto_update" to false, "privacy_mode" to false,
         ).forEach { (key, value) -> put(key, JsonPrimitive(value)) }
         mapOf(
             "slide_sensitivity" to 5, "when_countdown_remind" to 10,
+            "gesture_brightness_sensitivity" to 5, "gesture_volume_sensitivity" to 5,
             "proxy_type" to 1, "proxy_port" to -1, "download_count_limit" to 2,
             "download_speed_limit" to 0, "update_popup_interval_days" to 0,
         ).forEach { (key, value) -> put(key, JsonPrimitive(value)) }
@@ -36,9 +42,13 @@ object BackupSettingRules {
             "switch_player_kernel" -> value.content in setOf("ExoPlayer", "MediaPlayer")
             "player_speed" -> value.content.toFloatOrNull()?.let { it.isFinite() && it in 0.5f..3f } == true
             "long_press_speed_times" -> value.content.toFloatOrNull()?.let { it.isFinite() && it in 1f..4f } == true
+            "gesture_double_tap_mode" -> PlayerDoubleTapMode.entries.any { it.value == value.content }
+            "gesture_seek_step" -> value.content in setOf("5", "10", "15", "30")
+            "gesture_long_press_mode" -> PlayerLongPressMode.entries.any { it.value == value.content }
+            "gesture_temporary_speed" -> value.content.toFloatOrNull()?.let { it.isFinite() && it in 0.5f..4f } == true
             "domain_name" -> value.content in setOf(HANIME_MAIN_BASE_URL, HANIME_ALTER_BASE_URL)
             "proxy_ip" -> value.content.length <= 255 && value.content.none { it.isISOControl() }
-            "slide_sensitivity" -> value.intOrNull in 1..9
+            "slide_sensitivity", "gesture_brightness_sensitivity", "gesture_volume_sensitivity" -> value.intOrNull in 1..9
             "when_countdown_remind" -> value.intOrNull in 5..30
             "proxy_type" -> value.intOrNull in 0..3
             "proxy_port" -> value.intOrNull == -1 || value.intOrNull in 1..65535

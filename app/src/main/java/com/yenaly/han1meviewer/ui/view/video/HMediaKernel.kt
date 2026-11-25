@@ -13,11 +13,8 @@ import android.view.Surface
 import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.common.Timeline
-import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
@@ -33,7 +30,6 @@ import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import cn.jzvd.JZMediaInterface
 import cn.jzvd.JZMediaSystem
 import cn.jzvd.Jzvd
-import kotlin.math.absoluteValue
 
 
 /**
@@ -77,32 +73,36 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     @Volatile
     private var durationCache = 0L
 
-    private var snapshotRunnable: Runnable? = null
+    private var outputSurface: Surface? = null
 
-    /**
-     * 尽量少用，用了之后容易出bug
-     */
-    private val exoPlayer get() = _exoPlayer!!
+    @Volatile
+    private var session: Any? = null
 
     private var callback: Runnable? = null
-    private var prevSeek = 0L
 
     @OptIn(UnstableApi::class)
     override fun prepare() {
         Log.e(TAG, "prepare")
         val context = jzvd.context
+        val source = jzvd.jzDataSource
+        val currUrl = source.currentUrl.toString()
+        val initialPosition = jzvd.seekToInAdvance.coerceAtLeast(0L)
+        val surfaceTexture = jzvd.textureView?.surfaceTexture
 
         release()
-        // 新播放器创建完成前先置空，避免旧的 media handler 访问到跨线程播放器
-        _exoPlayer = null
-        isPlayingCache = false
+        SAVED_SURFACE = surfaceTexture
+        val token = Any()
+        session = token
+        isPlayingCache = true
         currentPositionCache = 0L
         durationCache = 0L
         mMediaHandlerThread = HandlerThread("JZVD")
         mMediaHandlerThread.start()
-        mMediaHandler = Handler(mMediaHandlerThread.looper)
+        val worker = Handler(mMediaHandlerThread.looper)
+        mMediaHandler = worker
         handler = Handler(Looper.getMainLooper())
-        mMediaHandler?.post {
+        worker.post {
+            if (session !== token) return@post
             val videoTrackSelectionFactory = AdaptiveTrackSelection.Factory()
             val trackSelector = DefaultTrackSelector(context, videoTrackSelectionFactory)
 
@@ -116,19 +116,31 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
             val bandwidthMeter = DefaultBandwidthMeter.Builder(context).build()
             // 2. Create the player
             val renderersFactory = DefaultRenderersFactory(context)
-            _exoPlayer = ExoPlayer.Builder(context, renderersFactory)
+            val player = ExoPlayer.Builder(context, renderersFactory)
                 .setTrackSelector(trackSelector)
                 .setLoadControl(loadControl)
                 .setBandwidthMeter(bandwidthMeter)
                 .build()
+            val videoSurface = surfaceTexture?.let(::Surface)
+            val attached = synchronized(this) {
+                if (session === token) {
+                    _exoPlayer = player
+                    outputSurface = videoSurface
+                    true
+                } else false
+            }
+            if (!attached) {
+                player.release()
+                videoSurface?.release()
+                return@post
+            }
             // Produces DataSource instances through which media data is loaded.
             val dataSourceFactory = DefaultDataSource.Factory(
                 context,
                 DefaultHttpDataSource.Factory()
-                    .setDefaultRequestProperties(jzvd.jzDataSource.headerMap)
+                    .setDefaultRequestProperties(source.headerMap)
             )
 
-            val currUrl = jzvd.jzDataSource.currentUrl.toString()
             val videoSource = if (currUrl.contains(".m3u8")) {
                 HlsMediaSource.Factory(dataSourceFactory)
                     .createMediaSource(MediaItem.fromUri(currUrl))
@@ -139,77 +151,69 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
 
             Log.e(TAG, "URL Link = $currUrl")
 
-            exoPlayer.addListener(this)
+            player.addListener(this)
 
-            val isLoop = jzvd.jzDataSource.looping
+            val isLoop = source.looping
             if (isLoop) {
-                exoPlayer.repeatMode = Player.REPEAT_MODE_ONE
+                player.repeatMode = Player.REPEAT_MODE_ONE
             } else {
-                exoPlayer.repeatMode = Player.REPEAT_MODE_OFF
+                player.repeatMode = Player.REPEAT_MODE_OFF
             }
-            currentPositionCache = 0L
-            durationCache = 0L
-            exoPlayer.setMediaSource(videoSource)
-            exoPlayer.prepare()
-            exoPlayer.playWhenReady = true
-            isPlayingCache = true
-            callback = OnBufferingUpdate(exoPlayer)
-
-            val surfaceTexture = jzvd.textureView?.surfaceTexture
-            surfaceTexture?.let { exoPlayer.setVideoSurface(Surface(it)) }
-            startSnapshot()
+            if (initialPosition > 0L) player.setMediaSource(videoSource, initialPosition)
+            else player.setMediaSource(videoSource)
+            player.prepare()
+            player.playWhenReady = isPlayingCache
+            synchronized(this) {
+                if (session === token) callback = OnBufferingUpdate(player, worker)
+            }
+            videoSurface?.let { player.setVideoSurface(it) }
+            startSnapshot(player, token, worker)
         }
     }
 
     /**
      * 在 JZVD 线程定期刷新状态快照，供主线程同步读取。
      */
-    private fun startSnapshot() {
-        snapshotRunnable?.let { mMediaHandler?.removeCallbacks(it) }
+    private fun startSnapshot(player: ExoPlayer, token: Any, worker: Handler) {
         val runnable = object : Runnable {
             override fun run() {
-                val player = _exoPlayer ?: return
-                if (player !== _exoPlayer) return
-                currentPositionCache = player.currentPosition.coerceAtLeast(0L)
-                durationCache = player.duration.coerceAtLeast(0L)
-                isPlayingCache = player.playWhenReady
-                mMediaHandler?.postDelayed(this, 200)
+                if (session !== token || !updateSnapshot(player)) return
+                worker.postDelayed(this, 200)
             }
         }
-        snapshotRunnable = runnable
-        mMediaHandler?.post(runnable)
+        worker.post(runnable)
+    }
+
+    private fun updateSnapshot(player: ExoPlayer): Boolean = synchronized(this) {
+        if (player !== _exoPlayer) false else {
+            currentPositionCache = player.currentPosition.coerceAtLeast(0L)
+            durationCache = player.duration.coerceAtLeast(0L)
+            true
+        }
+    }
+
+    private fun postPlayerCommand(action: (ExoPlayer) -> Unit) {
+        val token = session ?: return
+        mMediaHandler?.post {
+            val player = _exoPlayer
+            if (session === token && player != null) action(player)
+        }
+    }
+
+    private fun postToUi(player: ExoPlayer, action: () -> Unit) {
+        handler?.post {
+            if (_exoPlayer === player && jzvd.mediaInterface === this) action()
+        }
     }
 
     override fun start() {
         isPlayingCache = true
-        mMediaHandler?.post {
-            _exoPlayer?.playWhenReady = true
-        }
-    }
-
-    override fun onVideoSizeChanged(videoSize: VideoSize) {
-        val realWidth = videoSize.width * videoSize.pixelWidthHeightRatio
-        val realHeight = videoSize.height
-        handler.post {
-            jzvd.onVideoSizeChanged(realWidth.toInt(), realHeight)
-        }
-        val ratio = realWidth / realHeight // > 1 橫屏， < 1 竖屏
-        if (ratio > 1) {
-            Jzvd.FULLSCREEN_ORIENTATION = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else {
-            Jzvd.FULLSCREEN_ORIENTATION = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
-    }
-
-    override fun onRenderedFirstFrame() {
-        Log.e(TAG, "onRenderedFirstFrame")
+        postPlayerCommand { it.playWhenReady = true }
     }
 
     override fun pause() {
         isPlayingCache = false
-        mMediaHandler?.post {
-            _exoPlayer?.playWhenReady = false
-        }
+        postPlayerCommand { it.playWhenReady = false }
     }
 
     override fun isPlaying(): Boolean {
@@ -217,38 +221,31 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun seekTo(time: Long) {
-        mMediaHandler?.post {
-            if (time != prevSeek) {
-                _exoPlayer?.let { exoPlayer ->
-                    if (time >= exoPlayer.bufferedPosition) {
-                        handler?.post { jzvd.onStatePreparingPlaying() }
-                    }
-                    exoPlayer.seekTo(time)
-                    prevSeek = time
-                    jzvd.seekToInAdvance = time
-                }
-            }
-        }
+        postPlayerCommand { it.seekTo(time.coerceAtLeast(0L)) }
     }
 
     override fun release() {
-        if (mMediaHandler != null && mMediaHandlerThread != null && _exoPlayer != null) { //不知道有没有妖孽
-            val tmpHandlerThread = mMediaHandlerThread
-            val tmpMediaPlayer = exoPlayer
-            SAVED_SURFACE = null
-            snapshotRunnable?.let { mMediaHandler?.removeCallbacks(it) }
-            callback?.let { mMediaHandler?.removeCallbacks(it) }
-            mMediaHandler?.post {
-                tmpMediaPlayer.release() //release就不能放到主线程里，界面会卡顿
-                tmpHandlerThread.quit()
-                // 避免旧播放器的延迟释放把刚创建的新播放器置空
-                if (_exoPlayer === tmpMediaPlayer) {
-                    _exoPlayer = null
-                    currentPositionCache = 0L
-                    durationCache = 0L
-                    isPlayingCache = false
-                }
+        val worker = mMediaHandler
+        val thread = mMediaHandlerThread
+        mMediaHandler = null
+        mMediaHandlerThread = null
+        val (player, surface) = synchronized(this) {
+            session = null
+            (_exoPlayer to outputSurface).also {
+                _exoPlayer = null
+                outputSurface = null
             }
+        }
+        isPlayingCache = false
+        currentPositionCache = 0L
+        durationCache = 0L
+        if (worker != null || player != null) SAVED_SURFACE = null
+        callback = null
+        worker?.removeCallbacksAndMessages(null)
+        worker?.post {
+            player?.release() // Release on the owning thread, never on the UI thread.
+            surface?.release()
+            thread?.quit()
         }
     }
 
@@ -261,50 +258,48 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     }
 
     override fun setVolume(leftVolume: Float, rightVolume: Float) {
-        mMediaHandler?.post {
-            _exoPlayer?.volume = (leftVolume + rightVolume) / 2
-        }
+        postPlayerCommand { it.volume = (leftVolume + rightVolume) / 2 }
     }
 
     override fun setSpeed(speed: Float) {
-        mMediaHandler?.post {
-            val playbackParams = PlaybackParameters(speed, 1.0F)
-            _exoPlayer?.playbackParameters = playbackParams
-        }
-    }
-
-    override fun onTimelineChanged(timeline: Timeline, reason: Int) {
-        Log.e(TAG, "onTimelineChanged")
-    }
-
-    override fun onIsLoadingChanged(isLoading: Boolean) {
-        Log.e(TAG, "onIsLoadingChanged")
-    }
-
-    override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-        isPlayingCache = playWhenReady
-        if (playWhenReady && _exoPlayer?.playbackState == Player.STATE_READY) {
-            handler?.post {
-                jzvd.onStatePlaying()
+        if (!speed.isFinite() || speed <= 0f) return
+        postPlayerCommand {
+            try {
+                it.playbackParameters = PlaybackParameters(speed, 1.0F)
+            } catch (error: IllegalArgumentException) {
+                Log.w(TAG, "Unsupported playback speed: $speed", error)
+            } catch (error: IllegalStateException) {
+                Log.w(TAG, "Cannot change speed in the current media state", error)
             }
         }
     }
 
-    override fun onPlaybackStateChanged(playbackState: Int) {
-        handler?.post {
+    // onEvents supplies the emitting player. Late events from a released session cannot
+    // change a new video's state, and READY/BUFFERING must honor the latest pause request.
+    override fun onEvents(player: Player, events: Player.Events) {
+        val current = _exoPlayer ?: return
+        if (player !== current || !updateSnapshot(current)) return
+        if (events.contains(Player.EVENT_PLAYBACK_STATE_CHANGED) || events.contains(Player.EVENT_PLAY_WHEN_READY_CHANGED)) {
+            val playbackState = current.playbackState
             when (playbackState) {
                 Player.STATE_BUFFERING -> {
-                    jzvd.onStatePreparingPlaying()
+                    postToUi(current) { if (isPlayingCache) jzvd.onStatePreparingPlaying() }
+                    callback?.let { cb -> mMediaHandler?.removeCallbacks(cb) }
                     callback?.let { cb -> mMediaHandler?.post(cb) }
                 }
 
-                Player.STATE_READY -> {
-                    jzvd.onStatePlaying()
+                Player.STATE_READY -> postToUi(current) {
+                    if (isPlayingCache) {
+                        jzvd.seekToInAdvance = 0L
+                        jzvd.onStatePlaying()
+                    } else if (jzvd.state != Jzvd.STATE_PAUSE) jzvd.onStatePause()
                 }
 
-                Player.STATE_ENDED -> {
-                    isPlayingCache = false
-                    jzvd.onCompletion()
+                Player.STATE_ENDED -> postToUi(current) {
+                    if (isPlayingCache) {
+                        isPlayingCache = false
+                        jzvd.onCompletion()
+                    } else if (jzvd.state != Jzvd.STATE_PAUSE) jzvd.onStatePause()
                 }
 
                 else -> {
@@ -312,27 +307,31 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
                 }
             }
         }
-    }
-
-    override fun onPlayerError(error: PlaybackException) {
-        Log.e(TAG, "onPlayerError: $error")
-        handler?.post { jzvd.onError(1000, 1000) }
-    }
-
-    override fun onPositionDiscontinuity(
-        oldPosition: Player.PositionInfo,
-        newPosition: Player.PositionInfo,
-        reason: Int,
-    ) {
-        if (reason == Player.DISCONTINUITY_REASON_SEEK) {
-            handler?.post { jzvd.onSeekComplete() }
+        if (events.contains(Player.EVENT_VIDEO_SIZE_CHANGED)) {
+            val size = current.videoSize
+            val width = (size.width * size.pixelWidthHeightRatio).toInt()
+            val height = size.height
+            postToUi(current) {
+                jzvd.onVideoSizeChanged(width, height)
+                if (width > 0 && height > 0) Jzvd.FULLSCREEN_ORIENTATION = if (width > height) {
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                } else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+        }
+        if (events.contains(Player.EVENT_PLAYER_ERROR) && current.playerError != null) {
+            Log.e(TAG, "onPlayerError: ${current.playerError}")
+            postToUi(current) {
+                isPlayingCache = false
+                jzvd.onError(1000, 1000)
+            }
+        }
+        if (events.contains(Player.EVENT_POSITION_DISCONTINUITY)) {
+            postToUi(current) { jzvd.onSeekComplete() }
         }
     }
 
     override fun setSurface(surface: Surface?) {
-        mMediaHandler?.post {
-            _exoPlayer?.setVideoSurface(surface)
-        }
+        postPlayerCommand { it.setVideoSurface(surface) }
     }
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
@@ -351,17 +350,15 @@ class ExoMediaKernel(jzvd: Jzvd) : JZMediaInterface(jzvd), Player.Listener, HMed
     override fun onSurfaceTextureUpdated(surface: SurfaceTexture) = Unit
 
 
-    private inner class OnBufferingUpdate(private val player: ExoPlayer) : Runnable {
+    private inner class OnBufferingUpdate(private val player: ExoPlayer, private val worker: Handler) : Runnable {
         override fun run() {
             if (player !== _exoPlayer) return
             val per = player.bufferedPercentage
-            handler.post {
-                jzvd.setBufferProgress(per)
-            }
+            postToUi(player) { jzvd.setBufferProgress(per) }
             if (per < 100) {
-                mMediaHandler?.postDelayed(this, 300)
+                worker.postDelayed(this, 300)
             } else {
-                mMediaHandler?.removeCallbacks(this)
+                worker.removeCallbacks(this)
             }
         }
     }
@@ -402,50 +399,105 @@ class SystemMediaKernel(jzvd: Jzvd) : JZMediaSystem(jzvd), HMediaKernel {
                 player.prepareAsync()
             } catch (e: Exception) {
                 Log.e("SystemMediaKernel", "Cannot open downloaded content", e)
-                handler.post { jzvd.onError(MediaPlayer.MEDIA_ERROR_UNKNOWN, 0) }
-            }
-        }
-    }
-
-    // #issue-26: 有的手機長按快進會報錯，合理懷疑是不是因爲沒有加 post
-    // #issue-28: 有的平板长按快进也会报错，结果是 IllegalArgumentException，很奇怪，两次 try-catch 处理试试。
-    override fun setSpeed(speed: Float) {
-        mMediaHandler?.post {
-            try {
-                val pp = mediaPlayer.playbackParams
-                pp.speed = speed.absoluteValue
-                mediaPlayer.playbackParams = pp
-            } catch (_: IllegalArgumentException) {
-                try {
-                    val opp = PlaybackParams().setSpeed(speed.absoluteValue)
-                    mediaPlayer.playbackParams = opp
-                } catch (e: IllegalArgumentException) {
-                    e.printStackTrace()
+                handler.post {
+                    if (jzvd.mediaInterface === this) jzvd.onError(MediaPlayer.MEDIA_ERROR_UNKNOWN, 0)
                 }
             }
         }
     }
 
-    override fun onVideoSizeChanged(mediaPlayer: MediaPlayer?, width: Int, height: Int) {
-        super.onVideoSizeChanged(mediaPlayer, width, height)
-        val ratio = width.toFloat() / height // > 1 橫屏， < 1 竖屏
-        if (ratio > 1) {
-            Jzvd.FULLSCREEN_ORIENTATION = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else {
-            Jzvd.FULLSCREEN_ORIENTATION = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
-    }
-
-    // #issue-139: 部分机型暂停报错，没判空导致的
-    override fun pause() {
+    private fun postPlayerCommand(action: (MediaPlayer) -> Unit) {
+        val player = mediaPlayer ?: return
         mMediaHandler?.post {
-            mediaPlayer?.pause()
+            if (player !== mediaPlayer) return@post
+            try {
+                action(player)
+            } catch (error: IllegalStateException) {
+                Log.w("SystemMediaKernel", "Media state changed before the command ran", error)
+            }
         }
     }
 
-    // #issue-crashlytics-c8636c4bb0b8516675cbeb9e8776bf0b:
-    // 有些机器到这里可能会报空指针异常，所以加了个判断，但是不知道为什么会报空指针异常
+    private fun postToUi(player: MediaPlayer?, action: () -> Unit) {
+        if (player == null) return
+        handler?.post {
+            if (player === mediaPlayer && jzvd.mediaInterface === this) action()
+        }
+    }
+
+    // Nonzero PlaybackParams may start MediaPlayer. Keep its prior state on the
+    // owning thread, including a restoration queued after a pause request.
+    override fun setSpeed(speed: Float) {
+        if (!speed.isFinite() || speed <= 0f) return
+        postPlayerCommand { player ->
+            val wasPlaying = player.isPlaying
+            try {
+                try {
+                    player.playbackParams = player.playbackParams.setSpeed(speed)
+                } catch (_: IllegalArgumentException) {
+                    player.playbackParams = PlaybackParams().allowDefaults().setSpeed(speed)
+                }
+            } catch (error: IllegalArgumentException) {
+                Log.w("SystemMediaKernel", "Unsupported playback speed: $speed", error)
+            } catch (error: UnsupportedOperationException) {
+                Log.w("SystemMediaKernel", "Playback speed is unavailable", error)
+            } finally {
+                if (!wasPlaying) player.pause()
+            }
+        }
+    }
+
+    override fun onPrepared(player: MediaPlayer?) = postToUi(player) { jzvd.onPrepared() }
+
+    override fun onCompletion(player: MediaPlayer?) = postToUi(player) {
+        if (jzvd.state != Jzvd.STATE_PAUSE) jzvd.onCompletion()
+    }
+
+    override fun onBufferingUpdate(player: MediaPlayer?, percent: Int) =
+        postToUi(player) { jzvd.setBufferProgress(percent) }
+
+    override fun onSeekComplete(player: MediaPlayer?) = postToUi(player) { jzvd.onSeekComplete() }
+
+    override fun onError(player: MediaPlayer?, what: Int, extra: Int): Boolean {
+        postToUi(player) { jzvd.onError(what, extra) }
+        return true
+    }
+
+    override fun onInfo(player: MediaPlayer?, what: Int, extra: Int): Boolean {
+        postToUi(player) {
+            when (what) {
+                MediaPlayer.MEDIA_INFO_BUFFERING_START -> {
+                    if (jzvd.state == Jzvd.STATE_PLAYING && isPlaying()) jzvd.onStatePreparingPlaying()
+                }
+                MediaPlayer.MEDIA_INFO_BUFFERING_END, MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START -> {
+                    if (jzvd.state in setOf(Jzvd.STATE_PREPARED, Jzvd.STATE_PREPARING, Jzvd.STATE_PREPARING_PLAYING) &&
+                        isPlaying()
+                    ) jzvd.onStatePlaying()
+                }
+                else -> jzvd.onInfo(what, extra)
+            }
+        }
+        return true
+    }
+
+    override fun onVideoSizeChanged(player: MediaPlayer?, width: Int, height: Int) = postToUi(player) {
+        jzvd.onVideoSizeChanged(width, height)
+        if (width > 0 && height > 0) Jzvd.FULLSCREEN_ORIENTATION = if (width > height) {
+            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+
+    override fun start() = postPlayerCommand { it.start() }
+
+    override fun pause() = postPlayerCommand { it.pause() }
+
+    override fun seekTo(time: Long) = postPlayerCommand { it.seekTo(time.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()) }
+
     override fun isPlaying(): Boolean {
-        return mediaPlayer?.isPlaying == true
+        return try {
+            mediaPlayer?.isPlaying == true
+        } catch (_: IllegalStateException) {
+            false
+        }
     }
 }

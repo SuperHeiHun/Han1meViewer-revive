@@ -11,6 +11,9 @@ import com.yenaly.han1meviewer.ui.fragment.settings.NetworkSettingsFragment
 import com.yenaly.han1meviewer.ui.fragment.settings.PlayerSettingsFragment
 import com.yenaly.han1meviewer.ui.view.video.HJzvdStd
 import com.yenaly.han1meviewer.ui.view.video.HMediaKernel
+import com.yenaly.han1meviewer.ui.view.video.PlayerDoubleTapMode
+import com.yenaly.han1meviewer.ui.view.video.PlayerGestureConfig
+import com.yenaly.han1meviewer.ui.view.video.PlayerLongPressMode
 import com.yenaly.han1meviewer.util.CookieString
 import com.yenaly.han1meviewer.worker.HanimeDownloadManagerV2
 import com.yenaly.yenaly_libs.utils.applicationContext
@@ -117,7 +120,28 @@ object Preferences {
         get() = preferenceSp.getString(
             PlayerSettingsFragment.LONG_PRESS_SPEED_TIMES,
             HJzvdStd.DEF_LONG_PRESS_SPEED_TIMES.toString()
-        )?.toFloat() ?: HJzvdStd.DEF_LONG_PRESS_SPEED_TIMES
+        )?.toFloatOrNull()?.takeIf { it.isFinite() && it in 1f..4f }
+            ?: HJzvdStd.DEF_LONG_PRESS_SPEED_TIMES
+
+    internal val playerGestures: PlayerGestureConfig
+        get() {
+            val sp = preferenceSp
+            return PlayerGestureConfig(
+                doubleTapMode = PlayerDoubleTapMode.fromValue(sp.getString(PlayerSettingsFragment.GESTURE_DOUBLE_TAP_MODE, null)),
+                seekStepSeconds = sp.getString(PlayerSettingsFragment.GESTURE_SEEK_STEP, "10")
+                    ?.toIntOrNull()?.takeIf { it in setOf(5, 10, 15, 30) } ?: 10,
+                longPressMode = PlayerLongPressMode.fromValue(sp.getString(PlayerSettingsFragment.GESTURE_LONG_PRESS_MODE, null)),
+                temporarySpeed = sp.getString(PlayerSettingsFragment.GESTURE_TEMPORARY_SPEED, "2.0")
+                    ?.toFloatOrNull()?.takeIf { it.isFinite() && it in 0.5f..4f } ?: 2f,
+                legacySpeedMultiplier = longPressSpeedTime,
+                seekEnabled = sp.getBoolean(PlayerSettingsFragment.GESTURE_SEEK_ENABLED, true),
+                brightnessEnabled = sp.getBoolean(PlayerSettingsFragment.GESTURE_BRIGHTNESS_ENABLED, true),
+                volumeEnabled = sp.getBoolean(PlayerSettingsFragment.GESTURE_VOLUME_ENABLED, true),
+                seekSensitivity = slideSensitivity.coerceIn(1, 9),
+                brightnessSensitivity = sp.getInt(PlayerSettingsFragment.GESTURE_BRIGHTNESS_SENSITIVITY, 5).coerceIn(1, 9),
+                volumeSensitivity = sp.getInt(PlayerSettingsFragment.GESTURE_VOLUME_SENSITIVITY, 5).coerceIn(1, 9),
+            )
+        }
 
     val videoLanguage: String
         get() = preferenceSp.getString(HomeSettingsFragment.VIDEO_LANGUAGE, "zh-CHT") ?: "zh-CHT"
