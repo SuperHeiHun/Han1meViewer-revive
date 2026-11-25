@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.yenaly.han1meviewer.logic.dao.HistoryDatabase
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.entity.WatchHistoryEntity
+import com.yenaly.han1meviewer.logic.search.filterSearchHistories
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -77,7 +78,8 @@ class SearchHistoryDaoTest {
     @Test fun suggestionsCanFilterTheSameRecordsUsedByTheActivity() = runBlocking {
         dao.insertOrUpdate(SearchHistoryEntity("1080p First title"))
         dao.insertOrUpdate(SearchHistoryEntity("60FPS Second title"))
-        assertEquals(listOf("60FPS Second title"), dao.loadAll("Second").first().map { it.query })
+        val histories = dao.loadAll().first()
+        assertEquals(listOf("60FPS Second title"), filterSearchHistories(histories, "Second").map { it.query })
     }
 
     @Test fun clearingNotifiesActiveHistoryObservers() = runBlocking {

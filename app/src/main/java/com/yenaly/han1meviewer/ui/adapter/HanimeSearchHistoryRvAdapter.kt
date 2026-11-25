@@ -3,21 +3,19 @@ package com.yenaly.han1meviewer.ui.adapter
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter4.BaseDifferAdapter
 import com.chad.library.adapter4.viewholder.QuickViewHolder
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
-import com.yenaly.yenaly_libs.utils.getThemeColor
 
 /**
  * @project Han1meViewer
  * @author Yenaly Liew
  * @time 2023/11/26 026 16:42
  */
-class HanimeSearchHistoryRvAdapter(private val useThemeColors: Boolean = false) :
+class HanimeSearchHistoryRvAdapter :
     BaseDifferAdapter<SearchHistoryEntity, QuickViewHolder>(COMPARATOR) {
 
     init {
@@ -59,11 +57,6 @@ class HanimeSearchHistoryRvAdapter(private val useThemeColors: Boolean = false) 
         viewType: Int,
     ): QuickViewHolder {
         return QuickViewHolder(R.layout.item_search_history, parent).also { viewHolder ->
-            if (useThemeColors) {
-                viewHolder.getView<TextView>(R.id.tv_text).setTextColor(
-                    context.getThemeColor(android.R.attr.textColorPrimary)
-                )
-            }
             viewHolder.getView<View>(R.id.btn_remove).contentDescription = context.getString(R.string.delete)
             viewHolder.getView<View>(R.id.btn_remove).setOnClickListener {
                 val position = viewHolder.bindingAdapterPosition

@@ -15,9 +15,6 @@ abstract class SearchHistoryDao {
     @Query("SELECT * FROM SearchHistoryEntity ORDER BY id DESC")
     abstract fun loadAll(): Flow<MutableList<SearchHistoryEntity>>
 
-    @Query("SELECT * FROM SearchHistoryEntity WHERE `query` LIKE '%' || :keyword || '%' ORDER BY id DESC")
-    abstract fun loadAll(keyword: String): Flow<MutableList<SearchHistoryEntity>>
-
     @Delete
     abstract suspend fun delete(history: SearchHistoryEntity)
 
@@ -29,9 +26,6 @@ abstract class SearchHistoryDao {
 
     @Query("SELECT * FROM SearchHistoryEntity WHERE (`query` = :query) LIMIT 1")
     abstract suspend fun find(query: String): SearchHistoryEntity?
-
-    @Query("DELETE FROM SearchHistoryEntity WHERE (`query` = :query)")
-    abstract suspend fun deleteByKeyword(query: String)
 
     @Transaction
     open suspend fun insertOrUpdate(entity: SearchHistoryEntity) {

@@ -44,6 +44,7 @@ import com.yenaly.han1meviewer.ui.StateLayoutMixin
 import com.yenaly.han1meviewer.ui.activity.MainActivity
 import com.yenaly.han1meviewer.ui.activity.PreviewActivity
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
+import com.yenaly.han1meviewer.ui.activity.SearchHistoryActivity
 import com.yenaly.han1meviewer.ui.activity.VideoActivity
 import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
@@ -371,7 +372,7 @@ class HomePageFragment : YenalyFragment<FragmentHomePageBinding>(),
         this@HomePageFragment.addMenu(R.menu.menu_main_toolbar, viewLifecycleOwner) { item ->
             when (item.itemId) {
                 R.id.tb_search -> {
-                    startActivity<SearchActivity>()
+                    startActivity<SearchHistoryActivity>()
                     return@addMenu true
                 }
 

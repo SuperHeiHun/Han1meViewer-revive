@@ -10,6 +10,8 @@ import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.SearchOption
 import com.yenaly.han1meviewer.logic.search.SearchInputParser
+import com.yenaly.han1meviewer.logic.search.searchTagAliases
+import com.yenaly.han1meviewer.logic.search.toSearchTags
 import com.yenaly.han1meviewer.logic.state.PageLoadingState
 import com.yenaly.han1meviewer.util.loadAssetAs
 import com.yenaly.yenaly_libs.base.YenalyViewModel
@@ -20,7 +22,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -78,16 +79,7 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
     }
 
     private val searchInputParser by unsafeLazy {
-        SearchInputParser(buildMap {
-            tags.values.flatten().forEach { option ->
-                val key = option.searchKey ?: return@forEach
-                listOfNotNull(
-                    key, option.name, option.lang?.zhrCN, option.lang?.zhrTW, option.lang?.en,
-                ).filter(String::isNotBlank).forEach {
-                    put(it, key)
-                }
-            }
-        })
+        SearchInputParser(tags.values.flatten().toSearchTags().searchTagAliases())
     }
 
     val brands by unsafeLazy {
@@ -153,24 +145,6 @@ class SearchViewModel(application: Application) : YenalyViewModel(application) {
                     }
                 }
             }
-        }
-    }
-
-    fun deleteSearchHistory(history: SearchHistoryEntity) {
-        viewModelScope.launch(Dispatchers.IO) {
-            DatabaseRepo.SearchHistory.delete(history)
-            Log.d("delete_search_hty", "$history DONE!")
-        }
-    }
-
-    @JvmOverloads
-    fun loadAllSearchHistories(keyword: String? = null) =
-        DatabaseRepo.SearchHistory.loadAll(keyword).flowOn(Dispatchers.IO)
-
-    fun deleteSearchHistoryByKeyword(query: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            DatabaseRepo.SearchHistory.deleteByKeyword(query)
-            Log.d("delete_search_hty", "$query DONE!")
         }
     }
 }

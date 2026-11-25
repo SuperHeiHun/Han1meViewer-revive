@@ -132,10 +132,7 @@ object DatabaseRepo {
     object SearchHistory {
         private val searchHistoryDao = HistoryDatabase.instance.searchHistory
 
-        @JvmOverloads
-        fun loadAll(keyword: String? = null) =
-            if (keyword.isNullOrBlank()) searchHistoryDao.loadAll()
-            else searchHistoryDao.loadAll(keyword)
+        fun loadAll() = searchHistoryDao.loadAll()
 
         suspend fun delete(history: SearchHistoryEntity) =
             searchHistoryDao.delete(history)
@@ -146,8 +143,6 @@ object DatabaseRepo {
         suspend fun insert(history: SearchHistoryEntity) =
             searchHistoryDao.insertOrUpdate(history)
 
-        suspend fun deleteByKeyword(query: String) =
-            searchHistoryDao.deleteByKeyword(query)
     }
 
     object WatchHistory {

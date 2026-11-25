@@ -111,4 +111,16 @@ class SearchInputParserTest {
         assertEquals(name, result.query)
         assertTrue(result.tags.isEmpty())
     }
+
+    @Test fun emptyQuotedTitlesDoNotAffectTheRemainingInput() {
+        val result = parser.parse("\"\" 1080p Title")
+        assertEquals("Title", result.query)
+        assertEquals(setOf("1080p"), result.tags)
+    }
+
+    @Test fun emptyExplicitQuotedTagDoesNotCreateAnEmptyTagFilter() {
+        val result = parser.parse("#\"\" Title")
+        assertEquals("Title", result.query)
+        assertTrue(result.tags.isEmpty())
+    }
 }

@@ -8,8 +8,6 @@
     android:gravity="center"
     android:orientation="horizontal">
 
-    <!-- 不设置background的原因是search bar已经有统一color了 -->
-
     <TextView
         android:id="@+id/tv_text"
         android:layout_width="0dp"
@@ -17,7 +15,7 @@
         android:layout_marginStart="8dp"
         android:layout_weight="1"
         android:maxLines="2"
-        android:textColor="@color/black"
+        android:textColor="?android:attr/textColorPrimary"
         android:textSize="18sp"
         tools:text="Test Ce Shi" />
 

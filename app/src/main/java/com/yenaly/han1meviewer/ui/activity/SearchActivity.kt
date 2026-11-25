@@ -6,11 +6,9 @@ import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Button
 import androidx.activity.SystemBarStyle
-import androidx.activity.addCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -20,12 +18,9 @@ import androidx.core.view.isGone
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.OnScrollListener
 import com.yenaly.han1meviewer.ADVANCED_SEARCH_MAP
 import com.yenaly.han1meviewer.AdvancedSearchMap
 import com.yenaly.han1meviewer.HAdvancedSearch
@@ -33,7 +28,6 @@ import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VideoCoverSize
 import com.yenaly.han1meviewer.databinding.ActivitySearchBinding
 import com.yenaly.han1meviewer.logic.blocking.ContentBlocking
-import com.yenaly.han1meviewer.logic.entity.SearchHistoryEntity
 import com.yenaly.han1meviewer.logic.model.HanimeInfo
 import com.yenaly.han1meviewer.logic.model.SearchOption
 import com.yenaly.han1meviewer.logic.model.SearchOption.Companion.flatten
@@ -41,7 +35,6 @@ import com.yenaly.han1meviewer.logic.model.SearchOption.Companion.get
 import com.yenaly.han1meviewer.logic.state.PageLoadingState
 import com.yenaly.han1meviewer.ui.StateLayoutMixin
 import com.yenaly.han1meviewer.ui.adapter.FixedGridLayoutManager
-import com.yenaly.han1meviewer.ui.adapter.HanimeSearchHistoryRvAdapter
 import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
 import com.yenaly.han1meviewer.ui.fragment.search.HMultiChoicesDialog
 import com.yenaly.han1meviewer.ui.fragment.search.SearchOptionsPopupFragment
@@ -51,17 +44,8 @@ import com.yenaly.han1meviewer.util.CloudflareVerificationManager
 import com.yenaly.yenaly_libs.base.YenalyActivity
 import com.yenaly.yenaly_libs.utils.dp
 import com.yenaly.yenaly_libs.utils.intentExtra
-import com.yenaly.yenaly_libs.utils.startActivity
 import com.yenaly.yenaly_libs.utils.unsafeLazy
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 /**
@@ -89,7 +73,6 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
     private var blockLoadMoreButton: Button? = null
 
     private val searchAdapter by unsafeLazy { HanimeVideoRvAdapter() }
-    private val historyAdapter by unsafeLazy { HanimeSearchHistoryRvAdapter() }
 
     private val advancedSearchMap by intentExtra<Any>(ADVANCED_SEARCH_MAP)
 
@@ -122,14 +105,6 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
             )
             adapter = searchAdapter
             clipToPadding = false
-            addOnScrollListener(object : OnScrollListener() {
-
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    if (newState != RecyclerView.SCROLL_STATE_IDLE) {
-                        binding.searchBar.hideHistory()
-                    }
-                }
-            })
         }
         val filteredEmptyView = layoutInflater.inflate(
             R.layout.layout_block_filter_empty, binding.searchRv, false
@@ -271,49 +246,19 @@ class SearchActivity : YenalyActivity<ActivitySearchBinding>(), StateLayoutMixin
         getHanimeSearchResult()
     }
 
-    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
     private fun initSearchBar() {
-        onBackPressedDispatcher.addCallback(this) {
-            if (binding.searchBar.hideHistory()) {
-                return@addCallback
-            }
-            finish()
-        }
-        historyAdapter.listener = object : HanimeSearchHistoryRvAdapter.OnItemViewClickListener {
-            override fun onItemClickListener(v: View, history: SearchHistoryEntity?) {
-                binding.searchBar.searchText = history?.query
-            }
-
-            override fun onItemRemoveListener(v: View, history: SearchHistoryEntity?) {
-                history?.let(viewModel::deleteSearchHistory)
-            }
-        }
-        binding.searchBar.apply hsb@{
-            historyAdapter = this@SearchActivity.historyAdapter
+        binding.searchBar.apply {
             onTagClickListener = {
                 optionsPopupFragment.showIn(this@SearchActivity)
             }
             onBackClickListener = {
                 finish()
             }
-            onHistoryClickListener = {
-                hideHistory()
-                startActivity<SearchHistoryActivity>()
-            }
             onSearchClickListener = { _, text ->
                 viewModel.query = text
                 // getNewHanimeSearchResult() 下面那個方法自動幫你執行這個方法了
                 binding.searchSrl.autoRefresh()
             }
-
-            // 搜索框文字改变走这里
-            textChangeFlow()
-                .debounce(300)
-                .flatMapLatest {
-                    viewModel.loadAllSearchHistories(it)
-                }.flowOn(Dispatchers.IO).onEach {
-                    this@SearchActivity.historyAdapter.submitList(it)
-                }.flowWithLifecycle(lifecycle).launchIn(lifecycleScope)
         }
     }
 
