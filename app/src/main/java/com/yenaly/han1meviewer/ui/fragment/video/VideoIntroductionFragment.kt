@@ -40,7 +40,6 @@ import com.yenaly.han1meviewer.Preferences.isAlreadyLogin
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VIDEO_LAYOUT_MATCH_PARENT
 import com.yenaly.han1meviewer.VIDEO_LAYOUT_WRAP_CONTENT
-import com.yenaly.han1meviewer.VideoCoverSize
 import com.yenaly.han1meviewer.advancedSearchMapOf
 import com.yenaly.han1meviewer.databinding.FragmentVideoIntroductionBinding
 import com.yenaly.han1meviewer.databinding.ItemVideoIntroductionBinding
@@ -64,6 +63,7 @@ import com.yenaly.han1meviewer.ui.adapter.PlaybackPlaylistControlsAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
 import com.yenaly.han1meviewer.ui.adapter.VideoColumnTitleAdapter
 import com.yenaly.han1meviewer.ui.view.video.PlaybackSeriesPositioner
+import com.yenaly.han1meviewer.ui.view.video.RelatedVideoGridController
 import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
 import com.yenaly.han1meviewer.ui.viewmodel.VideoViewModel
 import com.yenaly.han1meviewer.util.requestPostNotificationPermission
@@ -152,6 +152,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val relatedTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.related_video)
     private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT)
+    private var relatedGrid: RelatedVideoGridController? = null
     private var blockFilterJob: Job? = null
 
     private var multi = ConcatAdapter()
@@ -185,6 +186,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         playlistWrapper.doOnBind { playlistPositioner.position(this) }
         binding.rvVideoIntro.layoutManager = layoutManager
         binding.rvVideoIntro.adapter = multi
+        relatedGrid = RelatedVideoGridController(binding.rvVideoIntro, layoutManager, relatedAdapter)
         binding.rvVideoIntro.addOnItemTouchListener(VideoIntroTouchListener())
         binding.rvVideoIntro.clipToPadding = false
         ViewCompat.setOnApplyWindowInsetsListener(binding.rvVideoIntro) { v, insets ->
@@ -279,6 +281,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                                 multi.removeAdapter(playlistWrapper)
                             }
                             if (!viewModel.fromDownload) {
+                                relatedGrid?.setVideoType(video.relatedHanimes.firstOrNull()?.itemType ?: HanimeInfo.SIMPLIFIED)
                                 multi.addAdapter(relatedTitleAdapter)
                                 blockFilterJob = viewLifecycleOwner.lifecycleScope.launch {
                                     viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -288,7 +291,6 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                                     }
                                 }
                                 multi.addAdapter(relatedAdapter)
-                                layoutManager.spanCount = video.relatedHanimes.eachGridCounts
                             }
                         }
 
@@ -434,6 +436,8 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
     override fun onDestroyView() {
         invalidatePlaylistPosition()
+        relatedGrid?.dispose()
+        relatedGrid = null
         super.onDestroyView()
     }
 
@@ -518,13 +522,6 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
             redownload = redownload
         )
     }
-
-    private val List<HanimeInfo>.eachGridCounts
-        get() = if (isNotEmpty() && this.first().itemType == HanimeInfo.NORMAL) {
-            VideoCoverSize.Normal.videoInOneLine
-        } else {
-            VideoCoverSize.Simplified.videoInOneLine
-        }
 
     private inner class VideoIntroTouchListener : OnItemTouchListener {
 

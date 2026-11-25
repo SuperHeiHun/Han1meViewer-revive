@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.DiffUtil
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
@@ -43,11 +44,15 @@ import com.yenaly.yenaly_libs.utils.startActivity
 class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidthType is VIDEO_LAYOUT_MATCH_PARENT or VIDEO_LAYOUT_WRAP_CONTENT or nothing
     BaseDifferAdapter<HanimeInfo, QuickViewHolder>(COMPARATOR) {
 
+    private var coverSize: Pair<Int, Int>? = null
+
     init {
         isStateViewEnable = true
     }
 
     companion object {
+        private object CoverSizePayload
+
         val COMPARATOR = object : DiffUtil.ItemCallback<HanimeInfo>() {
             override fun areItemsTheSame(
                 oldItem: HanimeInfo,
@@ -69,8 +74,36 @@ class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidth
         return list[position].itemType
     }
 
+    /** Opt-in viewport sizing for the detail related grid; other adapter instances keep their sizing. */
+    internal fun updateCoverSize(width: Int, height: Int) {
+        require(width > 0 && height > 0)
+        val size = width to height
+        if (coverSize == size) return
+        coverSize = size
+        if (itemCount > 0) notifyItemRangeChanged(0, itemCount, CoverSizePayload)
+    }
+
+    private fun applyCoverSize(holder: QuickViewHolder) {
+        val (width, height) = coverSize ?: return
+        val cover = holder.getView<ViewGroup>(R.id.cover_wrapper)
+        if (cover.layoutParams.width == width && cover.layoutParams.height == height) return
+        cover.updateLayoutParams {
+            this.width = width
+            this.height = height
+        }
+    }
+
+    override fun onBindViewHolder(holder: QuickViewHolder, position: Int, item: HanimeInfo?, payloads: List<Any>) {
+        if (payloads.isNotEmpty() && payloads.all { it === CoverSizePayload }) {
+            applyCoverSize(holder)
+        } else {
+            super.onBindViewHolder(holder, position, item, payloads)
+        }
+    }
+
     override fun onBindViewHolder(holder: QuickViewHolder, position: Int, item: HanimeInfo?) {
         item ?: return
+        applyCoverSize(holder)
         // stackoverflow-64362192
         when (getItemViewType(position)) {
             HanimeInfo.SIMPLIFIED -> {
