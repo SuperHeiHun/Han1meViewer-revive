@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="8dp"
+    android:paddingVertical="4dp">
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/auto_play_next"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/auto_play_next" />
+
+    <TextView
+        android:id="@+id/playback_playlist_order_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:labelFor="@+id/playback_playlist_order"
+        android:paddingTop="8dp"
+        android:text="@string/playback_playlist_order_label"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textStyle="bold" />
+
+    <RadioGroup
+        android:id="@id/playback_playlist_order"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/playback_playlist_order_label"
+        android:orientation="horizontal">
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/playback_playlist_forward"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/playback_playlist_forward" />
+
+        <androidx.appcompat.widget.AppCompatRadioButton
+            android:id="@+id/playback_playlist_reverse"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/playback_playlist_reverse" />
+    </RadioGroup>
+</LinearLayout>

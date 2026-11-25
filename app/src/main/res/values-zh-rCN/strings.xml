@@ -56,7 +56,7 @@
     <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="playback_playlist_forward">正序</string>
     <string name="playback_playlist_reverse">倒序</string>
-    <string name="playback_playlist_toggle_order">当前为%1$s，点按切换播放顺序</string>
+    <string name="playback_playlist_order_label">播放顺序</string>
     <string name="related_video">相关影片</string>
     <string name="now_playing">现正播放</string>
     <string name="view_more_replies">查看更多回复</string>

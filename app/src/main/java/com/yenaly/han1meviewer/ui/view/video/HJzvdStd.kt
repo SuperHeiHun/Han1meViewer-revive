@@ -20,7 +20,6 @@ import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
-import androidx.appcompat.widget.SwitchCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import cn.jzvd.JZDataSource
@@ -826,10 +825,6 @@ class HJzvdStd @JvmOverloads constructor(
         val sourceCode = videoCode
         val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playlist, null)
         content.findViewById<TextView>(R.id.playlist_title).text = playlist.title ?: context.getString(R.string.play_list)
-        content.findViewById<SwitchCompat>(R.id.auto_play_next).apply {
-            isChecked = Preferences.autoPlayNext
-            setOnCheckedChangeListener { _, enabled -> Preferences.autoPlayNext = enabled }
-        }
         val popup = PopupWindow(
             content, minOf(JZUtils.dip2px(context, 360f), (width * 0.5f).toInt()),
             LayoutParams.MATCH_PARENT, true,
@@ -846,14 +841,9 @@ class HJzvdStd @JvmOverloads constructor(
         content.findViewById<View>(R.id.close_playlist).setOnClickListener { popup.dismiss() }
         val list = content.findViewById<RecyclerView>(R.id.rv_playback_playlist)
         list.layoutManager = LinearLayoutManager(context)
-        val orderButton = content.findViewById<TextView>(R.id.playback_playlist_order)
         fun showPlaylistOrder() {
             val reverse = Preferences.playbackPlaylistReversed
             val videos = playlist.orderedVideos(reverse)
-            orderButton.setText(if (reverse) R.string.playback_playlist_reverse else R.string.playback_playlist_forward)
-            orderButton.contentDescription = context.getString(
-                R.string.playback_playlist_toggle_order, orderButton.text,
-            )
             list.adapter = PlaybackPlaylistAdapter(videos, sourceCode) { selectedCode ->
                 popup.dismiss()
                 if (videoCode == sourceCode && selectedCode != sourceCode) {
@@ -863,11 +853,19 @@ class HJzvdStd @JvmOverloads constructor(
             val selected = videos.indexOfFirst { it.videoCode == sourceCode }
             if (selected >= 0) list.scrollToPosition(selected)
         }
-        orderButton.setOnClickListener {
-            if (playlistPopup !== popup || videoCode != sourceCode) return@setOnClickListener
-            Preferences.playbackPlaylistReversed = !Preferences.playbackPlaylistReversed
-            showPlaylistOrder()
-        }
+        PlaybackPlaylistControls(
+            content.findViewById(R.id.playback_playlist_controls),
+            onAutoPlayNextChanged = { enabled ->
+                if (playlistPopup === popup && videoCode == sourceCode) Preferences.autoPlayNext = enabled
+            },
+            onOrderChanged = { reversed ->
+                if (playlistPopup === popup && videoCode == sourceCode) {
+                    Preferences.playbackPlaylistReversed = reversed
+                    showPlaylistOrder()
+                }
+            },
+            textColor = android.graphics.Color.WHITE,
+        ).render(Preferences.playbackPlaylistSettings)
         showPlaylistOrder()
         popup.showAtLocation(textureViewContainer, Gravity.END, 0, 0)
     }

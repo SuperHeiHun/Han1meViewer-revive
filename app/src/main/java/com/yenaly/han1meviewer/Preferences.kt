@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
 import com.yenaly.han1meviewer.logic.network.HProxySelector
 import com.yenaly.han1meviewer.logic.network.interceptor.SpeedLimitInterceptor
+import com.yenaly.han1meviewer.logic.player.PlaybackPlaylistSettings
 import com.yenaly.han1meviewer.ui.fragment.settings.DownloadSettingsFragment
 import com.yenaly.han1meviewer.ui.fragment.settings.HKeyframeSettingsFragment
 import com.yenaly.han1meviewer.ui.fragment.settings.HomeSettingsFragment
@@ -20,6 +21,9 @@ import com.yenaly.yenaly_libs.utils.applicationContext
 import com.yenaly.yenaly_libs.utils.getSpValue
 import com.yenaly.yenaly_libs.utils.putSpValue
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.days
@@ -117,6 +121,21 @@ object Preferences {
         set(value) {
             preferenceSp.edit().putBoolean(PLAYBACK_PLAYLIST_REVERSED, value).apply()
         }
+
+    val playbackPlaylistSettings: PlaybackPlaylistSettings
+        get() = PlaybackPlaylistSettings(autoPlayNext, playbackPlaylistReversed)
+
+    fun observePlaybackPlaylistSettings() = callbackFlow {
+        val sp = preferenceSp
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == null || key == PlayerSettingsFragment.AUTO_PLAY_NEXT || key == PLAYBACK_PLAYLIST_REVERSED) {
+                trySend(playbackPlaylistSettings)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        trySend(playbackPlaylistSettings)
+        awaitClose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.distinctUntilChanged()
 
     val playerSpeed: Float
         get() = preferenceSp.getString(

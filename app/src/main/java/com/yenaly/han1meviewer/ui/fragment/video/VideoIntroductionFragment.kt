@@ -35,6 +35,7 @@ import com.yenaly.han1meviewer.HAdvancedSearch
 import com.yenaly.han1meviewer.HCacheManager
 import com.yenaly.han1meviewer.HanimeResolution
 import com.yenaly.han1meviewer.LOCAL_DATE_FORMAT
+import com.yenaly.han1meviewer.Preferences
 import com.yenaly.han1meviewer.Preferences.isAlreadyLogin
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.VIDEO_LAYOUT_MATCH_PARENT
@@ -59,6 +60,7 @@ import com.yenaly.han1meviewer.ui.activity.SearchActivity
 import com.yenaly.han1meviewer.ui.adapter.AdapterLikeDataBindingPage
 import com.yenaly.han1meviewer.ui.adapter.BaseSingleDifferAdapter
 import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
+import com.yenaly.han1meviewer.ui.adapter.PlaybackPlaylistControlsAdapter
 import com.yenaly.han1meviewer.ui.adapter.RvWrapper.Companion.wrappedWith
 import com.yenaly.han1meviewer.ui.adapter.VideoColumnTitleAdapter
 import com.yenaly.han1meviewer.ui.viewmodel.LocalVideoListViewModel
@@ -137,6 +139,10 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val videoIntroAdapter = VideoIntroductionAdapter()
     private val playlistTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.series_video, notifyWhenSet = true)
+    private val playlistControlsAdapter = PlaybackPlaylistControlsAdapter(
+        onAutoPlayNextChanged = { Preferences.autoPlayNext = it },
+        onOrderChanged = { Preferences.playbackPlaylistReversed = it },
+    )
     private val playlistAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_WRAP_CONTENT)
     private val playlistWrapper = playlistAdapter.wrappedWith {
         LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
@@ -187,6 +193,18 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun bindDataObservers() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                var previousOrder: Boolean? = null
+                Preferences.observePlaybackPlaylistSettings().collect { settings ->
+                    playlistControlsAdapter.submitSettings(settings)
+                    if (previousOrder != settings.reversed) {
+                        updatePlaylistOrder(settings.reversed)
+                        previousOrder = settings.reversed
+                    }
+                }
+            }
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 combine(
@@ -246,10 +264,13 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                             if (playlist.videos.isNotEmpty() && !viewModel.fromDownload) {
                                 playlistTitleAdapter.subtitle = playlist.title
                                 multi.addAdapter(playlistTitleAdapter)
-                                playlistAdapter.submitList(playlist.videos)
+                                playlistControlsAdapter.submitSettings(Preferences.playbackPlaylistSettings)
+                                multi.addAdapter(playlistControlsAdapter)
+                                playlistAdapter.submitList(playlist.orderedVideos(Preferences.playbackPlaylistReversed))
                                 multi.addAdapter(playlistWrapper)
                             } else {
                                 multi.removeAdapter(playlistTitleAdapter)
+                                multi.removeAdapter(playlistControlsAdapter)
                                 multi.removeAdapter(playlistWrapper)
                             }
                             if (!viewModel.fromDownload) {
@@ -370,6 +391,11 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
                 }
             }
         }
+    }
+
+    private fun updatePlaylistOrder(reversed: Boolean) {
+        if (viewModel.fromDownload || viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return
+        playlistAdapter.submitList(viewModel.playbackPlaylist.value.orderedVideos(reversed))
     }
 
     private fun notifyDownload(
