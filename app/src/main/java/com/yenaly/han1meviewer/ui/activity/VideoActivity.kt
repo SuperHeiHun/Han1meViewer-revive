@@ -36,7 +36,7 @@ import com.yenaly.han1meviewer.logic.exception.CloudFlareBlockedException
 import com.yenaly.han1meviewer.logic.exception.ParseException
 import com.yenaly.han1meviewer.logic.player.completionTarget
 import com.yenaly.han1meviewer.logic.player.PlayerAutoFullscreen
-import com.yenaly.han1meviewer.logic.player.videoIsLandscape
+import com.yenaly.han1meviewer.logic.player.PlayerAutoRotation
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.ui.fragment.video.CommentFragment
 import com.yenaly.han1meviewer.ui.fragment.video.ChildCommentPopupFragment
@@ -77,7 +77,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     private var videoCodeByWebsite: String? = null
     private var startSelectedVideo = false
     private var hasSwitchedVideo = false
-    private var appliedVideoOrientation: Pair<Any, Boolean>? = null
+    private val automaticRotation = PlayerAutoRotation()
     private val automaticFullscreen = PlayerAutoFullscreen()
     private var automaticFullscreenRequest: Runnable? = null
 
@@ -102,7 +102,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         }
 
         onBackPressedDispatcher.addCallback(this) {
-            if (Jzvd.backPress()) {
+            if (Jzvd.CURRENT_JZVD === binding.videoPlayer && Jzvd.backPress()) {
                 return@addCallback
             }
             finish()
@@ -157,7 +157,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
                 Preferences.observePlaybackSettings().collect { settings ->
                     binding.videoPlayer.applyPlaybackSettings()
                     if (previousRotation != settings.autoRotate) {
-                        appliedVideoOrientation = null
+                        automaticRotation.reset()
                         previousRotation = settings.autoRotate
                     }
                     if (settings.autoRotate) applyVideoOrientation()
@@ -263,7 +263,8 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         cancelAutomaticFullscreen()
         super.onStop()
         binding.videoPlayer.dismissPlayerPanels()
-        Jzvd.goOnPlayOnPause()
+        // A related video may already own the global player when this activity stops.
+        if (Jzvd.CURRENT_JZVD === binding.videoPlayer) Jzvd.goOnPlayOnPause()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -315,13 +316,15 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     override fun onDestroy() {
         cancelAutomaticFullscreen()
         super.onDestroy()
-        Jzvd.releaseAllVideos()
+        // Finishing a previous playback page must not release a newer activity's media.
+        if (Jzvd.CURRENT_JZVD === binding.videoPlayer) Jzvd.releaseAllVideos()
     }
 
     override fun onOrientationChanged(orientation: OrientationManager.ScreenOrientation) {
         // Content-driven rotation must not fight the physical-device orientation listener.
         if (Preferences.playbackAutoRotate) return
-        if (Jzvd.CURRENT_JZVD != null
+        if (Jzvd.CURRENT_JZVD === binding.videoPlayer
+            && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
             && (binding.videoPlayer.state == Jzvd.STATE_PLAYING || binding.videoPlayer.state == Jzvd.STATE_PAUSE)
             && binding.videoPlayer.screen != Jzvd.SCREEN_TINY
             && Jzvd.FULLSCREEN_ORIENTATION != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
@@ -378,13 +381,14 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         if (!Preferences.playbackAutoRotate || isFinishing || isDestroyed ||
             !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
         val player = binding.videoPlayer
-        val media = player.mediaInterface ?: return
+        if (player.mediaInterface == null || player.videoCode != viewModel.videoCode ||
+            viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return
         val (width, height) = player.videoDimensions ?: return
-        val landscape = videoIsLandscape(width, height) ?: return
-        val identity = media to landscape
-        if (appliedVideoOrientation == identity) return
-        appliedVideoOrientation = identity
-        if (landscape && player.screen == Jzvd.SCREEN_NORMAL) player.gotoFullscreen()
+        val landscape = automaticRotation.directionFor(
+            player.playbackSession,
+            player.screen == Jzvd.SCREEN_FULLSCREEN && !player.isPortraitFullscreenRequested,
+            width, height,
+        ) ?: return
         requestedOrientation = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }

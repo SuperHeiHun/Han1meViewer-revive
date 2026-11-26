@@ -151,7 +151,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
     private val playlistPositioner = PlaybackSeriesPositioner(playlistAdapter)
     private val relatedTitleAdapter =
         VideoColumnTitleAdapter(title = R.string.related_video)
-    private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT)
+    private val relatedAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_MATCH_PARENT, reusePlaybackActivity = false)
     private var relatedGrid: RelatedVideoGridController? = null
     private var blockFilterJob: Job? = null
 

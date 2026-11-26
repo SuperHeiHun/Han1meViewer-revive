@@ -3,6 +3,7 @@ package com.yenaly.han1meviewer.ui.view.video
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.Log
@@ -183,6 +184,9 @@ class HJzvdStd @JvmOverloads constructor(
     private var controlsPopup: PopupWindow? = null
     private var playbackSettingsControls: PlaybackSettingsControls? = null
     private var replayRequest: Runnable? = null
+    private var portraitFullscreenOverride: Pair<Any, Int>? = null
+    internal val isPortraitFullscreenRequested: Boolean
+        get() = portraitFullscreenOverride?.first === playbackSession
     var videoDimensions: Pair<Int, Int>? = null
         private set
     /** Changes even when a quality switch prepares a new source on the same kernel object. */
@@ -259,6 +263,8 @@ class HJzvdStd @JvmOverloads constructor(
                         mediaInterface?.isPlaying == true
                 override val canAdjustLevels: Boolean get() = screen != SCREEN_TINY
                 override val canEnterFullscreen: Boolean get() = canSwipeToFullscreen()
+                override val canEnterPortraitFullscreen: Boolean get() = canSwipeToFullscreen() &&
+                        resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
                 override fun toggleControls() {
                     onClickUiToggle()
@@ -269,8 +275,13 @@ class HJzvdStd @JvmOverloads constructor(
                     if (state == STATE_PLAYING || state == STATE_PAUSE) startButton.performClick()
                 }
 
-                override fun enterFullscreen() {
+                override fun enterFullscreen(portrait: Boolean) {
+                    if (portrait) {
+                        portraitFullscreenOverride = playbackSession to FULLSCREEN_ORIENTATION
+                        FULLSCREEN_ORIENTATION = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
                     fullscreenButton.performClick()
+                    if (screen != SCREEN_FULLSCREEN) restorePortraitFullscreenOrientation()
                 }
 
                 override fun seekTo(position: Long) {
@@ -585,6 +596,7 @@ class HJzvdStd @JvmOverloads constructor(
 
     override fun setScreenNormal() {
         playerGestureController?.cancel()
+        restorePortraitFullscreenOrientation()
         super.setScreenNormal()
         backButton.isVisible = true
         tvSpeed.isVisible = false
@@ -716,11 +728,26 @@ class HJzvdStd @JvmOverloads constructor(
         super.onVideoSizeChanged(width, height)
         if (isVideoLoading || width <= 0 || height <= 0) return
         videoDimensions = width to height
-        videoIsLandscape(width, height)?.let { landscape ->
-            FULLSCREEN_ORIENTATION = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        // Repeated size callbacks must not undo an explicit portrait swipe for this source.
+        if (portraitFullscreenOverride?.first !== playbackSession) {
+            videoIsLandscape(width, height)?.let { landscape ->
+                FULLSCREEN_ORIENTATION = if (landscape) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                else ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
         }
         onVideoDimensionsChanged?.invoke()
+    }
+
+    private fun restorePortraitFullscreenOrientation() {
+        val (session, previous) = portraitFullscreenOverride ?: return
+        portraitFullscreenOverride = null
+        if (session !== playbackSession) return
+        val landscape = videoDimensions?.let { (width, height) -> videoIsLandscape(width, height) }
+        FULLSCREEN_ORIENTATION = when (landscape) {
+            true -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            false -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            null -> previous
+        }
     }
 
     fun applyPlaybackSettings() {

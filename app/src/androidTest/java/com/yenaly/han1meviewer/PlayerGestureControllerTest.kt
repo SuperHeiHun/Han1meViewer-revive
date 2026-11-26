@@ -30,7 +30,9 @@ class PlayerGestureControllerTest {
         override val canSeek get() = true
         override val canLongPress get() = playing
         override val canAdjustLevels = false
-        override val canEnterFullscreen = false
+        override var canEnterFullscreen = false
+        override var canEnterPortraitFullscreen = false
+        val fullscreenRequests = mutableListOf<Boolean>()
         var playing = false
         var controls = 0
         var playbackToggles = 0
@@ -41,7 +43,7 @@ class PlayerGestureControllerTest {
         var speedShown: CountDownLatch? = null
         override fun toggleControls() { controls++ }
         override fun togglePlayback() { playbackToggles++; playing = !playing }
-        override fun enterFullscreen() = Unit
+        override fun enterFullscreen(portrait: Boolean) { fullscreenRequests += portrait }
         override fun seekTo(position: Long) { seeks += position }
         override fun setTemporarySpeed(speed: Float) { speeds += speed }
         override fun beginInteraction() = Unit
@@ -122,6 +124,55 @@ class PlayerGestureControllerTest {
         touch(MotionEvent.ACTION_MOVE, 600f)
         touch(MotionEvent.ACTION_UP, 600f)
         assertTrue(host.seeks.isEmpty())
+    }
+
+    @Test fun centerDownwardSwipeRequestsPortraitOnceOnRelease() = withFixture {
+        host.canEnterFullscreen = true
+        host.canEnterPortraitFullscreen = true
+        touch(MotionEvent.ACTION_DOWN, 500f, 100f)
+        touch(MotionEvent.ACTION_MOVE, 500f, 280f)
+        assertTrue(host.fullscreenRequests.isEmpty())
+        touch(MotionEvent.ACTION_UP, 500f, 350f)
+        touch(MotionEvent.ACTION_UP, 500f, 380f)
+        assertEquals(listOf(true), host.fullscreenRequests)
+        assertTrue(host.seeks.isEmpty())
+        assertEquals(0, host.playbackToggles)
+        assertTrue(host.feedbackHidden)
+    }
+
+    @Test fun centerUpwardSwipeKeepsTheOriginalFullscreenAction() = withFixture {
+        host.canEnterFullscreen = true
+        host.canEnterPortraitFullscreen = true
+        touch(MotionEvent.ACTION_DOWN, 500f, 450f)
+        touch(MotionEvent.ACTION_UP, 500f, 100f)
+        assertEquals(listOf(false), host.fullscreenRequests)
+    }
+
+    @Test fun cancelOrSecondPointerDiscardsPortraitFullscreen() = withFixture {
+        host.canEnterFullscreen = true
+        host.canEnterPortraitFullscreen = true
+        for (cancel in listOf(MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_POINTER_DOWN)) {
+            touch(MotionEvent.ACTION_DOWN, 500f, 100f)
+            touch(MotionEvent.ACTION_MOVE, 500f, 280f)
+            touch(cancel, 500f, 280f)
+            touch(MotionEvent.ACTION_UP, 500f, 350f)
+        }
+        assertTrue(host.fullscreenRequests.isEmpty())
+        assertTrue(host.seeks.isEmpty())
+    }
+
+    @Test fun mediaReplacementOrLostPermissionPreventsPortraitCommit() = withFixture {
+        host.canEnterFullscreen = true
+        host.canEnterPortraitFullscreen = true
+        touch(MotionEvent.ACTION_DOWN, 500f, 100f)
+        touch(MotionEvent.ACTION_MOVE, 500f, 280f)
+        host.mediaIdentity = Any()
+        touch(MotionEvent.ACTION_UP, 500f, 350f)
+        touch(MotionEvent.ACTION_DOWN, 500f, 100f)
+        touch(MotionEvent.ACTION_MOVE, 500f, 280f)
+        host.canEnterPortraitFullscreen = false
+        touch(MotionEvent.ACTION_UP, 500f, 350f)
+        assertTrue(host.fullscreenRequests.isEmpty())
     }
 
     @Test fun mediaReplacementClearsTheTapChainAndPendingTarget() = withFixture {

@@ -63,7 +63,7 @@
     <string name="playback_auto_rotate">Auto-rotate</string>
     <string name="auto_fullscreen">Automatic fullscreen</string>
     <string name="auto_fullscreen_summary">Enter fullscreen when playback starts without enabling Auto-rotate. After a manual exit, do not enter again during the same playback session.</string>
-    <string name="playback_auto_rotate_hint">Choose landscape or portrait from the actual video dimensions, including when switching videos. Keep the current direction for unknown or square dimensions.</string>
+    <string name="playback_auto_rotate_hint">Follow the actual video orientation only while fullscreen, including when switching videos. This does not enter fullscreen from normal playback. Keep the current direction for unknown or square dimensions.</string>
     <string name="playback_settings_global_hint">Saved globally for all videos. Loop playlist wraps to the first item; a download or video without a series is a one-item list. Repeat current video repeats only that video.</string>
     <string name="close_playback_playlist">Close Playlist</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
@@ -369,7 +369,7 @@ Recommendations are as follows:\n
     <string name="long_press_speed_multiplier">Long Press Speed Multiplier</string>
     <string name="slide_sensitivity">Slide Sensitivity for Progress Adjustment</string>
     <string name="gesture_settings">Playback Gestures</string>
-    <string name="gesture_help">Tap to show or hide controls; swipe up in the center to enter fullscreen. Horizontal seeking is committed only on release. Hold for a temporary speed and release to restore it. Defaults retain whole-screen double-tap play/pause and the existing speed multiplier; enhanced modes are optional below.</string>
+    <string name="gesture_help">Tap to show or hide controls. Swiping up in the center keeps the existing fullscreen behavior; swiping down in the center during normal portrait playback opens portrait fullscreen. Horizontal seeking is committed only on release. Hold for a temporary speed and release to restore it. Defaults retain whole-screen double-tap play/pause and the existing speed multiplier; enhanced modes are optional below.</string>
     <string name="gesture_double_tap_mode">Double-tap Action</string>
     <string name="gesture_double_tap_play_pause">Play/pause anywhere (compatible default)</string>
     <string name="gesture_double_tap_seek">Left half: rewind / right half: forward</string>

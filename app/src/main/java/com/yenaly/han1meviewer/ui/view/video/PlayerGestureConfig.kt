@@ -114,6 +114,7 @@ internal class PlayerGestureSession(touchSlop: Float, minimumFullscreenDistance:
     fun down(
         x: Float, y: Float, width: Int, config: PlayerGestureConfig,
         canSeek: Boolean, canAdjustLevels: Boolean, canEnterFullscreen: Boolean,
+        canEnterPortraitFullscreen: Boolean = false,
     ) {
         this.downX = x
         this.downY = y
@@ -123,7 +124,7 @@ internal class PlayerGestureSession(touchSlop: Float, minimumFullscreenDistance:
         this.canAdjustLevels = canAdjustLevels
         hasMoved = false
         state = if (width > 0 && x.isFinite() && y.isFinite()) State.PENDING else State.IGNORED
-        fullscreen.onDown(x, y, width, canEnterFullscreen)
+        fullscreen.onDown(x, y, width, canEnterFullscreen, allowDownward = canEnterPortraitFullscreen)
     }
 
     fun move(x: Float, y: Float): State {
@@ -156,6 +157,8 @@ internal class PlayerGestureSession(touchSlop: Float, minimumFullscreenDistance:
         state = State.LONG_PRESS
         return true
     }
+
+    val isPortraitFullscreen: Boolean get() = state == State.FULLSCREEN && fullscreen.isDownward
 
     fun entersFullscreen(x: Float, y: Float): Boolean =
         state == State.FULLSCREEN && fullscreen.onUp(x, y)

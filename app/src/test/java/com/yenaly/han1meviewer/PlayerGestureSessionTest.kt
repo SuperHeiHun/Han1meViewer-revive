@@ -98,4 +98,32 @@ class PlayerGestureSessionTest {
         assertFalse(session.entersFullscreen(150f, 50f))
         assertFalse(session.longPress())
     }
+
+    @Test fun portraitDownwardSwipeTakesPriorityOverLevelControls() {
+        session.down(150f, 100f, 300, PlayerGestureConfig(), true, true, true, true)
+        assertEquals(State.FULLSCREEN, session.move(151f, 150f))
+        assertTrue(session.isPortraitFullscreen)
+        assertTrue(session.entersFullscreen(151f, 180f))
+    }
+
+    @Test fun downwardSwipeWithoutPortraitPermissionKeepsTheOldLevelGesture() {
+        down()
+        assertEquals(State.VOLUME, session.move(151f, 280f))
+        assertFalse(session.isPortraitFullscreen)
+        assertFalse(session.entersFullscreen(151f, 300f))
+    }
+
+    @Test fun shortPortraitSwipeDoesNotFallThroughToLevelControls() {
+        session.down(150f, 100f, 300, PlayerGestureConfig(), true, true, true, true)
+        assertEquals(State.FULLSCREEN, session.move(150f, 120f))
+        assertFalse(session.entersFullscreen(150f, 130f))
+    }
+
+    @Test fun resetDiscardsPortraitDirection() {
+        session.down(150f, 100f, 300, PlayerGestureConfig(), true, true, true, true)
+        session.move(150f, 180f)
+        session.reset()
+        assertFalse(session.isPortraitFullscreen)
+        assertFalse(session.entersFullscreen(150f, 220f))
+    }
 }

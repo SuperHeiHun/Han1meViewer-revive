@@ -1,6 +1,8 @@
 package com.yenaly.han1meviewer
 
 import android.graphics.SurfaceTexture
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.SystemClock
 import android.view.MotionEvent
@@ -17,6 +19,9 @@ import com.yenaly.han1meviewer.ui.activity.SettingsActivity
 import com.yenaly.han1meviewer.ui.view.video.HJzvdStd
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -41,11 +46,13 @@ class PlayerFullscreenGestureTest {
                 root.layout(0, 0, 900, 600)
                 val audioManager = activity.getSystemService<AudioManager>()!!
                 val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                val originalOrientation = Jzvd.FULLSCREEN_ORIENTATION
                 try {
                     test(player, media)
                 } finally {
                     if (player.screen == Jzvd.SCREEN_FULLSCREEN) player.gotoNormalScreen()
                     Jzvd.releaseAllVideos()
+                    Jzvd.FULLSCREEN_ORIENTATION = originalOrientation
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
                 }
             }
@@ -99,6 +106,48 @@ class PlayerFullscreenGestureTest {
         assertEquals(true, media.isPlaying())
         assertSame(media, player.mediaInterface)
         assertEquals(42_000L, media.positionMs)
+    }
+
+    @Test
+    fun downwardCenterSwipeUsesPortraitAndRestoresTheOriginalUpwardDirectionOnExit() = withPlayer { player, media ->
+        assumeTrue(player.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+        val activity = player.context as SettingsActivity
+        player.onVideoSizeChanged(1920, 1080)
+        val downTime = SystemClock.uptimeMillis()
+        player.touch(MotionEvent.ACTION_DOWN, 450f, 150f, downTime, 0)
+        player.touch(MotionEvent.ACTION_MOVE, 450f, 330f, downTime, 80)
+        assertEquals(Jzvd.SCREEN_NORMAL, player.screen)
+        player.touch(MotionEvent.ACTION_UP, 450f, 450f, downTime, 120)
+        assertEquals(Jzvd.SCREEN_FULLSCREEN, player.screen)
+        assertEquals(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, activity.requestedOrientation)
+        assertTrue(player.isPortraitFullscreenRequested)
+        assertSame(media, player.mediaInterface)
+        assertEquals(Jzvd.STATE_PAUSE, player.state)
+        assertEquals(42_000L, media.positionMs)
+        assertEquals(0, media.seekCount)
+        player.onVideoSizeChanged(1920, 1080)
+        assertEquals(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, Jzvd.FULLSCREEN_ORIENTATION)
+        player.backButton.performClick()
+        assertEquals(Jzvd.SCREEN_NORMAL, player.screen)
+        assertFalse(player.isPortraitFullscreenRequested)
+        assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, Jzvd.FULLSCREEN_ORIENTATION)
+    }
+
+    @Test
+    fun portraitSwipeOverrideDoesNotApplyToTheNextVideoSession() = withPlayer { player, _ ->
+        assumeTrue(player.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
+        val downTime = SystemClock.uptimeMillis()
+        player.touch(MotionEvent.ACTION_DOWN, 450f, 150f, downTime, 0)
+        player.touch(MotionEvent.ACTION_UP, 450f, 450f, downTime, 120)
+        assertTrue(player.isPortraitFullscreenRequested)
+        player.prepareForVideoSwitch()
+        player.setUp(JZDataSource("file:///next-not-opened.mp4", "Next"), player.screen)
+        player.mediaInterface = TestMediaKernel(player)
+        player.onStatePause()
+        player.onVideoSizeChanged(1920, 1080)
+        assertEquals(Jzvd.SCREEN_FULLSCREEN, player.screen)
+        assertFalse(player.isPortraitFullscreenRequested)
+        assertEquals(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, Jzvd.FULLSCREEN_ORIENTATION)
     }
 
     @Test

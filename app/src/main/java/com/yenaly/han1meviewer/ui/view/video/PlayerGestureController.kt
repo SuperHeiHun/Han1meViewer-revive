@@ -36,9 +36,10 @@ internal class PlayerGestureController(
         val canLongPress: Boolean
         val canAdjustLevels: Boolean
         val canEnterFullscreen: Boolean
+        val canEnterPortraitFullscreen: Boolean
         fun toggleControls()
         fun togglePlayback()
-        fun enterFullscreen()
+        fun enterFullscreen(portrait: Boolean)
         fun seekTo(position: Long)
         fun setTemporarySpeed(speed: Float)
         fun beginInteraction()
@@ -135,6 +136,7 @@ internal class PlayerGestureController(
         session.down(
             event.x, event.y, surface.width, config,
             host.canSeek, host.canAdjustLevels, host.canEnterFullscreen,
+            host.canEnterPortraitFullscreen,
         )
         host.beginInteraction()
         if (config.longPressMode != PlayerLongPressMode.NONE) {
@@ -191,6 +193,7 @@ internal class PlayerGestureController(
         if (pointerId == MotionEvent.INVALID_POINTER_ID) return
         handler.removeCallbacks(longPress)
         val state = session.state
+        val portraitFullscreen = session.isPortraitFullscreen
         val enterFullscreen = session.entersFullscreen(event.x, event.y)
         val target = previewPosition
         val isTap = state == PlayerGestureSession.State.PENDING && !session.hasMoved
@@ -200,10 +203,10 @@ internal class PlayerGestureController(
         surface.parent?.requestDisallowInterceptTouchEvent(false)
         host.endInteraction()
         when {
-            enterFullscreen && host.canEnterFullscreen -> {
+            enterFullscreen && host.canEnterFullscreen && (!portraitFullscreen || host.canEnterPortraitFullscreen) -> {
                 clearTaps()
                 host.finishFeedback(true)
-                host.enterFullscreen()
+                host.enterFullscreen(portraitFullscreen)
             }
             state == PlayerGestureSession.State.SEEK && target != null && host.canSeek -> {
                 requestSeek(target)

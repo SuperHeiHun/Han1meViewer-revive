@@ -64,7 +64,7 @@
     <string name="playback_auto_rotate">自动旋转</string>
     <string name="auto_fullscreen">自动全屏</string>
     <string name="auto_fullscreen_summary">开始播放后自动进入全屏，不会自动开启“自动旋转”；手动退出后，同次播放不再重复进入。</string>
-    <string name="playback_auto_rotate_hint">按实际视频宽高自动选择横竖屏，切换下一项时同样生效。未知尺寸或正方形保持方向不变。</string>
+    <string name="playback_auto_rotate_hint">仅在全屏中按实际视频宽高跟随横竖屏，切换下一项时自动调整；不会从普通播放进入全屏。未知尺寸或正方形保持方向不变。</string>
     <string name="playback_settings_global_hint">对所有视频生效并保存。列表循环在末项回到首项；无系列或离线时按单项列表循环。循环播放只重复当前视频。</string>
     <string name="close_playback_playlist">关闭播放列表</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
@@ -375,7 +375,7 @@
     <string name="long_press_speed_multiplier">长按快进速度是当前速度的</string>
     <string name="slide_sensitivity">滑动调整进度的灵敏度</string>
     <string name="gesture_settings">播放手势</string>
-    <string name="gesture_help">单击显示／隐藏控制栏，中间区域上划进入全屏。横滑进度仅在松手后跳转；长按临时变速，松手恢复原速。默认保留全区域双击播放／暂停及原有长按倍率，可在下方启用增强模式。</string>
+    <string name="gesture_help">单击显示／隐藏控制栏，中间区域上划沿用原全屏方式；竖屏普通播放时，中间下滑进入竖屏全屏。横滑进度仅在松手后跳转；长按临时变速，松手恢复原速。默认保留全区域双击播放／暂停及原有长按倍率，可在下方启用增强模式。</string>
     <string name="gesture_double_tap_mode">双击操作</string>
     <string name="gesture_double_tap_play_pause">全区域播放／暂停（兼容默认）</string>
     <string name="gesture_double_tap_seek">左半快退／右半快进</string>

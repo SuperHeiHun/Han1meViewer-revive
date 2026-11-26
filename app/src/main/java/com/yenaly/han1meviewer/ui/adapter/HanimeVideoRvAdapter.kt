@@ -41,7 +41,10 @@ import com.yenaly.yenaly_libs.utils.startActivity
  * @author Yenaly Liew
  * @time 2023/11/26 026 17:15
  */
-class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidthType is VIDEO_LAYOUT_MATCH_PARENT or VIDEO_LAYOUT_WRAP_CONTENT or nothing
+class HanimeVideoRvAdapter(
+    private val videoWidthType: Int = -1, // VIDEO_LAYOUT_MATCH_PARENT, VIDEO_LAYOUT_WRAP_CONTENT or neither
+    private val reusePlaybackActivity: Boolean = true,
+) :
     BaseDifferAdapter<HanimeInfo, QuickViewHolder>(COMPARATOR) {
 
     private var coverSize: Pair<Int, Int>? = null
@@ -255,7 +258,7 @@ class HanimeVideoRvAdapter(private val videoWidthType: Int = -1) : // videoWidth
 
     private fun Context.startVideoActivity(videoCode: String) {
         val playerActivity = activity as? VideoActivity
-        if (playerActivity?.playVideo(videoCode) == true) return
+        if (reusePlaybackActivity && playerActivity?.playVideo(videoCode) == true) return
         if (this is SearchActivity) {
             val intent = Intent(this, VideoActivity::class.java).apply {
                 putExtra(VIDEO_CODE, videoCode)

@@ -117,4 +117,53 @@ class CenterFullscreenGestureTest {
         assertFalse(gesture.onMove(0f, 100f))
         assertFalse(gesture.onUp(0f, 80f))
     }
+
+    @Test fun enabledDownwardCenterSwipeEntersPortraitFullscreenOnlyOnRelease() {
+        gesture.onDown(150f, 100f, 300, true, allowDownward = true)
+        assertTrue(gesture.onMove(152f, 125f))
+        assertTrue(gesture.isDownward)
+        assertTrue(gesture.onUp(155f, 180f))
+        assertFalse(gesture.isTracking)
+        assertFalse(gesture.onUp(155f, 200f))
+    }
+
+    @Test fun shortDownwardSwipeDoesNotEnterFullscreen() {
+        gesture.onDown(150f, 100f, 300, true, allowDownward = true)
+        assertTrue(gesture.onMove(150f, 120f))
+        assertFalse(gesture.onUp(150f, 135f))
+    }
+
+    @Test fun canceledDownwardSwipeCannotCommit() {
+        gesture.onDown(150f, 100f, 300, true, allowDownward = true)
+        gesture.onMove(150f, 170f)
+        gesture.cancel()
+        assertFalse(gesture.onUp(150f, 200f))
+    }
+
+    @Test fun downwardSwipeCannotReverseIntoTheUpwardAction() {
+        gesture.onDown(150f, 100f, 300, true, allowDownward = true)
+        assertTrue(gesture.onMove(150f, 170f))
+        assertFalse(gesture.onUp(150f, 20f))
+    }
+
+    @Test fun enablingDownwardDoesNotChangeUpwardBehavior() {
+        gesture.onDown(150f, 200f, 300, true, allowDownward = true)
+        assertTrue(gesture.onMove(150f, 160f))
+        assertFalse(gesture.isDownward)
+        assertTrue(gesture.onUp(150f, 100f))
+    }
+
+    @Test fun downwardSwipeOutsideTheCenterPassesThrough() {
+        for (x in listOf(50f, 250f)) {
+            gesture.onDown(x, 100f, 300, true, allowDownward = true)
+            assertFalse(gesture.onMove(x, 180f))
+            assertFalse(gesture.onUp(x, 200f))
+        }
+    }
+
+    @Test fun horizontalLockCannotBecomeADownwardFullscreenSwipe() {
+        gesture.onDown(150f, 100f, 300, true, allowDownward = true)
+        assertFalse(gesture.onMove(190f, 102f))
+        assertFalse(gesture.onUp(190f, 220f))
+    }
 }
