@@ -2,7 +2,7 @@ package com.yenaly.han1meviewer
 
 import com.yenaly.han1meviewer.ui.view.video.PlayerPanelBounds
 import com.yenaly.han1meviewer.ui.view.video.playerSettingsPanelBounds
-import com.yenaly.han1meviewer.ui.view.video.playbackPlaylistDockWidth
+import com.yenaly.han1meviewer.ui.view.video.playerDetailsPanelBounds
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -38,20 +38,27 @@ class PlayerSettingsPanelLayoutTest {
         assertNull(playerSettingsPanelBounds(400, 0, 360))
     }
 
-    @Test fun expandedPlaylistLeavesTwoThirdsOfTheLandscapeViewport() {
-        assertEquals(300, playbackPlaylistDockWidth(900, 600, 320))
-        assertEquals(320, playbackPlaylistDockWidth(1800, 900, 320))
+    @Test fun expandedPortraitPlaylistUsesOnlyTheDetailsViewport() {
+        val details = PlayerPanelBounds(12, 330, 376, 440)
+        assertEquals(details, playerDetailsPanelBounds(400, 800, details))
     }
 
-    @Test fun portraitSquareAndUnmeasuredWindowsCannotExpandThePlaylist() {
-        assertNull(playbackPlaylistDockWidth(400, 800, 320))
-        assertNull(playbackPlaylistDockWidth(800, 800, 320))
-        assertNull(playbackPlaylistDockWidth(800, 0, 320))
+    @Test fun landscapeAndMissingDetailsCannotExpandOverTheVideo() {
+        assertNull(playerDetailsPanelBounds(800, 400, PlayerPanelBounds(0, 200, 800, 200)))
+        assertNull(playerDetailsPanelBounds(400, 800, null))
+        assertNull(playerDetailsPanelBounds(0, 800, PlayerPanelBounds(0, 330, 400, 440)))
     }
 
-    @Test fun resizingUsesCurrentWindowDimensionsAndNeverAPhysicalDisplaySize() {
-        assertEquals(200, playbackPlaylistDockWidth(600, 400, 320))
-        assertEquals(320, playbackPlaylistDockWidth(1200, 700, 320))
-        assertEquals(PlayerPanelBounds(300, 0, 300, 400), playerSettingsPanelBounds(600, 400, 360))
+    @Test fun invalidDetailsCannotFallBackToCoveringTheVideo() {
+        for (details in listOf(PlayerPanelBounds(-1, 330, 400, 440), PlayerPanelBounds(0, -1, 400, 440),
+            PlayerPanelBounds(0, 800, 400, 440), PlayerPanelBounds(400, 330, 400, 440),
+            PlayerPanelBounds(0, 330, 0, 440), PlayerPanelBounds(0, 330, 400, 0))) {
+            assertNull(playerDetailsPanelBounds(400, 800, details))
+        }
+    }
+
+    @Test fun expandedDetailsClipAtTheWindowWithoutMovingTheirTopEdge() {
+        assertEquals(PlayerPanelBounds(12, 330, 388, 470),
+            playerDetailsPanelBounds(400, 800, PlayerPanelBounds(12, 330, 500, 900)))
     }
 }

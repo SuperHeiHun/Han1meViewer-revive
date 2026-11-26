@@ -68,9 +68,9 @@
     <string name="playback_settings_global_hint">對所有影片生效並儲存。清單循環在末項回到首項；無系列或離線時視為單項清單循環。循環播放僅重複目前影片。</string>
     <string name="close_playback_playlist">關閉播放清單</string>
     <string name="expand_playback_playlist">展開</string>
-    <string name="expand_playback_playlist_description">展開播放清單，與影片並排顯示</string>
+    <string name="expand_playback_playlist_description">在影片下方展開全部選集</string>
     <string name="collapse_playback_playlist">收起</string>
-    <string name="collapse_playback_playlist_description">收起播放清單，恢復完整播放畫面</string>
+    <string name="collapse_playback_playlist_description">收起播放清單，返回影片簡介</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="playback_playlist_forward">正序</string>
     <string name="playback_playlist_reverse">倒序</string>

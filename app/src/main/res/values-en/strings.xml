@@ -67,9 +67,9 @@
     <string name="playback_settings_global_hint">Saved globally for all videos. Loop playlist wraps to the first item; a download or video without a series is a one-item list. Repeat current video repeats only that video.</string>
     <string name="close_playback_playlist">Close Playlist</string>
     <string name="expand_playback_playlist">Expand</string>
-    <string name="expand_playback_playlist_description">Expand the playlist beside the video</string>
+    <string name="expand_playback_playlist_description">Show all episodes below the video</string>
     <string name="collapse_playback_playlist">Collapse</string>
-    <string name="collapse_playback_playlist_description">Collapse the playlist and restore the full video viewport</string>
+    <string name="collapse_playback_playlist_description">Close the playlist and return to video details</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="playback_playlist_forward">Forward</string>
     <string name="playback_playlist_reverse">Reverse</string>

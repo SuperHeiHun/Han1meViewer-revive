@@ -37,7 +37,7 @@ class PlayerBottomPanelTest {
                 val details = FrameLayout(activity)
                 root.addView(details, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT).apply { topMargin = 160 })
-                player.playbackSettingsAnchor = details
+                player.playbackDetailsAnchor = details
                 player.videoCode = "a"
                 player.setUp(JZDataSource("file:///not-opened.mp4", "Local"), Jzvd.SCREEN_NORMAL)
                 player.updatePlaybackPlaylist(PlaybackPlaylist("Local series", listOf(
@@ -75,8 +75,8 @@ class PlayerBottomPanelTest {
         assertEquals(cn.jzvd.R.style.pop_animation, popup.animationStyle)
         assertEquals(255, popup.contentView.background.alpha)
         if (player.rootView.height >= player.rootView.width) {
-            assertEquals(player.playbackSettingsAnchor!!.width, popup.width)
-            assertEquals(player.playbackSettingsAnchor!!.height, popup.height)
+            assertEquals(player.playbackDetailsAnchor!!.width, popup.width)
+            assertEquals(player.playbackDetailsAnchor!!.height, popup.height)
         } else {
             val expected = requireNotNull(playerSettingsPanelBounds(player.rootView.width,
                 player.rootView.height, JZUtils.dip2px(player.context, 360f)))
@@ -152,7 +152,7 @@ class PlayerBottomPanelTest {
     @Test fun detailsResizeDismissesTheOldSettingsPanel() = withPlayer { player ->
         player.clickPlaybackSettings()
         val popup = requireNotNull(player.popup("controlsPopup"))
-        player.playbackSettingsAnchor!!.let { details ->
+        player.playbackDetailsAnchor!!.let { details ->
             details.layout(details.left, details.top, details.right, details.bottom - 1)
         }
         if (player.rootView.height >= player.rootView.width) {

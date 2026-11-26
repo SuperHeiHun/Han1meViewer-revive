@@ -157,7 +157,6 @@ class HJzvdStd @JvmOverloads constructor(
     private lateinit var layoutTop: View
     private lateinit var layoutBottom: View
     private lateinit var gestureFeedback: PlayerGestureOverlay
-    private lateinit var playlistDock: FrameLayout
 
     var hKeyframe: HKeyframeEntity? = null
         set(value) {
@@ -174,7 +173,6 @@ class HJzvdStd @JvmOverloads constructor(
                 hKeyframe = null
             }
             field = value
-            renderPlaylistDock()
         }
 
     private var keyframeAdapter: HKeyframeRvAdapter? = null
@@ -185,10 +183,7 @@ class HJzvdStd @JvmOverloads constructor(
     private var playlistPopup: PopupWindow? = null
     private var controlsPopup: PopupWindow? = null
     private var playbackSettingsControls: PlaybackSettingsControls? = null
-    internal var playbackSettingsAnchor: View? = null
-    private var playlistDockContent: View? = null
-    private var preservePlaylistDock = false
-    internal val isPlaylistExpanded: Boolean get() = playlistDockContent != null
+    internal var playbackDetailsAnchor: View? = null
     private var replayRequest: Runnable? = null
     private var portraitFullscreenOverride: Pair<Any, Int>? = null
     internal val isPortraitFullscreenRequested: Boolean
@@ -331,7 +326,6 @@ class HJzvdStd @JvmOverloads constructor(
         layoutTop = findViewById(R.id.layout_top)
         layoutBottom = findViewById(R.id.layout_bottom)
         gestureFeedback = findViewById(R.id.gesture_feedback)
-        playlistDock = findViewById(R.id.playback_playlist_dock)
         textureViewContainer.isHapticFeedbackEnabled = true
         tvSpeed.setOnClickListener(this)
         tvPlaybackPlaylist.setOnClickListener(this)
@@ -388,7 +382,6 @@ class HJzvdStd @JvmOverloads constructor(
             bottomProgressBar.removeItself()
             bottomProgressBar = ProgressBar(context)
         }
-        renderPlaylistDock()
     }
 
     override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -439,7 +432,7 @@ class HJzvdStd @JvmOverloads constructor(
         playbackSession = Any()
         cancelReplay()
         videoDimensions = null
-        if (preservePlaylistDock) dismissPlaylistPopup() else dismissPlaybackPlaylist()
+        dismissPlaybackPlaylist()
         controlsPopup?.dismiss()
         super.reset()
     }
@@ -459,15 +452,9 @@ class HJzvdStd @JvmOverloads constructor(
 
     /** Release only this media session, without reparenting the fullscreen view. */
     fun prepareForVideoSwitch() {
-        preservePlaylistDock = isPlaylistExpanded
-        try {
-            if (!isVideoLoading) reset()
-        } finally {
-            preservePlaylistDock = false
-        }
+        if (!isVideoLoading) reset()
         isVideoLoading = true
-        dismissPlaylistPopup()
-        renderPlaylistDock()
+        dismissPlaybackPlaylist()
         controlsPopup?.dismiss()
         clarityPopWindow?.dismiss()
         mediaInterface = null
@@ -646,7 +633,6 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     override fun clickBack() {
-        if (collapsePlaybackPlaylist()) return
         Log.i(TAG, "backPress")
         when {
             CONTAINER_LIST.isNotEmpty() && CURRENT_JZVD != null -> { //判断条件，因为当前所有goBack都是回到普通窗口
@@ -774,7 +760,7 @@ class HJzvdStd @JvmOverloads constructor(
     fun clickPlaybackSettings() {
         if (screen == SCREEN_TINY || !isAttachedToWindow) return
         val window = rootView
-        val anchor = playbackSettingsAnchor?.takeIf {
+        val anchor = playbackDetailsAnchor?.takeIf {
             screen == SCREEN_NORMAL && window.height >= window.width && it.isAttachedToWindow && it.isShown
         }
         val details = anchor?.takeIf { it.width > 0 && it.height > 0 }?.let {
@@ -1006,28 +992,43 @@ class HJzvdStd @JvmOverloads constructor(
     }
 
     fun updatePlaybackPlaylist(playlist: PlaybackPlaylist) {
-        if (playbackPlaylist != playlist) dismissPlaylistPopup()
+        if (playbackPlaylist != playlist) dismissPlaybackPlaylist()
         playbackPlaylist = playlist
         tvPlaybackPlaylist.isVisible = screen == SCREEN_FULLSCREEN && playlist.videos.isNotEmpty()
-        renderPlaylistDock()
     }
 
     fun dismissPlaybackPlaylist() {
-        dismissPlaylistPopup()
-        collapsePlaybackPlaylist()
-    }
-
-    private fun dismissPlaylistPopup() {
         playlistPopup?.dismiss()
         playlistPopup = null
     }
 
-    @SuppressLint("InflateParams")
     fun clickPlaybackPlaylist() {
-        if (collapsePlaybackPlaylist()) return
-        val playlist = playbackPlaylist ?: return
-        if (screen != SCREEN_FULLSCREEN || playlist.videos.isEmpty() || !isAttachedToWindow) return
-        val panel = currentPanelLayout() ?: return
+        if (screen != SCREEN_FULLSCREEN) return
+        showPlaybackPlaylist()
+    }
+
+    /** Show all episodes below the inline portrait video, without resizing or moving its output. */
+    internal fun expandPortraitPlaybackPlaylist(): Boolean {
+        if (screen != SCREEN_NORMAL || isVideoLoading || videoCode.isNullOrBlank() || !isAttachedToWindow) return false
+        val window = rootView
+        val anchor = playbackDetailsAnchor?.takeIf {
+            it.isAttachedToWindow && it.isShown && it.width > 0 && it.height > 0
+        } ?: return false
+        val position = IntArray(2)
+        val origin = IntArray(2)
+        anchor.getLocationInWindow(position)
+        window.getLocationInWindow(origin)
+        val details = playerDetailsPanelBounds(window.width, window.height,
+            PlayerPanelBounds(position[0] - origin[0], position[1] - origin[1], anchor.width, anchor.height),
+        ) ?: return false
+        return showPlaybackPlaylist(details)
+    }
+
+    @SuppressLint("InflateParams", "RtlHardcoded")
+    private fun showPlaybackPlaylist(details: PlayerPanelBounds? = null): Boolean {
+        val playlist = playbackPlaylist ?: return false
+        if (playlist.videos.isEmpty() || isVideoLoading || !isAttachedToWindow) return false
+        val panel = currentPanelLayout() ?: return false
         playerGestureController?.cancel()
         cancelDismissControlViewTimer()
         onCLickUiToggleToClear()
@@ -1035,18 +1036,25 @@ class HJzvdStd @JvmOverloads constructor(
         dismissPlaybackPlaylist()
         val sourceCode = videoCode
         val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playlist, null)
-        if (panel.fromBottom) content.applyPlayerPanelInsets()
-        content.findViewById<TextView>(R.id.playlist_title).text = playlist.title ?: context.getString(R.string.play_list)
+        if (panel.fromBottom || details != null) content.applyPlayerPanelInsets()
+        if (details != null) content.setBackgroundColor(android.graphics.Color.rgb(26, 26, 26))
+        val window = rootView
+        val anchor = if (details != null) playbackDetailsAnchor else null
         val popup = PopupWindow(
-            content, panel.width, panel.height, true,
+            content, details?.width ?: panel.width, details?.height ?: panel.height, true,
         ).apply {
             setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
             isOutsideTouchable = true
-            animationStyle = if (panel.fromBottom) R.style.PlayerBottomPanelAnimation else cn.jzvd.R.style.pop_animation
-            setOnDismissListener {
-                if (playlistPopup === this) playlistPopup = null
-                if (state == STATE_PLAYING) startDismissControlViewTimer()
-            }
+            animationStyle = if (details != null || panel.fromBottom) R.style.PlayerBottomPanelAnimation else cn.jzvd.R.style.pop_animation
+        }
+        val boundsWatcher = View.OnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (left != oldLeft || top != oldTop || right != oldRight || bottom != oldBottom) popup.dismiss()
+        }
+        popup.setOnDismissListener {
+            window.removeOnLayoutChangeListener(boundsWatcher)
+            anchor?.removeOnLayoutChangeListener(boundsWatcher)
+            if (playlistPopup === popup) playlistPopup = null
+            if (state == STATE_PLAYING) startDismissControlViewTimer()
         }
         playlistPopup = popup
         bindPlaylistContent(content, playlist, sourceCode,
@@ -1056,16 +1064,20 @@ class HJzvdStd @JvmOverloads constructor(
                 popup.dismiss()
                 onPlaylistVideoSelected?.invoke(selectedCode)
             },
-            onExpand = if (panel.fromBottom) null else {
-                {
-                    popup.dismiss()
-                    expandPlaybackPlaylist()
-                    Unit
-                }
-            },
         )
-        popup.showAtLocation(textureViewContainer,
-            if (panel.fromBottom) Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL else Gravity.END, 0, 0)
+        if (details != null) {
+            content.findViewById<TextView>(R.id.close_playlist).apply {
+                setText(R.string.collapse_playback_playlist)
+                contentDescription = context.getString(R.string.collapse_playback_playlist_description)
+            }
+            window.addOnLayoutChangeListener(boundsWatcher)
+            anchor?.addOnLayoutChangeListener(boundsWatcher)
+            popup.showAtLocation(window, Gravity.TOP or Gravity.LEFT, details.left, details.top)
+        } else {
+            popup.showAtLocation(textureViewContainer,
+                if (panel.fromBottom) Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL else Gravity.END, 0, 0)
+        }
+        return true
     }
 
     private fun bindPlaylistContent(
@@ -1075,14 +1087,9 @@ class HJzvdStd @JvmOverloads constructor(
         isCurrent: () -> Boolean,
         onClose: () -> Unit,
         onSelect: (String) -> Unit,
-        onExpand: (() -> Unit)? = null,
     ) {
         content.findViewById<TextView>(R.id.playlist_title).text = playlist.title ?: context.getString(R.string.play_list)
         content.findViewById<View>(R.id.close_playlist).setOnClickListener { onClose() }
-        content.findViewById<View>(R.id.expand_playlist).apply {
-            isVisible = onExpand != null
-            setOnClickListener { if (isCurrent()) onExpand?.invoke() }
-        }
         val list = content.findViewById<RecyclerView>(R.id.rv_playback_playlist)
         list.layoutManager = LinearLayoutManager(context)
         fun showPlaylistOrder() {
@@ -1109,58 +1116,6 @@ class HJzvdStd @JvmOverloads constructor(
             textColor = android.graphics.Color.WHITE,
         ).render(Preferences.playbackPlaylistSettings)
         showPlaylistOrder()
-    }
-
-    /** Resize only the native viewport; do not reparent its TextureView or touch the media session. */
-    internal fun expandPlaybackPlaylist(): Boolean {
-        val playlist = playbackPlaylist ?: return false
-        val width = playbackPlaylistDockWidth(rootView.width, rootView.height,
-            JZUtils.dip2px(context, 320f)) ?: return false
-        if (screen != SCREEN_FULLSCREEN || playlist.videos.isEmpty() || !isAttachedToWindow || isVideoLoading) return false
-        playerGestureController?.cancel()
-        controlsPopup?.dismiss()
-        dismissPlaylistPopup()
-        if (playlistDockContent == null) {
-            val content = LayoutInflater.from(context).inflate(R.layout.jz_layout_playlist, playlistDock, false)
-            content.setBackgroundColor(android.graphics.Color.rgb(26, 26, 26))
-            content.applyPlayerPanelInsets(includeTop = true)
-            playlistDockContent = content
-            playlistDock.addView(content)
-        }
-        playlistDock.layoutParams = playlistDock.layoutParams.apply { this.width = width }
-        playlistDock.isVisible = true
-        renderPlaylistDock()
-        if (state == STATE_PLAYING) startDismissControlViewTimer()
-        return true
-    }
-
-    internal fun collapsePlaybackPlaylist(): Boolean {
-        if (playlistDockContent == null) return false
-        playerGestureController?.cancel()
-        playlistDockContent = null
-        playlistDock.removeAllViews()
-        playlistDock.isGone = true
-        return true
-    }
-
-    private fun renderPlaylistDock() {
-        val content = playlistDockContent ?: return
-        val playlist = playbackPlaylist
-        if (screen != SCREEN_FULLSCREEN || rootView.width <= rootView.height || playlist?.videos.isNullOrEmpty()) {
-            collapsePlaybackPlaylist()
-            return
-        }
-        val sourceCode = videoCode
-        content.alpha = if (isVideoLoading) 0.6f else 1f
-        bindPlaylistContent(content, requireNotNull(playlist), sourceCode,
-            isCurrent = { playlistDockContent === content && videoCode == sourceCode && playbackPlaylist == playlist },
-            onClose = { if (playlistDockContent === content) collapsePlaybackPlaylist() },
-            onSelect = { onPlaylistVideoSelected?.invoke(it) },
-        )
-        content.findViewById<TextView>(R.id.close_playlist).apply {
-            setText(R.string.collapse_playback_playlist)
-            contentDescription = context.getString(R.string.collapse_playback_playlist_description)
-        }
     }
 
     private fun currentPanelLayout(): PlayerPanelLayout? =

@@ -2,6 +2,7 @@ package com.yenaly.han1meviewer.ui.fragment.video
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -56,6 +57,7 @@ import com.yenaly.han1meviewer.logic.search.quotedSearchText
 import com.yenaly.han1meviewer.logic.state.VideoLoadingState
 import com.yenaly.han1meviewer.logic.state.WebsiteState
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
+import com.yenaly.han1meviewer.ui.activity.VideoActivity
 import com.yenaly.han1meviewer.ui.adapter.AdapterLikeDataBindingPage
 import com.yenaly.han1meviewer.ui.adapter.BaseSingleDifferAdapter
 import com.yenaly.han1meviewer.ui.adapter.HanimeVideoRvAdapter
@@ -142,6 +144,7 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
         VideoColumnTitleAdapter(title = R.string.series_video, notifyWhenSet = true)
     private val playlistControlsAdapter = PlaybackPlaylistControlsAdapter(
         onOrderChanged = { Preferences.playbackPlaylistReversed = it },
+        onExpand = { (activity as? VideoActivity)?.expandPortraitPlaybackPlaylist() },
     )
     private val playlistAdapter = HanimeVideoRvAdapter(VIDEO_LAYOUT_WRAP_CONTENT)
     private val playlistWrapper = playlistAdapter.wrappedWith {
@@ -432,6 +435,11 @@ class VideoIntroductionFragment : YenalyFragment<FragmentVideoIntroductionBindin
             // Offscreen cached rows will receive the same request when they are bound again.
             playlistWrapper.item = Unit
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        playlistControlsAdapter.notifyItemChanged(0)
     }
 
     override fun onDestroyView() {

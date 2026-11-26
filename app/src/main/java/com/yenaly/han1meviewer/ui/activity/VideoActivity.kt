@@ -102,7 +102,6 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         }
 
         onBackPressedDispatcher.addCallback(this) {
-            if (binding.videoPlayer.collapsePlaybackPlaylist()) return@addCallback
             if (Jzvd.CURRENT_JZVD === binding.videoPlayer && Jzvd.backPress()) {
                 return@addCallback
             }
@@ -118,7 +117,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             if (viewModel.videoCode != it) viewModel.videoCode = it
         }
         binding.videoPlayer.onPlaylistVideoSelected = { playVideo(it) }
-        binding.videoPlayer.playbackSettingsAnchor = binding.videoVp
+        binding.videoPlayer.playbackDetailsAnchor = binding.videoVp
         binding.videoPlayer.onVideoDimensionsChanged = {
             applyVideoOrientation()
             requestAutomaticFullscreen()
@@ -272,6 +271,12 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(VIDEO_CODE, viewModel.videoCode)
         super.onSaveInstanceState(outState)
+    }
+
+    fun expandPortraitPlaybackPlaylist(): Boolean {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) || viewModel.fromDownload ||
+            viewModel.hanimeVideoStateFlow.value !is VideoLoadingState.Success) return false
+        return binding.videoPlayer.expandPortraitPlaybackPlaylist()
     }
 
     /** Reuse this activity and the very same fullscreen player view. */

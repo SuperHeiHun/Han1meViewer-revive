@@ -1,6 +1,8 @@
 package com.yenaly.han1meviewer
 
 import android.graphics.Color
+import android.content.res.Configuration
+import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
@@ -90,5 +92,41 @@ class PlaybackPlaylistControlsTest {
         adapter.submitSettings(PlaybackPlaylistSettings())
         adapter.bindViewHolder(holder, 0)
         assertEquals(R.id.playback_playlist_forward, holder.itemView.findViewById<RadioGroup>(R.id.playback_playlist_order).checkedRadioButtonId)
+    }
+
+    @Test fun portraitSeriesRowOffersExpansionWithoutChangingOrder() = withControls { view ->
+        val configuration = Configuration(view.resources.configuration).apply {
+            orientation = Configuration.ORIENTATION_PORTRAIT
+        }
+        val context = ContextThemeWrapper(view.context.createConfigurationContext(configuration), view.context.theme)
+        var expansions = 0
+        var orderChanges = 0
+        val adapter = PlaybackPlaylistControlsAdapter({ orderChanges++ }, { expansions++ })
+        val holder = adapter.createViewHolder(FrameLayout(context), 0)
+        adapter.bindViewHolder(holder, 0)
+        val expand = holder.itemView.findViewById<View>(R.id.expand_portrait_playlist)
+        assertEquals(View.VISIBLE, expand.visibility)
+        expand.performClick()
+        assertEquals(1, expansions)
+        assertEquals(0, orderChanges)
+        adapter.submitSettings(PlaybackPlaylistSettings(reversed = true))
+        adapter.bindViewHolder(holder, 0)
+        assertEquals(1, expansions)
+        assertEquals(0, orderChanges)
+    }
+
+    @Test fun landscapeSeriesRowDoesNotOfferThePortraitExpansion() = withControls { view ->
+        val configuration = Configuration(view.resources.configuration).apply {
+            orientation = Configuration.ORIENTATION_LANDSCAPE
+        }
+        val context = ContextThemeWrapper(view.context.createConfigurationContext(configuration), view.context.theme)
+        var expansions = 0
+        val adapter = PlaybackPlaylistControlsAdapter({}, { expansions++ })
+        val holder = adapter.createViewHolder(FrameLayout(context), 0)
+        adapter.bindViewHolder(holder, 0)
+        val expand = holder.itemView.findViewById<View>(R.id.expand_portrait_playlist)
+        assertEquals(View.GONE, expand.visibility)
+        expand.performClick()
+        assertEquals(0, expansions)
     }
 }

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <include
+        layout="@layout/layout_playback_playlist_controls"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/expand_portrait_playlist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:minWidth="48dp"
+        android:paddingHorizontal="16dp"
+        android:gravity="center"
+        android:background="?attr/selectableItemBackground"
+        android:contentDescription="@string/expand_playback_playlist_description"
+        android:text="@string/expand_playback_playlist"
+        android:textColor="?android:attr/textColorPrimary"
+        android:visibility="gone" />
+
+</LinearLayout>
