@@ -3,6 +3,7 @@ package com.yenaly.han1meviewer
 import com.yenaly.han1meviewer.logic.search.SearchInputParser
 import com.yenaly.han1meviewer.logic.search.quotedSearchText
 import com.yenaly.han1meviewer.logic.search.tagSearchText
+import com.yenaly.han1meviewer.logic.search.tagClickSearchText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -122,5 +123,47 @@ class SearchInputParserTest {
         val result = parser.parse("#\"\" Title")
         assertEquals("Title", result.query)
         assertTrue(result.tags.isEmpty())
+    }
+
+    @Test fun clickedTagsDoNotAddHashOrQuotesToTheSearchField() {
+        assertEquals("ASMR", tagClickSearchText("ASMR"))
+        assertEquals("Chinese Subtitle", tagClickSearchText("Chinese Subtitle"))
+    }
+
+    @Test fun clickedTagDecorationsAreRemovedBeforeAliasMatching() {
+        for (label in listOf("#示例标签", " ＃ 示例标签 ", "##＃示例标签")) {
+            val input = parser.parse(tagClickSearchText(label))
+            assertNull(input.query)
+            assertEquals(setOf("示例標籤"), input.tags)
+        }
+    }
+
+    @Test fun clickedUnknownTagUsesPlainKeywordInsteadOfAnUnsupportedTagFilter() {
+        val input = parser.parse(tagClickSearchText("#New Label"))
+        assertEquals("New Label", input.query)
+        assertTrue(input.tags.isEmpty())
+    }
+
+    @Test fun clickedEnglishMultiwordAliasKeepsItsCanonicalFilter() {
+        val input = parser.parse(tagClickSearchText("＃Chinese Subtitle"))
+        assertNull(input.query)
+        assertEquals(setOf("中文字幕"), input.tags)
+    }
+
+    @Test fun oldExplicitHashDecoratedHistoryDoesNotSendHashesAsTagNames() {
+        val input = parser.parse("#\"#示例标签\" #\"＃Custom Tag\"")
+        assertNull(input.query)
+        assertEquals(setOf("示例標籤", "Custom Tag"), input.tags)
+    }
+
+    @Test fun hashInsideANameOrQuotedTitleIsNotStripped() {
+        assertEquals("C#", tagClickSearchText(" C# "))
+        assertEquals("#Title", parser.parse(quotedSearchText("#Title")).query)
+        assertEquals(setOf("C#"), parser.parse(tagSearchText("C#")).tags)
+    }
+
+    @Test fun explicitTagGenerationDoesNotDuplicateDecorativePrefixes() {
+        assertEquals("#\"Custom Tag\"", tagSearchText(" ＃ #Custom Tag "))
+        assertTrue(parser.parse("#\"＃#\"").tags.isEmpty())
     }
 }

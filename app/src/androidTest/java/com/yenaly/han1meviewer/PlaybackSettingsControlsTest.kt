@@ -1,7 +1,9 @@
 package com.yenaly.han1meviewer
 
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import androidx.appcompat.widget.AppCompatSpinner
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ActivityScenario
@@ -9,6 +11,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.yenaly.han1meviewer.logic.player.*
 import com.yenaly.han1meviewer.ui.activity.SettingsActivity
 import com.yenaly.han1meviewer.ui.view.video.PlaybackSettingsControls
+import com.yenaly.han1meviewer.ui.view.video.TapOnlySpinner
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,5 +74,43 @@ class PlaybackSettingsControlsTest {
         view.findViewById<SwitchCompat>(R.id.playback_auto_rotate).performClick()
         assertEquals(listOf(true), rotations)
         assertEquals(0, otherChanges)
+    }
+
+    @Test fun bothSelectorsRejectLongPressWithoutOpeningADropdownOrWritingSettings() = withControls { view ->
+        var changes = 0
+        PlaybackSettingsControls(view, { changes++ }, { changes++ }, { changes++ }).render(PlaybackSettings())
+        for (id in listOf(R.id.playback_mode_choice, R.id.playback_aspect_choice)) {
+            val spinner = view.findViewById<View>(id)
+            assertTrue(spinner is TapOnlySpinner)
+            val held = ViewConfiguration.getLongPressTimeout().toLong() + 100
+            MotionEvent.obtain(0, 0, MotionEvent.ACTION_DOWN, 20f, 20f, 0).let {
+                spinner.onTouchEvent(it)
+                it.recycle()
+            }
+            MotionEvent.obtain(0, held, MotionEvent.ACTION_UP, 20f, 20f, 0).let {
+                spinner.onTouchEvent(it)
+                it.recycle()
+            }
+            assertFalse(spinner.isPressed)
+        }
+        assertEquals(0, changes)
+    }
+
+    @Test fun draggingEitherSelectorDoesNotChangeItsSelection() = withControls { view ->
+        var changes = 0
+        PlaybackSettingsControls(view, { changes++ }, { changes++ }, { changes++ }).render(PlaybackSettings())
+        for (id in listOf(R.id.playback_mode_choice, R.id.playback_aspect_choice)) {
+            val spinner = view.findViewById<AppCompatSpinner>(id)
+            val selected = spinner.selectedItemPosition
+            for ((time, action, y) in listOf(Triple(0L, MotionEvent.ACTION_DOWN, 20f),
+                Triple(700L, MotionEvent.ACTION_MOVE, 100f), Triple(800L, MotionEvent.ACTION_UP, 100f))) {
+                MotionEvent.obtain(0, time, action, 20f, y, 0).let {
+                    spinner.onTouchEvent(it)
+                    it.recycle()
+                }
+            }
+            assertEquals(selected, spinner.selectedItemPosition)
+        }
+        assertEquals(0, changes)
     }
 }

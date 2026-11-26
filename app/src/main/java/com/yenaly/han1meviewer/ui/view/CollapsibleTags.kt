@@ -19,7 +19,7 @@ import com.google.android.material.chip.ChipGroup
 import com.yenaly.han1meviewer.ADVANCED_SEARCH_MAP
 import com.yenaly.han1meviewer.R
 import com.yenaly.han1meviewer.logic.blocking.BlockKind
-import com.yenaly.han1meviewer.logic.search.tagSearchText
+import com.yenaly.han1meviewer.logic.search.tagClickSearchText
 import com.yenaly.han1meviewer.ui.activity.SearchActivity
 import com.yenaly.han1meviewer.util.addUpdateListener
 import com.yenaly.han1meviewer.util.blockActionLabel
@@ -134,7 +134,7 @@ class CollapsibleTags @JvmOverloads constructor(
                     text = tag
                     setOnClickListener {
                         context?.activity?.startActivity<SearchActivity>(
-                            ADVANCED_SEARCH_MAP to tagSearchText(tag)
+                            ADVANCED_SEARCH_MAP to tagClickSearchText(tag)
                         )
                     }
                     setOnLongClickListener {

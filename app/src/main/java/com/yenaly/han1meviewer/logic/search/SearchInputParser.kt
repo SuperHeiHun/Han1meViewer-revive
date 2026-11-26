@@ -8,7 +8,13 @@ internal data class SearchInput(val query: String?, val tags: Set<String>)
 internal fun quotedSearchText(text: String): String =
     "\"${text.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
-internal fun tagSearchText(tag: String): String = "#${quotedSearchText(tag)}"
+/** A clicked label is a normal search; decorative hash prefixes are not part of its name. */
+internal fun tagClickSearchText(tag: String): String = cleanSearchTag(tag)
+
+internal fun tagSearchText(tag: String): String = "#${quotedSearchText(cleanSearchTag(tag))}"
+
+private fun cleanSearchTag(tag: String): String =
+    tag.trim().trimStart { it == '#' || it == '＃' || it.isWhitespace() }
 
 internal fun normalizeSearchTag(value: String): String = Normalizer.normalize(value, Normalizer.Form.NFKC)
     .trim().replace(Regex("[\\s\\p{Z}]+"), " ").lowercase(Locale.ROOT)
@@ -72,7 +78,8 @@ internal class SearchInputParser(tagAliases: Map<String, String>) {
                 continue
             }
             if (token.explicitTag) {
-                tags += aliases[normalizeSearchTag(token.value)] ?: token.value
+                val name = cleanSearchTag(token.value)
+                if (name.isNotBlank()) tags += aliases[normalizeSearchTag(name)] ?: name
                 index++
                 continue
             }

@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black"
+    android:orientation="horizontal"
     android:descendantFocusability="blocksDescendants"
     tools:ignore="all">
+
+    <RelativeLayout
+        android:id="@+id/player_viewport"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1">
 
     <FrameLayout
         android:id="@+id/surface_container"
@@ -321,4 +328,13 @@
         android:focusable="false"
         android:visibility="gone" />
 
-</RelativeLayout>
+    </RelativeLayout>
+
+    <FrameLayout
+        android:id="@+id/playback_playlist_dock"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:background="#1A1A1A"
+        android:visibility="gone" />
+
+</LinearLayout>

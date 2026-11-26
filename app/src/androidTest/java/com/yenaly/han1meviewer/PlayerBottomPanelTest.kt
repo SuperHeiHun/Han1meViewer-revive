@@ -18,6 +18,7 @@ import com.yenaly.han1meviewer.logic.player.PlaybackPlaylist
 import com.yenaly.han1meviewer.ui.activity.SettingsActivity
 import com.yenaly.han1meviewer.ui.view.video.HJzvdStd
 import com.yenaly.han1meviewer.ui.view.video.playerPanelLayout
+import com.yenaly.han1meviewer.ui.view.video.playerSettingsPanelBounds
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +34,10 @@ class PlayerBottomPanelTest {
                 activity.setContentView(root)
                 player = HJzvdStd(activity)
                 root.addView(player, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, 160))
+                val details = FrameLayout(activity)
+                root.addView(details, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT).apply { topMargin = 160 })
+                player.playbackSettingsAnchor = details
                 player.videoCode = "a"
                 player.setUp(JZDataSource("file:///not-opened.mp4", "Local"), Jzvd.SCREEN_NORMAL)
                 player.updatePlaybackPlaylist(PlaybackPlaylist("Local series", listOf(
@@ -64,18 +69,31 @@ class PlayerBottomPanelTest {
         assertEquals(Gravity.BOTTOM, params.gravity and Gravity.VERTICAL_GRAVITY_MASK)
     }
 
-    @Test fun inlineSettingsUseTheWindowHalfInsteadOfTheShortPlayerHeight() = withPlayer { player ->
+    @Test fun inlinePortraitSettingsMatchTheDetailsHeightWithoutTransparency() = withPlayer { player ->
         player.clickPlaybackSettings()
         val popup = requireNotNull(player.popup("controlsPopup"))
-        assertBottomHalf(player, popup)
-        assertNotEquals(player.height / 2, popup.height)
+        assertEquals(cn.jzvd.R.style.pop_animation, popup.animationStyle)
+        assertEquals(255, popup.contentView.background.alpha)
+        if (player.rootView.height >= player.rootView.width) {
+            assertEquals(player.playbackSettingsAnchor!!.width, popup.width)
+            assertEquals(player.playbackSettingsAnchor!!.height, popup.height)
+        } else {
+            val expected = requireNotNull(playerSettingsPanelBounds(player.rootView.width,
+                player.rootView.height, JZUtils.dip2px(player.context, 360f)))
+            assertEquals(expected.height, popup.height)
+            assertEquals(expected.width, popup.width)
+        }
     }
 
-    @Test fun fullscreenSettingsAlsoUseBottomHalfAndKeepScrollableControls() = withPlayer { player ->
+    @Test fun fullscreenSettingsSlideFromTheRightAndKeepScrollableControls() = withPlayer { player ->
         player.setScreenFullscreen()
         player.clickPlaybackSettings()
         val popup = requireNotNull(player.popup("controlsPopup"))
-        assertBottomHalf(player, popup)
+        val expected = requireNotNull(playerSettingsPanelBounds(player.rootView.width,
+            player.rootView.height, JZUtils.dip2px(player.context, 360f)))
+        assertEquals(expected.width, popup.width)
+        assertEquals(expected.height, popup.height)
+        assertEquals(cn.jzvd.R.style.pop_animation, popup.animationStyle)
         val mode = popup.contentView.findViewById<View>(R.id.playback_mode_choice)
         val scroll = (mode.parent as View).parent
         assertTrue(scroll is ScrollView)
@@ -129,5 +147,17 @@ class PlayerBottomPanelTest {
         player.layout(player.left, player.top, player.right - 1, player.bottom)
         assertFalse(popup.isShowing)
         assertNull(player.popup("controlsPopup"))
+    }
+
+    @Test fun detailsResizeDismissesTheOldSettingsPanel() = withPlayer { player ->
+        player.clickPlaybackSettings()
+        val popup = requireNotNull(player.popup("controlsPopup"))
+        player.playbackSettingsAnchor!!.let { details ->
+            details.layout(details.left, details.top, details.right, details.bottom - 1)
+        }
+        if (player.rootView.height >= player.rootView.width) {
+            assertFalse(popup.isShowing)
+            assertNull(player.popup("controlsPopup"))
+        }
     }
 }

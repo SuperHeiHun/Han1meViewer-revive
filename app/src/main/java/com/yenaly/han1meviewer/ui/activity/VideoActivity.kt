@@ -102,6 +102,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
         }
 
         onBackPressedDispatcher.addCallback(this) {
+            if (binding.videoPlayer.collapsePlaybackPlaylist()) return@addCallback
             if (Jzvd.CURRENT_JZVD === binding.videoPlayer && Jzvd.backPress()) {
                 return@addCallback
             }
@@ -117,6 +118,7 @@ class VideoActivity : YenalyActivity<ActivityVideoBinding>(),
             if (viewModel.videoCode != it) viewModel.videoCode = it
         }
         binding.videoPlayer.onPlaylistVideoSelected = { playVideo(it) }
+        binding.videoPlayer.playbackSettingsAnchor = binding.videoVp
         binding.videoPlayer.onVideoDimensionsChanged = {
             applyVideoOrientation()
             requestAutomaticFullscreen()

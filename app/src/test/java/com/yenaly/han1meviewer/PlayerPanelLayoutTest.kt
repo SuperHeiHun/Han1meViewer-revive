@@ -2,6 +2,8 @@ package com.yenaly.han1meviewer
 
 import com.yenaly.han1meviewer.ui.view.video.PlayerPanelLayout
 import com.yenaly.han1meviewer.ui.view.video.playerPanelLayout
+import com.yenaly.han1meviewer.ui.view.video.PlayerPanelBounds
+import com.yenaly.han1meviewer.ui.view.video.playerSettingsPanelBounds
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -18,14 +20,14 @@ class PlayerPanelLayoutTest {
         assertEquals(PlayerPanelLayout(250, 300, false), playerPanelLayout(500, 300, 360))
     }
 
-    @Test fun settingsUseABottomHalfPanelInBothDirections() {
-        assertEquals(PlayerPanelLayout(1080, 960, true), playerPanelLayout(1080, 1920, 360, true))
-        assertEquals(PlayerPanelLayout(1920, 540, true), playerPanelLayout(1920, 1080, 360, true))
+    @Test fun fullscreenSettingsUseARightSidePanelInBothDirections() {
+        assertEquals(PlayerPanelBounds(720, 0, 360, 1920), playerSettingsPanelBounds(1080, 1920, 360))
+        assertEquals(PlayerPanelBounds(1560, 0, 360, 1080), playerSettingsPanelBounds(1920, 1080, 360))
     }
 
     @Test fun windowHeightRatherThanInlineVideoHeightDeterminesTheSettingsPanel() {
-        assertEquals(960, playerPanelLayout(1080, 1920, 360, true)?.height)
-        assertNotEquals(960, playerPanelLayout(1080, 608, 360, true)?.height)
+        assertEquals(1920, playerSettingsPanelBounds(1080, 1920, 360)?.height)
+        assertNotEquals(1920, playerSettingsPanelBounds(1080, 608, 360)?.height)
     }
 
     @Test fun squareWindowsUseTheBottomLayout() {
@@ -45,7 +47,7 @@ class PlayerPanelLayoutTest {
 
     @Test fun unmeasuredWindowsDoNotProducePopups() {
         assertNull(playerPanelLayout(0, 900, 360))
-        assertNull(playerPanelLayout(400, 0, 360, true))
+        assertNull(playerPanelLayout(400, 0, 360))
         assertNull(playerPanelLayout(-1, 900, 360))
     }
 

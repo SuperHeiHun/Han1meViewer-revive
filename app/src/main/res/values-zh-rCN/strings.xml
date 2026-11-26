@@ -67,6 +67,10 @@
     <string name="playback_auto_rotate_hint">仅在全屏中按实际视频宽高跟随横竖屏，切换下一项时自动调整；不会从普通播放进入全屏。未知尺寸或正方形保持方向不变。</string>
     <string name="playback_settings_global_hint">对所有视频生效并保存。列表循环在末项回到首项；无系列或离线时按单项列表循环。循环播放只重复当前视频。</string>
     <string name="close_playback_playlist">关闭播放列表</string>
+    <string name="expand_playback_playlist">展开</string>
+    <string name="expand_playback_playlist_description">展开播放列表，与视频并排显示</string>
+    <string name="collapse_playback_playlist">收起</string>
+    <string name="collapse_playback_playlist_description">收起播放列表，恢复完整播放画面</string>
     <string name="playback_playlist_position">%1$d / %2$d</string>
     <string name="playback_playlist_forward">正序</string>
     <string name="playback_playlist_reverse">倒序</string>
